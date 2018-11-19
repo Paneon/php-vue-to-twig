@@ -1,0 +1,12 @@
+{
+    "name": "macavity/php-vue-to-twig",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alexander Pape",
+            "email": "a.pape@paneon.de"
+        }
+    ],
+    "require": {}
+}
