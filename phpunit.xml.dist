@@ -1,0 +1,8 @@
+<phpunit
+        bootstrap="vendor/autoload.php">
+    <testsuites>
+        <testsuite name="PHPVueToTwigTests">
+            <directory>tests/</directory>
+        </testsuite>
+    </testsuites>
+</phpunit>
