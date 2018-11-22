@@ -31,6 +31,6 @@
     },
     "require-dev": {
         "ext-simplexml": "*",
-        "phpunit/phpunit": "^4.0"
+        "phpunit/phpunit": "^7"
     }
 }
