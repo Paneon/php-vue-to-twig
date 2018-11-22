@@ -45,6 +45,12 @@ class Compiler
     {
         return $node->parentNode === null;
     }
+
+    private function isTextNode(DOMNode $node): bool
+    {
+        return $node instanceof DOMCharacterData;
+    }
+
     /**
      * @throws Exception
      */
