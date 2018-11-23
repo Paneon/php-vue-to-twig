@@ -1,0 +1,59 @@
+<?xml version="1.0"?>
+<ruleset>
+    <rule ref="PSR2"/>
+
+    <rule ref="Generic.Files.LineLength.TooLong">
+        <type>error</type>
+    </rule>
+
+    <rule ref="Squiz.Strings.ConcatenationSpacing"/>
+
+    <rule ref="./vendor/slevomat/coding-standard/SlevomatCodingStandard/ruleset.xml">
+        <exclude name="SlevomatCodingStandard.ControlStructures.RequireYodaComparison.RequiredYodaComparison"/>
+        <exclude name="SlevomatCodingStandard.Files.TypeNameMatchesFileName.NoMatchBetweenTypeNameAndFileName"/>
+        <exclude name="SlevomatCodingStandard.Namespaces.AlphabeticallySortedUses.IncorrectlyOrderedUses"/>
+        <exclude name="SlevomatCodingStandard.Namespaces.FullyQualifiedClassNameInAnnotation.NonFullyQualifiedClassName"/>
+        <exclude name="SlevomatCodingStandard.Namespaces.FullyQualifiedExceptions.NonFullyQualifiedException"/>
+        <exclude name="SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalFunctions.NonFullyQualified"/>
+        <exclude name="SlevomatCodingStandard.Namespaces.UseOnlyWhitelistedNamespaces.NonFullyQualified"/>
+        <exclude name="SlevomatCodingStandard.Types.EmptyLinesAroundTypeBraces"/>
+        <exclude name="SlevomatCodingStandard.Commenting.DisallowOneLinePropertyDocComment.OneLinePropertyComment"/>
+        <exclude name="SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming"/>
+        <exclude name="SlevomatCodingStandard.Classes.SuperfluousExceptionNaming.SuperfluousSuffix"/>
+        <exclude name="SlevomatCodingStandard.Classes.SuperfluousInterfaceNaming.SuperfluousSuffix"/>
+        <exclude name="SlevomatCodingStandard.Operators.DisallowIncrementAndDecrementOperators.DisallowedPreDecrementOperator"/>
+        <exclude name="SlevomatCodingStandard.Operators.DisallowIncrementAndDecrementOperators.DisallowedPostDecrementOperator"/>
+        <exclude name="SlevomatCodingStandard.ControlStructures.DisallowShortTernaryOperator.DisallowedShortTernaryOperator"/>
+        <exclude name="SlevomatCodingStandard.Namespaces.FullyQualifiedGlobalConstants.NonFullyQualified"/>
+        <exclude name="SlevomatCodingStandard.ControlStructures.NewWithoutParentheses.UselessParentheses"/>
+        <exclude name="SlevomatCodingStandard.PHP.UselessParentheses.UselessParentheses"/>
+        <exclude name="SlevomatCodingStandard.Classes.TraitUseSpacing.IncorrectLinesCountBeforeFirstUse"/>
+        <exclude name="SlevomatCodingStandard.Commenting.UselessInheritDocComment.UselessInheritDocComment"/>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.TypeHints.TypeHintDeclaration">
+        <exclude-pattern>./tests/*/*Test.php</exclude-pattern>
+
+        <properties>
+            <property name="allAnnotationsAreUseful" type="boolean" value="true"/>
+        </properties>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.TypeHints.DeclareStrictTypes">
+        <properties>
+            <property name="spacesCountAroundEqualsSign" value="0"/>
+        </properties>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.Namespaces.UnusedUses">
+        <properties>
+            <property name="searchAnnotations" value="true"/>
+        </properties>
+    </rule>
+
+    <rule ref="SlevomatCodingStandard.Namespaces.UseOnlyWhitelistedNamespaces">
+        <properties>
+            <property name="allowUseFromRootNamespace" value="true"/>
+        </properties>
+    </rule>
+</ruleset>

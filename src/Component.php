@@ -49,20 +49,8 @@ class Component
         @$this->document->loadHTMLFile($this->assetPath . $fileName);
         $this->templateElement = $this->document->getElementsByTagName('template')->item(0);
 
-
         $this->rootElement = $this->getRootNode($this->templateElement);
-
         $this->templateHtml = $this->getInnerHtml($this->templateElement);
-
-//        dd($this->templateHtml);
-
-//        $this->document = new DOMDocument();
-//
-//        // Ignore all warnings issued by DOMDocument when parsing
-//        // as soon as VueJs template is not actually a "valid" HTML
-//        @$this->document->loadHTMLFile($this->assetPath . $fileName);
-
-        //$this->document = $this->parseHtml($this->document->saveHTML($this->rootElement));
 
         return $this;
     }

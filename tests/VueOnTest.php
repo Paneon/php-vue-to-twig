@@ -4,18 +4,24 @@ namespace Macavity\VueToTwig\Tests;
 
 use Macavity\VueToTwig\Compiler;
 
-class CompilerTest extends AbstractTestCase
+class VueOnTest extends AbstractTestCase
 {
-    /** @test */
-    public function leavesMustacheVariablesIntact()
+    /**
+     * @dataProvider onProvider
+     * @throws \Exception
+     */
+    public function testOn($html, $expected)
     {
-        $html = '<template><div>{{ someVariable }}</div></template>';
-        $expected = '<div>{{ someVariable }}</div>';
         $document = $this->createDocumentWithHtml($html);
         $compiler = new Compiler($document);
 
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
+    }
+
+    public function onProvider()
+    {
+        return $this->loadFixturesFromDir('vue-on');
     }
 }

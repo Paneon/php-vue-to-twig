@@ -6,3 +6,4 @@
 
 # PHPUnit
 /phpunit.xml
+.phpcs-cache
