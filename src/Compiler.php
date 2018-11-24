@@ -66,10 +66,10 @@ class Compiler
 //        }
 
         $this->stripEventHandlers($node);
-        //$this->handleFor($node);
+        $this->handleFor($node);
         //$this->handleRawHtml($node, $data);
 
-        //$this->handleAttributeBinding($node);
+        $this->handleAttributeBinding($node);
 
         foreach (iterator_to_array($node->childNodes) as $childNode) {
             $this->convertNode($childNode);
@@ -92,13 +92,16 @@ class Compiler
     {
         /** @var DOMAttr $attribute */
         foreach (iterator_to_array($node->attributes) as $attribute) {
-            dump($attribute->name);
+
             if (strpos($attribute->name, 'v-bind:') !== 0 && strpos($attribute->name, ':') !== 0) {
-                dump("- skip");
+                var_dump("- skip: ". $attribute->name);
                 continue;
             }
 
             $name = substr($attribute->name, 1);
+            $value = $attribute->value;
+            var_dump('- handle: '.$name.' = '.$value);
+
             if (is_bool($value)) {
                 if ($value) {
                     $node->setAttribute($name, $name);
@@ -180,29 +183,45 @@ class Compiler
         }
     }
 
-    private function handleFor(DOMNode $node)
+    private function handleFor(DOMElement $node)
     {
-        if ($this->isTextNode($node)) {
-            return;
-        }
-
         /** @var DOMElement $node */
         if (!$node->hasAttribute('v-for')) {
             return;
         }
 
-        [$itemName, $listName] = explode(' in ', $node->getAttribute('v-for'));
+        [$forLeft, $listName] = explode(' in ', $node->getAttribute('v-for'));
 
-        // Start For
-        if (strpos($itemName, ',') !== false) {
-            [$keyName, $itemName] = explode(',', $itemName);
-            $keyName = trim($keyName, ' (');
-            $itemName = trim($itemName, ') ');
-            $startFor = $this->document->createTextNode('{% for ' . $itemName . ' in ' . $listName . ' %}' .
-                '{% set ' . $keyName . ' = index0 %}');
-        } else {
-            $startFor = $this->document->createTextNode('{% for ' . $itemName . ' in ' . $listName . ' %}');
+        /*
+         * Variations:
+         * (1) item in array
+         * (2) key, item in array
+         * (3) key, item, index in object
+         */
+
+        // (1)
+        $forCommand = '{% for ' . $forLeft . ' in ' . $listName . ' %}';
+
+        if (strpos($forLeft, ',')) {
+            $forLeft = str_replace('(', '', $forLeft);
+            $forLeft = str_replace(')', '', $forLeft);
+
+            $forLeftArray = explode(',', $forLeft);
+
+            $forValue = $forLeftArray[0];
+            $forKey = $forLeftArray[1];
+            $forIndex = $forLeftArray[2] ?? null;
+
+            // (2)
+            $forCommand = '{% for ' . $forKey . ', ' . $forValue . ' in ' . $listName . ' %}';
+
+            if ($forIndex) {
+                // (3)
+                $forCommand .= ' {% set ' . $forIndex . ' = loop.index0 %}';
+            }
         }
+
+        $startFor = $this->document->createTextNode($forCommand);
         $node->parentNode->insertBefore($startFor, $node);
 
         // End For
