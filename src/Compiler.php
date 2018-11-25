@@ -13,6 +13,9 @@ use Psr\Log\LoggerInterface;
 
 class Compiler
 {
+    protected const DOUBLE_CURLY_OPEN = '__DOUBLE_CURLY_OPEN__';
+    protected const DOUBLE_CURLY_CLOSE = '__DOUBLE_CURLY_CLOSE__';
+
     /** @var String[] */
     protected $components;
 
@@ -30,6 +33,8 @@ class Compiler
         $this->logger = $logger;
         $this->document = $document;
         $this->lastCloseIf = null;
+
+        $this->logger->debug("\n--------- New Compiler Instance ----------\n");
     }
 
     /**
@@ -46,7 +51,7 @@ class Compiler
         $rootNode = $this->getRootNode($templateElement);
         $resultNode = $this->convertNode($rootNode);
 
-        return $this->document->saveHTML($resultNode);
+        return $this->replacePlaceholders($this->document->saveHTML($resultNode));
     }
 
     public function convertNode(DOMNode $node): DOMNode
@@ -95,7 +100,7 @@ class Compiler
                 continue;
             }
 
-            $name = substr($attribute->name, 1);
+            $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
             $value = $attribute->value;
             $this->logger->debug('- handle: ' . $name . ' = ' . $value);
 
@@ -110,17 +115,18 @@ class Compiler
                     break;
                 default:
                     if ($value === 'true') {
+                        $this->logger->debug('- setAttribute '.$name);
                         $node->setAttribute($name, $name);
+                    } else {
+                        $this->logger->debug('- setAttribute "'.$name.'" with value');
+                        $node->setAttribute(
+                            $name,
+                            self::DOUBLE_CURLY_OPEN.$value.self::DOUBLE_CURLY_CLOSE
+                        );
                     }
-                    $node->setAttribute($name, $value);
             }
 
-            if (is_bool($value)) {
-                if ($value) {
-                    $this->logger->debug('=> setAttribute');
-                    $node->setAttribute($name, $name);
-                }
-            } elseif (is_array($value)) {
+            if (is_array($value)) {
                 if ($name === 'style') {
                     $styles = [];
                     foreach ($value as $prop => $setting) {
@@ -141,7 +147,7 @@ class Compiler
                 }
             }
 
-            $this->logger->debug('=> remove ' . $attribute->name);
+            $this->logger->debug('=> remove original ' . $attribute->name);
             $node->removeAttribute($attribute->name);
         }
     }
@@ -251,11 +257,6 @@ class Compiler
         }
     }
 
-    private function isTextNode(DOMNode $node): bool
-    {
-        return $node instanceof DOMCharacterData;
-    }
-
     /**
      * @throws Exception
      */
@@ -281,5 +282,13 @@ class Compiler
         }
 
         return $firstTagNode;
+    }
+
+    protected function replacePlaceholders(string $string)
+    {
+        $string = str_replace(self::DOUBLE_CURLY_OPEN, '{{', $string);
+        $string = str_replace(self::DOUBLE_CURLY_CLOSE, '}}', $string);
+
+        return $string;
     }
 }

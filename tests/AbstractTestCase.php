@@ -15,6 +15,7 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         $document = $this->createDocumentWithHtml($template);
         $compiler = new Compiler($document, $this->createLogger());
 
+
         return $compiler;
     }
 
