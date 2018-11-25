@@ -9,7 +9,7 @@ use DOMElement;
 use DOMNode;
 use DOMText;
 use Exception;
-use LibXMLError;
+use Psr\Log\LoggerInterface;
 
 class Compiler
 {
@@ -22,10 +22,13 @@ class Compiler
     /** @var DOMText */
     protected $lastCloseIf;
 
-    public function __construct(DOMDocument $document)
-    {
-        $this->document = $document;
+    /** @var LoggerInterface */
+    protected $logger;
 
+    public function __construct(DOMDocument $document, LoggerInterface $logger)
+    {
+        $this->logger = $logger;
+        $this->document = $document;
         $this->lastCloseIf = null;
     }
 
@@ -48,22 +51,18 @@ class Compiler
 
     public function convertNode(DOMNode $node): DOMNode
     {
-        if ($this->isTextNode($node)) {
+        if ($node->nodeType === XML_TEXT_NODE) {
             return $node;
         }
 
         if ($node->nodeType === XML_ELEMENT_NODE) {
-            echo "\nElement node found";
+            //echo "\nElement node found";
             /** @var DOMElement $node */
             $this->replaceShowWithIf($node);
             $this->handleIf($node);
+        } elseif ($node->nodeType === XML_HTML_DOCUMENT_NODE) {
+            $this->logger->warning("Document node found.");
         }
-        elseif($node->nodeType === XML_HTML_DOCUMENT_NODE) {
-            echo "\nDocument node found.";
-        }
-//        else {
-//            var_dump($node->nodeType);
-//        }
 
         $this->stripEventHandlers($node);
         $this->handleFor($node);
@@ -80,12 +79,10 @@ class Compiler
 
     public function replaceShowWithIf(DOMElement $node): void
     {
-
         if ($node->hasAttribute('v-show')) {
             $node->setAttribute('v-if', $node->getAttribute('v-show'));
             $node->removeAttribute('v-show');
         }
-
     }
 
     private function handleAttributeBinding(DOMElement $node)
@@ -94,16 +91,33 @@ class Compiler
         foreach (iterator_to_array($node->attributes) as $attribute) {
 
             if (strpos($attribute->name, 'v-bind:') !== 0 && strpos($attribute->name, ':') !== 0) {
-                var_dump("- skip: ". $attribute->name);
+                $this->logger->debug("- skip: " . $attribute->name);
                 continue;
             }
 
             $name = substr($attribute->name, 1);
             $value = $attribute->value;
-            var_dump('- handle: '.$name.' = '.$value);
+            $this->logger->debug('- handle: ' . $name . ' = ' . $value);
+
+
+            switch ($name) {
+                case 'key':
+                    // Not necessary in twig
+                    break;
+                case 'style':
+                    break;
+                case 'class':
+                    break;
+                default:
+                    if ($value === 'true') {
+                        $node->setAttribute($name, $name);
+                    }
+                    $node->setAttribute($name, $value);
+            }
 
             if (is_bool($value)) {
                 if ($value) {
+                    $this->logger->debug('=> setAttribute');
                     $node->setAttribute($name, $name);
                 }
             } elseif (is_array($value)) {
@@ -125,9 +139,9 @@ class Compiler
                     }
                     $node->setAttribute($name, implode(' ', $classes));
                 }
-            } else {
-                $node->setAttribute($name, $value);
             }
+
+            $this->logger->debug('=> remove ' . $attribute->name);
             $node->removeAttribute($attribute->name);
         }
     }
@@ -154,12 +168,11 @@ class Compiler
             $this->lastCloseIf = $closeIf;
 
             $node->removeAttribute('v-if');
-        }
-        elseif ($node->hasAttribute('v-else-if')) {
+        } elseif ($node->hasAttribute('v-else-if')) {
             $condition = $node->getAttribute('v-else-if');
 
             // Replace old endif with else
-            $this->lastCloseIf->textContent = '{% elseif '.$condition.' %}';
+            $this->lastCloseIf->textContent = '{% elseif ' . $condition . ' %}';
 
             // Close with new endif
             $closeIf = $this->document->createTextNode('{% endif %}');
@@ -167,10 +180,7 @@ class Compiler
             $this->lastCloseIf = $closeIf;
 
             $node->removeAttribute('v-else-if');
-        }
-        elseif ($node->hasAttribute('v-else')) {
-            echo "\nFound a v-else";
-
+        } elseif ($node->hasAttribute('v-else')) {
             // Replace old endif with else
             $this->lastCloseIf->textContent = '{% else %}';
 

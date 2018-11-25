@@ -2,8 +2,6 @@
 
 namespace Macavity\VueToTwig\Tests;
 
-use Macavity\VueToTwig\Compiler;
-
 class VueForTest extends AbstractTestCase
 {
     /**
@@ -12,8 +10,7 @@ class VueForTest extends AbstractTestCase
      */
     public function testFor($html, $expected)
     {
-        $document = $this->createDocumentWithHtml($html);
-        $compiler = new Compiler($document);
+        $compiler = $this->createCompiler($html);
 
         $actual = $compiler->convert();
 

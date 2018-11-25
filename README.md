@@ -17,6 +17,8 @@ Compile vue files to twig templates with PHP
 |v-for|:white_check_mark:|
 |v-on|:white_check_mark:|
 |v-bind||
+|v-bind:style||
+|v-bind:class||
 |v-model||
 |v-pre||
 |v-cloak||

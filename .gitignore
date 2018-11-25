@@ -1,4 +1,6 @@
 
+/var
+
 # Managed by Composer
 /bin/*
 !bin/console
@@ -7,3 +9,4 @@
 # PHPUnit
 /phpunit.xml
 .phpcs-cache
+

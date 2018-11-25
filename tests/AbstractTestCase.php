@@ -4,9 +4,29 @@ namespace Macavity\VueToTwig\Tests;
 
 use DirectoryIterator;
 use DOMDocument;
+use Macavity\VueToTwig\Compiler;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 
 abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
 {
+    protected function createCompiler(string $template): Compiler
+    {
+        $document = $this->createDocumentWithHtml($template);
+        $compiler = new Compiler($document, $this->createLogger());
+
+        return $compiler;
+    }
+
+    protected function createLogger(): Logger
+    {
+        $logger = new Logger('test');
+        $logger->pushHandler(new StreamHandler(__DIR__ . '/../var/dev/test.log'));
+
+        return $logger;
+    }
+
+
     protected function assertEqualHtml($expectedResult, $result): void
     {
         $expectedResult = $this->normalizeHtml($expectedResult);

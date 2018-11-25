@@ -32,7 +32,8 @@
     },
     "require-dev": {
         "ext-simplexml": "*",
-        "phpunit/phpunit": "^7"
+        "phpunit/phpunit": "^7",
+        "monolog/monolog": "^1.24"
     },
     "scripts": {
         "cs:fix": "phpcbf --standard=phpcs.xml",
