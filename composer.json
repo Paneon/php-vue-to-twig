@@ -1,5 +1,5 @@
 {
-    "name": "macavity/php-vue-to-twig",
+    "name": "paneon/php-vue-to-twig",
     "description": "",
     "type": "library",
     "license": "MIT",
@@ -17,13 +17,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Macavity\\VueToTwig\\": "src"
+            "Paneon\\VueToTwig\\": "src"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Macavity\\VueToTwig\\": "src",
-            "Macavity\\VueToTwig\\Tests\\": "tests"
+            "Paneon\\VueToTwig\\": "src",
+            "Paneon\\VueToTwig\\Tests\\": "tests"
         },
         "files": [
             "vendor/autoload.php"

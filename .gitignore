@@ -7,6 +7,5 @@
 /vendor/
 
 # PHPUnit
-/phpunit.xml
 .phpcs-cache
 

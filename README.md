@@ -1,6 +1,6 @@
 # php-vue-to-twig
 
-[![Build Status](https://travis-ci.org/Macavity/php-vue-to-twig.svg?branch=master)](https://travis-ci.org/Macavity/php-vue-to-twig)
+[![Build Status](https://travis-ci.org/Paneon/php-vue-to-twig.svg?branch=master)](https://travis-ci.org/Paneon/php-vue-to-twig)
 
 Compile vue files to twig templates with PHP
 
@@ -24,6 +24,7 @@ Compile vue files to twig templates with PHP
 |v-cloak||
 |v-once||
 
+
 ## Other Functionalities
 
 |Functionality|Implemented|
@@ -31,3 +32,24 @@ Compile vue files to twig templates with PHP
 |Slots||
 |Components||
 |Filters||
+
+
+## Limitations
+
+It's difficult to interpret JavaScript language features and translate them into twig.
+
+For example string concatenation inside attribute binding does not work currently: :no_entry_sign:
+
+```vue
+<div :style="{ fontSize: size + 'px' }"></div> 
+```
+
+But if you move this into a single property like (A) or (B), it will work.
+
+```vue
+<!-- (A) -_>
+<div :style="divStyleProperty"></div> 
+
+<!-- (B) -_>
+<div :style="{ fontSize: fontSizeVariable }"></div> 
+```

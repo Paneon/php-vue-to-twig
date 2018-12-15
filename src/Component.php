@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Macavity\VueToTwig;
+namespace Paneon\VueToTwig;
 
 
 use DOMDocument;

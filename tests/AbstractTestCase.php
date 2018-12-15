@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace Macavity\VueToTwig\Tests;
+namespace Paneon\VueToTwig\Tests;
 
 use DirectoryIterator;
 use DOMDocument;
-use Macavity\VueToTwig\Compiler;
+use Paneon\VueToTwig\Compiler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 

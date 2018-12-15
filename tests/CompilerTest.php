@@ -1,6 +1,6 @@
 <?php
 
-namespace Macavity\VueToTwig\Tests;
+namespace Paneon\VueToTwig\Tests;
 
 class CompilerTest extends AbstractTestCase
 {
