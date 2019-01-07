@@ -47,9 +47,9 @@ For example string concatenation inside attribute binding does not work currentl
 But if you move this into a single property like (A) or (B), it will work.
 
 ```vue
-<!-- (A) -_>
+<!-- (A) -->
 <div :style="divStyleProperty"></div> 
 
-<!-- (B) -_>
+<!-- (B) -->
 <div :style="{ fontSize: fontSizeVariable }"></div> 
 ```
