@@ -38,7 +38,7 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
 
     protected function createDocumentWithHtml(string $html): DOMDocument
     {
-        $vueDocument = new DOMDocument();
+        $vueDocument = new DOMDocument('1.0', 'utf-8');
         @$vueDocument->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         return $vueDocument;
@@ -52,10 +52,6 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         // Trim node text
         $html = str_replace('> ', ">", $html);
         $html = str_replace(' <', "<", $html);
-
-        // Each tag (open and close) on a new line
-        $html = str_replace('>', ">\n", $html);
-        $html = str_replace('<', "\n<", $html);
 
         // Remove duplicated new lines
         $html = str_replace("\n\n", "\n", $html);
