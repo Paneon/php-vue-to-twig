@@ -3,18 +3,16 @@
 namespace Paneon\VueToTwig;
 
 use DOMAttr;
-use DOMCharacterData;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
 use DOMText;
 use Exception;
+use Paneon\VueToTwig\Models\Replacements;
 use Psr\Log\LoggerInterface;
 
 class Compiler
 {
-    protected const DOUBLE_CURLY_OPEN = '__DOUBLE_CURLY_OPEN__';
-    protected const DOUBLE_CURLY_CLOSE = '__DOUBLE_CURLY_CLOSE__';
 
     /** @var String[] */
     protected $components;
@@ -50,8 +48,11 @@ class Compiler
 
         $rootNode = $this->getRootNode($templateElement);
         $resultNode = $this->convertNode($rootNode);
+        $html = $this->document->saveHTML($resultNode);
 
-        return $this->replacePlaceholders($this->document->saveHTML($resultNode));
+        $html = $this->replacePlaceholders($html);
+
+        return $html;
     }
 
     public function convertNode(DOMNode $node): DOMNode
@@ -96,13 +97,13 @@ class Compiler
         foreach (iterator_to_array($node->attributes) as $attribute) {
 
             if (strpos($attribute->name, 'v-bind:') !== 0 && strpos($attribute->name, ':') !== 0) {
-                $this->logger->debug("- skip: " . $attribute->name);
+                $this->logger->debug("- skip: ".$attribute->name);
                 continue;
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
             $value = $attribute->value;
-            $this->logger->debug('- handle: ' . $name . ' = ' . $value);
+            $this->logger->debug('- handle: '.$name.' = '.$value);
 
 
             switch ($name) {
@@ -121,7 +122,9 @@ class Compiler
                         $this->logger->debug('- setAttribute "'.$name.'" with value');
                         $node->setAttribute(
                             $name,
-                            self::DOUBLE_CURLY_OPEN.$value.self::DOUBLE_CURLY_CLOSE
+                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
+                            $value .
+                            Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE')
                         );
                     }
             }
@@ -147,7 +150,7 @@ class Compiler
                 }
             }
 
-            $this->logger->debug('=> remove original ' . $attribute->name);
+            $this->logger->debug('=> remove original '.$attribute->name);
             $node->removeAttribute($attribute->name);
         }
     }
@@ -162,9 +165,10 @@ class Compiler
 
         if ($node->hasAttribute('v-if')) {
             $condition = $node->getAttribute('v-if');
+            $condition = $this->sanitizeCondition($condition);
 
             // Open with if
-            $openIf = $this->document->createTextNode('{% if ' . $condition . ' %}');
+            $openIf = $this->document->createTextNode('{% if '.$condition.' %}');
             $node->parentNode->insertBefore($openIf, $node);
 
             // Close with endif
@@ -176,9 +180,10 @@ class Compiler
             $node->removeAttribute('v-if');
         } elseif ($node->hasAttribute('v-else-if')) {
             $condition = $node->getAttribute('v-else-if');
+            $condition = $this->sanitizeCondition($condition);
 
             // Replace old endif with else
-            $this->lastCloseIf->textContent = '{% elseif ' . $condition . ' %}';
+            $this->lastCloseIf->textContent = '{% elseif '.$condition.' %}';
 
             // Close with new endif
             $closeIf = $this->document->createTextNode('{% endif %}');
@@ -211,12 +216,18 @@ class Compiler
         /*
          * Variations:
          * (1) item in array
-         * (2) key, item in array
-         * (3) key, item, index in object
+         * (2)
+         * (3) key, item in array
+         * (4) key, item, index in object
          */
 
+        // (2)
+        if (preg_match('/(\d+)/', $listName)) {
+            $listName = '1..'.$listName;
+        }
+
         // (1)
-        $forCommand = '{% for ' . $forLeft . ' in ' . $listName . ' %}';
+        $forCommand = '{% for '.$forLeft.' in '.$listName.' %}';
 
         if (strpos($forLeft, ',')) {
             $forLeft = str_replace('(', '', $forLeft);
@@ -228,12 +239,12 @@ class Compiler
             $forKey = $forLeftArray[1];
             $forIndex = $forLeftArray[2] ?? null;
 
-            // (2)
-            $forCommand = '{% for ' . $forKey . ', ' . $forValue . ' in ' . $listName . ' %}';
+            // (3)
+            $forCommand = '{% for '.$forKey.', '.$forValue.' in '.$listName.' %}';
 
             if ($forIndex) {
-                // (3)
-                $forCommand .= ' {% set ' . $forIndex . ' = loop.index0 %}';
+                // (4)
+                $forCommand .= ' {% set '.$forIndex.' = loop.index0 %}';
             }
         }
 
@@ -284,10 +295,23 @@ class Compiler
         return $firstTagNode;
     }
 
+    protected function sanitizeCondition(string $condition)
+    {
+        $condition = str_replace('&&', 'and', $condition);
+        $condition = str_replace('||', 'or', $condition);
+
+        foreach(Replacements::getConstants() as $constant => $value) {
+            $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
+        }
+
+        return $condition;
+    }
+
     protected function replacePlaceholders(string $string)
     {
-        $string = str_replace(self::DOUBLE_CURLY_OPEN, '{{', $string);
-        $string = str_replace(self::DOUBLE_CURLY_CLOSE, '}}', $string);
+        foreach(Replacements::getConstants() as $constant => $value) {
+            $string = str_replace(Replacements::getSanitizedConstant($constant), $value, $string);
+        }
 
         return $string;
     }
