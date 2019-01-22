@@ -211,9 +211,15 @@ class Compiler
         /*
          * Variations:
          * (1) item in array
-         * (2) key, item in array
-         * (3) key, item, index in object
+         * (2)
+         * (3) key, item in array
+         * (4) key, item, index in object
          */
+
+        // (2)
+        if(preg_match('/(\d+)/', $listName)){
+            $listName = '1..'.$listName;
+        }
 
         // (1)
         $forCommand = '{% for ' . $forLeft . ' in ' . $listName . ' %}';
@@ -228,11 +234,11 @@ class Compiler
             $forKey = $forLeftArray[1];
             $forIndex = $forLeftArray[2] ?? null;
 
-            // (2)
+            // (3)
             $forCommand = '{% for ' . $forKey . ', ' . $forValue . ' in ' . $listName . ' %}';
 
             if ($forIndex) {
-                // (3)
+                // (4)
                 $forCommand .= ' {% set ' . $forIndex . ' = loop.index0 %}';
             }
         }
