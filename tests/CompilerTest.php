@@ -15,4 +15,41 @@ class CompilerTest extends AbstractTestCase
 
         $this->assertEqualHtml($expected, $actual);
     }
+
+    /** @test */
+    public function setBannerWithSingleLineAddsBannerCommentToTheTopOfTheTwigFile()
+    {
+        $html = '<template><div>{{ someVariable }}</div></template>';
+        $expected = '{# This file was generated using VueToTwig #}<div>{{ someVariable }}</div>';
+        $compiler = $this->createCompiler($html);
+        $compiler->setBanner('This file was generated using VueToTwig');
+
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
+
+    }
+
+    /** @test */
+    public function setBannerAddsMultipleCommentsToTheTopOfTheTwigFile()
+    {
+        $html = '<template><div>{{ someVariable }}</div></template>';
+        $expected = '
+{#
+ # This file was generated using VueToTwig
+ # Source: assets/js/SomeComponent.vue
+ #}
+<div>{{ someVariable }}</div>';
+
+        $compiler = $this->createCompiler($html);
+        $compiler->setBanner([
+            'This file was generated using VueToTwig',
+            'Source: assets/js/SomeComponent.vue',
+        ]);
+
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
+
+    }
 }
