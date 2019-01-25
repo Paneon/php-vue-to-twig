@@ -73,6 +73,8 @@ class Compiler
 
         if (in_array($node->nodeName, array_keys($this->components))) {
             $currentComponent = $this->components[$node->nodeName];
+            $this->handleIf($node);
+            $this->handleFor($node);
             if ($node->hasAttributes()) {
                 /** @var DOMAttr $attribute */
                 foreach ($node->attributes as $attribute) {
@@ -101,6 +103,7 @@ class Compiler
             $include = $this->document->createTextNode('{% include "'.$currentComponent->getPath().'" '.$propsString.'%}');
             $node->parentNode->insertBefore($include, $node);
             $node->parentNode->removeChild($node);
+            return $node;
         }
 
         $this->stripEventHandlers($node);
