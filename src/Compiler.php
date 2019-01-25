@@ -26,13 +26,29 @@ class Compiler
     /** @var LoggerInterface */
     protected $logger;
 
+    /** @var string[] */
+    protected $banner;
+
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
         $this->logger = $logger;
         $this->document = $document;
         $this->lastCloseIf = null;
+        $this->banner = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
+    }
+
+    /**
+     * @param string|string[] $strings
+     */
+    public function setBanner($strings): void
+    {
+        if (!is_array($strings)) {
+            $strings = [$strings];
+        }
+
+        $this->banner = $strings;
     }
 
     /**
@@ -51,6 +67,10 @@ class Compiler
         $html = $this->document->saveHTML($resultNode);
 
         $html = $this->replacePlaceholders($html);
+
+        if (!empty($this->banner)) {
+            $html = $this->addBanner($html);
+        }
 
         return $html;
     }
@@ -126,8 +146,8 @@ class Compiler
                         $this->logger->debug('- setAttribute "'.$name.'" with value');
                         $node->setAttribute(
                             $name,
-                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
-                            $value .
+                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN').
+                            $value.
                             Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE')
                         );
                     }
@@ -304,7 +324,7 @@ class Compiler
         $condition = str_replace('&&', 'and', $condition);
         $condition = str_replace('||', 'or', $condition);
 
-        foreach(Replacements::getConstants() as $constant => $value) {
+        foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
         }
 
@@ -313,10 +333,34 @@ class Compiler
 
     protected function replacePlaceholders(string $string)
     {
-        foreach(Replacements::getConstants() as $constant => $value) {
+        foreach (Replacements::getConstants() as $constant => $value) {
             $string = str_replace(Replacements::getSanitizedConstant($constant), $value, $string);
         }
 
         return $string;
+    }
+
+    protected function addSingleLineBanner(string $html)
+    {
+        return '{# '.implode('', $this->banner).' #}'."\n".$html;
+    }
+
+    protected function addBanner(string $html)
+    {
+        if (count($this->banner) === 1) {
+            return $this->addSingleLineBanner($html);
+        }
+
+        $bannerLines = ['{#'];
+
+        foreach ($this->banner as $line) {
+            $bannerLines[] = ' # '.$line;
+        }
+
+        $bannerLines[] = ' #}';
+
+        $html = implode("\n", $bannerLines)."\n".$html;
+
+        return $html;
     }
 }
