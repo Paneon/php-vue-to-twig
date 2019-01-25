@@ -19,6 +19,9 @@ class Component
      */
     protected $path;
 
+    /** @var Property[] */
+    protected $properties = [];
+
     public function __construct(string $name = '', string $path = '')
     {
         $this->name = $name;
@@ -31,6 +34,14 @@ class Component
 
     public function getPath(){
         return $this->path;
+    }
+
+    /**
+     * @return Property[]
+     */
+    public function getProperties(): array
+    {
+        return $this->properties;
     }
 
     /**
@@ -51,8 +62,13 @@ class Component
         return $this;
     }
 
-    public function registerComponents($name, $path)
+    public function registerComponents(string $name, string $path)
     {
         $this->components[$name] = $path;
     }
+
+    public function addProperty(string $name, string $value, bool $isBinding = false) {
+        $this->properties[] = new Property($name, $value, $isBinding);
+    }
+
 }
