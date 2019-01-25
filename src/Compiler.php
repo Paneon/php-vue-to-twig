@@ -57,17 +57,21 @@ class Compiler
 
     public function convertNode(DOMNode $node): DOMNode
     {
-        if ($node->nodeType === XML_TEXT_NODE) {
-            return $node;
-        }
-
-        if ($node->nodeType === XML_ELEMENT_NODE) {
-            //echo "\nElement node found";
-            /** @var DOMElement $node */
-            $this->replaceShowWithIf($node);
-            $this->handleIf($node);
-        } elseif ($node->nodeType === XML_HTML_DOCUMENT_NODE) {
-            $this->logger->warning("Document node found.");
+        switch($node->nodeType) {
+            case XML_TEXT_NODE:
+                $this->logger->debug('Text node found', ['name' => $node->nodeName]);
+                // fall through to next case, because we don't need to handle either of these node-types
+            case XML_COMMENT_NODE:
+                $this->logger->debug('Comment node found', ['name' => $node->nodeName]);
+                return $node;
+            case XML_ELEMENT_NODE:
+                /** @var DOMElement $node */
+                $this->replaceShowWithIf($node);
+                $this->handleIf($node);
+                break;
+            case XML_HTML_DOCUMENT_NODE:
+                $this->logger->warning("Document node found.");
+                break;
         }
 
         $this->stripEventHandlers($node);
