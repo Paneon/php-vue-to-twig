@@ -173,6 +173,23 @@ class Compiler
                     $node->setAttribute($name, implode(' ', $classes));
                 }
             }
+            /*
+             * <div :class="`abc ${someDynamicClass}`">
+             */
+            elseif(preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
+                $templateStringContent = $matches['content'];
+
+                $templateStringContent = preg_replace(
+                    '/\$\{(.+)\}/',
+                    '{{ $1 }}',
+                    $templateStringContent
+                );
+
+                $node->setAttribute($name, $templateStringContent);
+            }
+            else {
+                $this->logger->warning('- No Handling for: '.$value);
+            }
 
             $this->logger->debug('=> remove original '.$attribute->name);
             $node->removeAttribute($attribute->name);
@@ -303,17 +320,22 @@ class Compiler
         $tagNodes = 0;
         $firstTagNode = null;
 
+        /** @var DOMNode $node */
         foreach ($nodes as $node) {
             if ($node->nodeType === XML_TEXT_NODE) {
                 continue;
-            } else {
+            }
+            elseif(in_array($node->nodeName, ['script', 'style'])) {
+                continue;
+            }
+            else {
                 $tagNodes++;
                 $firstTagNode = $node;
             }
         }
 
         if ($tagNodes > 1) {
-            throw new Exception('Template should have only one root node');
+            //throw new Exception('Template should have only one root node');
         }
 
         return $firstTagNode;
