@@ -8,33 +8,29 @@ use Exception;
 
 class Component
 {
-    /** @var string */
-    protected $assetPath;
-
-    /** @var string */
-    protected $targetPath;
-
-    /** @var string */
-    protected $fileName;
-
-    /** @var DOMDocument */
-    protected $document;
-
-    protected $templateHtml;
-    protected $data;
-    protected $templateElement;
-    protected $rootElement;
-
     /** @var String[] */
     protected $components = [];
+    /**
+     * @var string
+     */
+    protected $name;
+    /**
+     * @var string
+     */
+    protected $path;
 
-    public function __construct(string $assetPath = '', string $targetPath = '')
+    public function __construct(string $name = '', string $path = '')
     {
-        $this->assetPath = $assetPath;
-        $this->targetPath = $targetPath;
+        $this->name = $name;
+        $this->path = $path;
+    }
 
-        $this->fileName = '';
-        $this->document = new DOMDocument();
+    public function getName(){
+        return $this->name;
+    }
+
+    public function getPath(){
+        return $this->path;
     }
 
     /**

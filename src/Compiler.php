@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
 class Compiler
 {
 
-    /** @var String[] */
+    /** @var Component[] */
     protected $components;
 
     /** @var DOMDocument */
@@ -31,6 +31,7 @@ class Compiler
         $this->logger = $logger;
         $this->document = $document;
         $this->lastCloseIf = null;
+        $this->components = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
     }
@@ -68,6 +69,13 @@ class Compiler
             $this->handleIf($node);
         } elseif ($node->nodeType === XML_HTML_DOCUMENT_NODE) {
             $this->logger->warning("Document node found.");
+        }
+
+        if (in_array($node->nodeName, array_keys($this->components))) {
+            $currentComponent = $this->components[$node->nodeName];
+            $include = $this->document->createTextNode('{% include "'.$currentComponent->getPath().'" %}');
+            $node->parentNode->insertBefore($include, $node);
+            $node->parentNode->removeChild($node);
         }
 
         $this->stripEventHandlers($node);
@@ -282,6 +290,8 @@ class Compiler
         foreach ($nodes as $node) {
             if ($node->nodeType === XML_TEXT_NODE) {
                 continue;
+            } else if ($node->nodeName === 'script' || $node->nodeName === 'style') {
+                continue;
             } else {
                 $tagNodes++;
                 $firstTagNode = $node;
@@ -289,7 +299,7 @@ class Compiler
         }
 
         if ($tagNodes > 1) {
-            throw new Exception('Template should have only one root node');
+            //throw new Exception('Template should have only one root node');
         }
 
         return $firstTagNode;
@@ -314,5 +324,10 @@ class Compiler
         }
 
         return $string;
+    }
+
+    public function registerComponent(string $componentName, string $componentPath)
+    {
+        $this->components[strtolower($componentName)] = new Component($componentName, $componentPath);
     }
 }
