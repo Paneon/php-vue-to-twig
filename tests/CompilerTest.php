@@ -34,8 +34,7 @@ class CompilerTest extends AbstractTestCase
     public function setBannerAddsMultipleCommentsToTheTopOfTheTwigFile()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';
-        $expected = '
-{#
+        $expected = '{#
  # This file was generated using VueToTwig
  # Source: assets/js/SomeComponent.vue
  #}
