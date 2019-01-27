@@ -9,6 +9,7 @@ use DOMNode;
 use DOMText;
 use Exception;
 use Paneon\VueToTwig\Models\Replacements;
+use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
 
 class Compiler
@@ -28,11 +29,16 @@ class Compiler
 
     /** @var string[] */
     protected $banner;
+    /**
+     * @var TwigBuilder
+     */
+    protected $builder;
 
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
-        $this->logger = $logger;
+        $this->builder = new TwigBuilder();
         $this->document = $document;
+        $this->logger = $logger;
         $this->lastCloseIf = null;
         $this->banner = [];
 
@@ -77,10 +83,10 @@ class Compiler
 
     public function convertNode(DOMNode $node): DOMNode
     {
-        switch($node->nodeType) {
+        switch ($node->nodeType) {
             case XML_TEXT_NODE:
                 $this->logger->debug('Text node found', ['name' => $node->nodeName]);
-                // fall through to next case, because we don't need to handle either of these node-types
+            // fall through to next case, because we don't need to handle either of these node-types
             case XML_COMMENT_NODE:
                 $this->logger->debug('Comment node found', ['name' => $node->nodeName]);
                 return $node;
@@ -172,11 +178,10 @@ class Compiler
                     }
                     $node->setAttribute($name, implode(' ', $classes));
                 }
-            }
-            /*
+            } /*
              * <div :class="`abc ${someDynamicClass}`">
              */
-            elseif(preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
+            elseif (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
                 $templateStringContent = $matches['content'];
 
                 $templateStringContent = preg_replace(
@@ -186,8 +191,7 @@ class Compiler
                 );
 
                 $node->setAttribute($name, $templateStringContent);
-            }
-            else {
+            } else {
                 $this->logger->warning('- No Handling for: '.$value);
             }
 
@@ -209,11 +213,11 @@ class Compiler
             $condition = $this->sanitizeCondition($condition);
 
             // Open with if
-            $openIf = $this->document->createTextNode('{% if '.$condition.' %}');
+            $openIf = $this->document->createTextNode($this->builder->createIf($condition));
             $node->parentNode->insertBefore($openIf, $node);
 
             // Close with endif
-            $closeIf = $this->document->createTextNode('{% endif %}');
+            $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
 
             $this->lastCloseIf = $closeIf;
@@ -224,20 +228,20 @@ class Compiler
             $condition = $this->sanitizeCondition($condition);
 
             // Replace old endif with else
-            $this->lastCloseIf->textContent = '{% elseif '.$condition.' %}';
+            $this->lastCloseIf->textContent = $this->builder->createElseIf($condition);
 
             // Close with new endif
-            $closeIf = $this->document->createTextNode('{% endif %}');
+            $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
             $this->lastCloseIf = $closeIf;
 
             $node->removeAttribute('v-else-if');
         } elseif ($node->hasAttribute('v-else')) {
             // Replace old endif with else
-            $this->lastCloseIf->textContent = '{% else %}';
+            $this->lastCloseIf->textContent = $this->builder->createElse();
 
             // Close with new endif
-            $closeIf = $this->document->createTextNode('{% endif %}');
+            $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
             $this->lastCloseIf = $closeIf;
 
@@ -268,7 +272,7 @@ class Compiler
         }
 
         // (1)
-        $forCommand = '{% for '.$forLeft.' in '.$listName.' %}';
+        $forCommand = $this->builder->createForItemInList($forLeft, $listName);
 
         if (strpos($forLeft, ',')) {
             $forLeft = str_replace('(', '', $forLeft);
@@ -281,11 +285,11 @@ class Compiler
             $forIndex = $forLeftArray[2] ?? null;
 
             // (3)
-            $forCommand = '{% for '.$forKey.', '.$forValue.' in '.$listName.' %}';
+            $forCommand = $this->builder->createFor($listName, $forValue, $forKey);
 
             if ($forIndex) {
                 // (4)
-                $forCommand .= ' {% set '.$forIndex.' = loop.index0 %}';
+                $forCommand .= $this->builder->createVariable($forIndex, 'loop.index0');
             }
         }
 
@@ -293,7 +297,7 @@ class Compiler
         $node->parentNode->insertBefore($startFor, $node);
 
         // End For
-        $endFor = $this->document->createTextNode('{% endfor %}');
+        $endFor = $this->document->createTextNode($this->builder->createEndFor());
         $node->parentNode->insertBefore($endFor, $node->nextSibling);
 
         $node->removeAttribute('v-for');
@@ -324,11 +328,9 @@ class Compiler
         foreach ($nodes as $node) {
             if ($node->nodeType === XML_TEXT_NODE) {
                 continue;
-            }
-            elseif(in_array($node->nodeName, ['script', 'style'])) {
+            } elseif (in_array($node->nodeName, ['script', 'style'])) {
                 continue;
-            }
-            else {
+            } else {
                 $tagNodes++;
                 $firstTagNode = $node;
             }
@@ -364,7 +366,7 @@ class Compiler
 
     protected function addSingleLineBanner(string $html)
     {
-        return '{# '.implode('', $this->banner).' #}'."\n".$html;
+        return $this->builder->createComment(implode('', $this->banner))."\n".$html;
     }
 
     protected function addBanner(string $html)

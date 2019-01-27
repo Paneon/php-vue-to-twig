@@ -4,9 +4,9 @@ namespace Paneon\VueToTwig\Tests;
 
 use DirectoryIterator;
 use DOMDocument;
-use Paneon\VueToTwig\Compiler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
+use Paneon\VueToTwig\Compiler;
 
 abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
 {
@@ -21,18 +21,17 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
     protected function createLogger(): Logger
     {
         $logger = new Logger('test');
-        $logger->pushHandler(new StreamHandler(__DIR__ . '/../var/dev/test.log'));
+        $logger->pushHandler(new StreamHandler(__DIR__.'/../var/dev/test.log'));
 
         return $logger;
     }
 
-
-    protected function assertEqualHtml($expectedResult, $result): void
+    protected function assertEqualHtml($expected, $actual)
     {
-        $expectedResult = $this->normalizeHtml($expectedResult);
-        $result = $this->normalizeHtml($result);
-
-        $this->assertEquals($expectedResult, $result);
+        $this->assertEquals(
+            $this->normalizeHtml($expected),
+            $this->normalizeHtml($actual)
+        );
     }
 
     protected function createDocumentWithHtml(string $html): DOMDocument
@@ -45,22 +44,23 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
 
     protected function normalizeHtml($html): string
     {
-        $html = preg_replace('/<!--.*?-->/', '', $html);
-        $html = preg_replace('/\s+/', ' ', $html);
+        $html = preg_replace('/(\s)+/s', '\\1', $html);
 
         // Trim node text
-        $html = str_replace('> ', ">", $html);
-        $html = str_replace(' <', "<", $html);
+        $html = preg_replace('/\>[^\S ]+/s', ">", $html);
+        $html = preg_replace('/[^\S ]+\</s', "<", $html);
 
-        // Remove duplicated new lines
-        $html = str_replace("\n\n", "\n", $html);
+        $html = preg_replace('/> </s', '><', $html);
+        $html = preg_replace('/} </s', '}<', $html);
+        $html = preg_replace('/> {/s', '>{', $html);
+        $html = preg_replace('/} {/s', '}{', $html);
 
-        return trim($html);
+        return $html;
     }
 
     protected function loadFixturesFromDir(string $dir): array
     {
-        $fixtureDir = __DIR__ . '/fixtures/' . $dir;
+        $fixtureDir = __DIR__.'/fixtures/'.$dir;
 
         $cases = [];
 
