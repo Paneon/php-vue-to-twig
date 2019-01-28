@@ -8,33 +8,40 @@ use Exception;
 
 class Component
 {
-    /** @var string */
-    protected $assetPath;
-
-    /** @var string */
-    protected $targetPath;
-
-    /** @var string */
-    protected $fileName;
-
-    /** @var DOMDocument */
-    protected $document;
-
-    protected $templateHtml;
-    protected $data;
-    protected $templateElement;
-    protected $rootElement;
-
     /** @var String[] */
     protected $components = [];
+    /**
+     * @var string
+     */
+    protected $name;
+    /**
+     * @var string
+     */
+    protected $path;
 
-    public function __construct(string $assetPath = '', string $targetPath = '')
+    /** @var Property[] */
+    protected $properties = [];
+
+    public function __construct(string $name = '', string $path = '')
     {
-        $this->assetPath = $assetPath;
-        $this->targetPath = $targetPath;
+        $this->name = $name;
+        $this->path = $path;
+    }
 
-        $this->fileName = '';
-        $this->document = new DOMDocument();
+    public function getName(){
+        return $this->name;
+    }
+
+    public function getPath(){
+        return $this->path;
+    }
+
+    /**
+     * @return Property[]
+     */
+    public function getProperties(): array
+    {
+        return $this->properties;
     }
 
     /**
@@ -55,8 +62,13 @@ class Component
         return $this;
     }
 
-    public function registerComponents($name, $path)
+    public function registerComponents(string $name, string $path)
     {
         $this->components[$name] = $path;
     }
+
+    public function addProperty(string $name, string $value, bool $isBinding = false) {
+        $this->properties[] = new Property($name, $value, $isBinding);
+    }
+
 }
