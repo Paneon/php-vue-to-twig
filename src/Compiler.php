@@ -15,7 +15,7 @@ use Psr\Log\LoggerInterface;
 class Compiler
 {
 
-    /** @var String[] */
+    /** @var Component[] */
     protected $components;
 
     /** @var DOMDocument */
@@ -40,6 +40,7 @@ class Compiler
         $this->document = $document;
         $this->logger = $logger;
         $this->lastCloseIf = null;
+        $this->components = [];
         $this->banner = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
@@ -98,6 +99,41 @@ class Compiler
             case XML_HTML_DOCUMENT_NODE:
                 $this->logger->warning("Document node found.");
                 break;
+        }
+
+        if (in_array($node->nodeName, array_keys($this->components))) {
+            $currentComponent = $this->components[$node->nodeName];
+            $this->handleIf($node);
+            $this->handleFor($node);
+            if ($node->hasAttributes()) {
+                /** @var DOMAttr $attribute */
+                foreach ($node->attributes as $attribute) {
+                    if (strpos($attribute->name, 'v-bind:') === 0 || strpos($attribute->name, ':') === 0) {
+                        $currentComponent->addProperty($attribute->name, $attribute->value, true);
+                    } else {
+                        $currentComponent->addProperty($attribute->name, $attribute->value, false);
+                    }
+                }
+            }
+            $props = [];
+            if (count($currentComponent->getProperties()) > 0) {
+                foreach ($currentComponent->getProperties() as $property) {
+                    if ($property->isBinding()){
+                        $propName = substr($property->getName(), 1); //delete ':'
+                        $props[] = $propName.': '.$property->getValue();
+                    } else {
+                        $props[] = $property->getName().': "'.$property->getValue().'"';
+                    }
+                }
+            }
+            $propsString = '';
+            if (count($props) > 0) {
+                $propsString = 'with { '.implode(', ', $props).' } ';
+            }
+            $include = $this->document->createTextNode('{% include "'.$currentComponent->getPath().'" '.$propsString.'%}');
+            $node->parentNode->insertBefore($include, $node);
+            $node->parentNode->removeChild($node);
+            return $node;
         }
 
         $this->stripEventHandlers($node);
@@ -362,6 +398,11 @@ class Compiler
         }
 
         return $string;
+    }
+
+    public function registerComponent(string $componentName, string $componentPath)
+    {
+        $this->components[strtolower($componentName)] = new Component($componentName, $componentPath);
     }
 
     protected function addSingleLineBanner(string $html)
