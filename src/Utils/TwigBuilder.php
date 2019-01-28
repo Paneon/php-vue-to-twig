@@ -2,6 +2,8 @@
 
 namespace Paneon\VueToTwig\Utils;
 
+use Paneon\VueToTwig\Property;
+
 class TwigBuilder
 {
     protected const OPEN = 0;
@@ -57,19 +59,17 @@ class TwigBuilder
 
     public function createFor(string $list, ?string $item = null, ?string $key = null)
     {
-        if($item !== null && $key !== null) {
-            return $this->createBlock( 'for '.$key.', '.$item.' in '.$list);
-        }
-        elseif($item !== null) {
+        if ($item !== null && $key !== null) {
+            return $this->createBlock('for '.$key.', '.$item.' in '.$list);
+        } elseif ($item !== null) {
             return $this->createForItemInList($item, $list);
-        }
-        elseif($key !== null) {
+        } elseif ($key !== null) {
             return $this->createForKeyInList($key, $list);
         }
 
         return null;
     }
-    
+
     public function createEndFor()
     {
         return $this->createBlock('endfor');
@@ -88,5 +88,25 @@ class TwigBuilder
     public function createBlock($content)
     {
         return $this->options['tag_block'][self::OPEN].' '.$content.' '.$this->options['tag_block'][self::CLOSE];
+    }
+
+    /**
+     * @param string $partialPath
+     * @param Property[]  $variables
+     */
+    public function createIncludePartial(string $partialPath, array $variables = [])
+    {
+        if (empty($variables)) {
+            return $this->createBlock('include "'.$partialPath.'"');
+        }
+
+        $props = [];
+
+        /** @var Property $property */
+        foreach ($variables as $property) {
+            $props[] = $property->getName().': '.$property->getValue();
+        }
+
+        return $this->createBlock('include "'.$partialPath.'" with { '.implode(', ', $props).' }');
     }
 }

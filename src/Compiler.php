@@ -105,32 +105,26 @@ class Compiler
             $currentComponent = $this->components[$node->nodeName];
             $this->handleIf($node);
             $this->handleFor($node);
+
             if ($node->hasAttributes()) {
                 /** @var DOMAttr $attribute */
                 foreach ($node->attributes as $attribute) {
                     if (strpos($attribute->name, 'v-bind:') === 0 || strpos($attribute->name, ':') === 0) {
-                        $currentComponent->addProperty($attribute->name, $attribute->value, true);
+                        $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
+                        $currentComponent->addProperty($name, $attribute->value, true);
                     } else {
-                        $currentComponent->addProperty($attribute->name, $attribute->value, false);
+                        $currentComponent->addProperty($attribute->name, '"'.$attribute->value.'"', false);
                     }
                 }
             }
-            $props = [];
-            if (count($currentComponent->getProperties()) > 0) {
-                foreach ($currentComponent->getProperties() as $property) {
-                    if ($property->isBinding()){
-                        $propName = substr($property->getName(), 1); //delete ':'
-                        $props[] = $propName.': '.$property->getValue();
-                    } else {
-                        $props[] = $property->getName().': "'.$property->getValue().'"';
-                    }
-                }
-            }
-            $propsString = '';
-            if (count($props) > 0) {
-                $propsString = 'with { '.implode(', ', $props).' } ';
-            }
-            $include = $this->document->createTextNode('{% include "'.$currentComponent->getPath().'" '.$propsString.'%}');
+
+            $include = $this->document->createTextNode(
+                $this->builder->createIncludePartial(
+                    $currentComponent->getPath(),
+                    $currentComponent->getProperties()
+                )
+            );
+
             $node->parentNode->insertBefore($include, $node);
             $node->parentNode->removeChild($node);
             return $node;
