@@ -37,7 +37,7 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
     protected function createDocumentWithHtml(string $html): DOMDocument
     {
         $vueDocument = new DOMDocument('1.0', 'utf-8');
-        @$vueDocument->loadHTML($html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        @$vueDocument->loadHTML('<?xml encoding="utf-8" ?>'.$html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         return $vueDocument;
     }

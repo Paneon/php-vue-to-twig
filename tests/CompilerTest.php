@@ -51,4 +51,16 @@ class CompilerTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
 
     }
+
+    /** @test */
+    public function canHandleUTF8()
+    {
+        $html = '<template><div>Äöü: 10,00€</div></template>';
+        $expected = '<div>Äöü: 10,00€</div>';
+
+        $compiler = $this->createCompiler($html);
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
+    }
 }
