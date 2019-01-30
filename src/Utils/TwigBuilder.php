@@ -92,7 +92,9 @@ class TwigBuilder
 
     /**
      * @param string $partialPath
-     * @param Property[]  $variables
+     * @param Property[] $variables
+     *
+     * @return string
      */
     public function createIncludePartial(string $partialPath, array $variables = [])
     {
@@ -104,9 +106,26 @@ class TwigBuilder
 
         /** @var Property $property */
         foreach ($variables as $property) {
-            $props[] = $property->getName().': '.$property->getValue();
+            if($property->getName() !== 'key') {
+                $value = $this->checkPropertyValue($property->getValue());
+                $props[] = $property->getName().': '.$value;
+            }
         }
 
         return $this->createBlock('include "'.$partialPath.'" with { '.implode(', ', $props).' }');
+    }
+
+    public function checkPropertyValue($value)
+    {
+        if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
+            $templateStringContent = '"'.$matches['content'].'"';
+            $value = preg_replace(
+                '/\$\{(.+)\}/',
+                '{{ $1 }}',
+                $templateStringContent
+            );
+        }
+
+        return $value;
     }
 }
