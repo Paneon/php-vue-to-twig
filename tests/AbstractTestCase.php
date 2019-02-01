@@ -45,6 +45,7 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
     protected function normalizeHtml($html): string
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
+        $html = str_replace("\n", '', $html);
 
         // Trim node text
         $html = preg_replace('/\>[^\S ]+/s', ">", $html);

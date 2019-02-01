@@ -29,11 +29,15 @@ class TwigBuilder
 
     public function createIf(string $condition)
     {
+        $condition = $this->refactorCondition($condition);
+
         return $this->createBlock('if '.$condition);
     }
 
     public function createElseIf(string $condition)
     {
+        $condition = $this->refactorCondition($condition);
+
         return $this->createBlock('elseif '.$condition);
     }
 
@@ -87,7 +91,7 @@ class TwigBuilder
 
     public function createBlock($content)
     {
-        return $this->options['tag_block'][self::OPEN].' '.$content.' '.$this->options['tag_block'][self::CLOSE];
+        return "\n".$this->options['tag_block'][self::OPEN].' '.$content.' '.$this->options['tag_block'][self::CLOSE];
     }
 
     /**
@@ -108,5 +112,13 @@ class TwigBuilder
         }
 
         return $this->createBlock('include "'.$partialPath.'" with { '.implode(', ', $props).' }');
+    }
+
+    public function refactorCondition(string $condition): string
+    {
+        $condition = str_replace('===', '==', $condition);
+        $condition = str_replace('!==', '!=', $condition);
+
+        return $condition;
     }
 }
