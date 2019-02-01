@@ -106,31 +106,29 @@ class TwigBuilder
             return $this->createBlock('include "'.$partialPath.'"');
         }
 
+        $serializedProperties = $this->serializeComponentProperties($variables);
+
+        return $this->createBlock('include "'.$partialPath.'" with '.$serializedProperties);
+    }
+
+    /**
+     * @param Property[] $properties
+     * @return string
+     */
+    public function serializeComponentProperties(array $properties): string
+    {
         $props = [];
 
         /** @var Property $property */
-        foreach ($variables as $property) {
-            if($property->getName() !== 'key') {
-                $value = $this->checkPropertyValue($property->getValue());
-                $props[] = $property->getName().': '.$value;
+        foreach ($properties as $property) {
+            if($property->getName() === 'key') {
+                continue;
             }
+
+            $props[] = '\''.$property->getName().'\''.': '.$property->getValue();
         }
 
-        return $this->createBlock('include "'.$partialPath.'" with { '.implode(', ', $props).' }');
-    }
-
-    public function checkPropertyValue($value)
-    {
-        if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
-            $templateStringContent = '"'.$matches['content'].'"';
-            $value = preg_replace(
-                '/\$\{(.+)\}/',
-                '{{ $1 }}',
-                $templateStringContent
-            );
-        }
-
-        return $value;
+        return '{ '.implode(', ', $props).' }';
     }
 
     public function refactorCondition(string $condition): string

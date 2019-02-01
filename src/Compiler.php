@@ -101,17 +101,21 @@ class Compiler
                 break;
         }
 
+        $this->handleFor($node);
+        $this->stripEventHandlers($node);
+        //$this->handleRawHtml($node, $data);
+
         if (in_array($node->nodeName, array_keys($this->components))) {
             $currentComponent = $this->components[$node->nodeName];
-            $this->handleIf($node);
-            $this->handleFor($node);
 
             if ($node->hasAttributes()) {
                 /** @var DOMAttr $attribute */
                 foreach ($node->attributes as $attribute) {
                     if (strpos($attribute->name, 'v-bind:') === 0 || strpos($attribute->name, ':') === 0) {
                         $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-                        $currentComponent->addProperty($name, $attribute->value, true);
+                        $value = $this->refactorTemplateString($attribute->value);
+
+                        $currentComponent->addProperty($name, $value, true);
                     } else {
                         $currentComponent->addProperty($attribute->name, '"'.$attribute->value.'"', false);
                     }
@@ -127,12 +131,9 @@ class Compiler
 
             $node->parentNode->insertBefore($include, $node);
             $node->parentNode->removeChild($node);
+
             return $node;
         }
-
-        $this->stripEventHandlers($node);
-        $this->handleFor($node);
-        //$this->handleRawHtml($node, $data);
 
         $this->handleAttributeBinding($node);
 
@@ -222,7 +223,7 @@ class Compiler
 
                 $node->setAttribute($name, $templateStringContent);
             } else {
-                $this->logger->warning('- No Handling for: '.$value);
+                $this->logger->debug('- No Handling for: '.$value);
             }
 
             $this->logger->debug('=> remove original '.$attribute->name);
@@ -421,5 +422,19 @@ class Compiler
         $html = implode("\n", $bannerLines)."\n".$html;
 
         return $html;
+    }
+
+    public function refactorTemplateString($value)
+    {
+        if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
+            $templateStringContent = '"'.$matches['content'].'"';
+            $value = preg_replace(
+                '/\$\{(.+)\}/',
+                '{{ $1 }}',
+                $templateStringContent
+            );
+        }
+
+        return $value;
     }
 }
