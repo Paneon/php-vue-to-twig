@@ -106,7 +106,8 @@ class Compiler
         //$this->handleRawHtml($node, $data);
 
         if (in_array($node->nodeName, array_keys($this->components))) {
-            $currentComponent = $this->components[$node->nodeName];
+            $matchedComponent = $this->components[$node->nodeName];
+            $usedComponent = new Component($matchedComponent->getName(), $matchedComponent->getPath());
 
             if ($node->hasAttributes()) {
                 /** @var DOMAttr $attribute */
@@ -115,17 +116,17 @@ class Compiler
                         $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
                         $value = $this->refactorTemplateString($attribute->value);
 
-                        $currentComponent->addProperty($name, $value, true);
+                        $usedComponent->addProperty($name, $value, true);
                     } else {
-                        $currentComponent->addProperty($attribute->name, '"'.$attribute->value.'"', false);
+                        $usedComponent->addProperty($attribute->name, '"'.$attribute->value.'"', false);
                     }
                 }
             }
 
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
-                    $currentComponent->getPath(),
-                    $currentComponent->getProperties()
+                    $usedComponent->getPath(),
+                    $usedComponent->getProperties()
                 )
             );
 
