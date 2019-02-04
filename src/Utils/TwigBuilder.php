@@ -29,11 +29,15 @@ class TwigBuilder
 
     public function createIf(string $condition)
     {
+        $condition = $this->refactorCondition($condition);
+
         return $this->createBlock('if '.$condition);
     }
 
     public function createElseIf(string $condition)
     {
+        $condition = $this->refactorCondition($condition);
+
         return $this->createBlock('elseif '.$condition);
     }
 
@@ -87,7 +91,7 @@ class TwigBuilder
 
     public function createBlock($content)
     {
-        return $this->options['tag_block'][self::OPEN].' '.$content.' '.$this->options['tag_block'][self::CLOSE];
+        return "\n".$this->options['tag_block'][self::OPEN].' '.$content.' '.$this->options['tag_block'][self::CLOSE];
     }
 
     /**
@@ -102,30 +106,36 @@ class TwigBuilder
             return $this->createBlock('include "'.$partialPath.'"');
         }
 
+        $serializedProperties = $this->serializeComponentProperties($variables);
+
+        return $this->createBlock('include "'.$partialPath.'" with '.$serializedProperties);
+    }
+
+    /**
+     * @param Property[] $properties
+     * @return string
+     */
+    public function serializeComponentProperties(array $properties): string
+    {
         $props = [];
 
         /** @var Property $property */
-        foreach ($variables as $property) {
-            if($property->getName() !== 'key') {
-                $value = $this->checkPropertyValue($property->getValue());
-                $props[] = $property->getName().': '.$value;
+        foreach ($properties as $property) {
+            if($property->getName() === 'key') {
+                continue;
             }
+
+            $props[] = '\''.$property->getName().'\''.': '.$property->getValue();
         }
 
-        return $this->createBlock('include "'.$partialPath.'" with { '.implode(', ', $props).' }');
+        return '{ '.implode(', ', $props).' }';
     }
 
-    public function checkPropertyValue($value)
+    public function refactorCondition(string $condition): string
     {
-        if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
-            $templateStringContent = '"'.$matches['content'].'"';
-            $value = preg_replace(
-                '/\$\{(.+)\}/',
-                '{{ $1 }}',
-                $templateStringContent
-            );
-        }
+        $condition = str_replace('===', '==', $condition);
+        $condition = str_replace('!==', '!=', $condition);
 
-        return $value;
+        return $condition;
     }
 }

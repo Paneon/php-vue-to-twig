@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ChildComponent :product="testProduct" string="Test" />
+    <ChildComponent :product="testProduct" test-a="Hello" string="Test" />
   </div>
 </template>
 

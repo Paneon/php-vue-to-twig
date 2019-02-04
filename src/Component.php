@@ -44,31 +44,27 @@ class Component
         return $this->properties;
     }
 
-    /**
-     * @param string $fileName
-     *
-     * @return Component
-     */
-    public function loadFile(string $fileName): self
-    {
-        $this->fileName = $fileName;
-
-        @$this->document->loadHTMLFile($this->assetPath . $fileName);
-        $this->templateElement = $this->document->getElementsByTagName('template')->item(0);
-
-        $this->rootElement = $this->getRootNode($this->templateElement);
-        $this->templateHtml = $this->getInnerHtml($this->templateElement);
-
-        return $this;
-    }
-
     public function registerComponents(string $name, string $path)
     {
         $this->components[$name] = $path;
     }
 
     public function addProperty(string $name, string $value, bool $isBinding = false) {
-        $this->properties[] = new Property($name, $value, $isBinding);
+        $this->properties[] = new Property(
+            $this->kebabToCamelCase($name),
+            $value,
+            $isBinding
+        );
     }
 
+    public function kebabToCamelCase($string, $capitalizeFirstCharacter = false)
+    {
+        $str = str_replace('-', '', ucwords($string, '-'));
+
+        if (!$capitalizeFirstCharacter) {
+            $str = lcfirst($str);
+        }
+
+        return $str;
+    }
 }
