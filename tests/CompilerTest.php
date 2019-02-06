@@ -17,6 +17,26 @@ class CompilerTest extends AbstractTestCase
     }
 
     /** @test */
+    public function stripsOutWhitespaceBetweenTags()
+    {
+        $html = '
+<template>
+  
+  <div>
+                    {{ someVariable }}
+  </div>
+  
+</template>';
+
+        $expected = '<div>{{ someVariable }}</div>';
+
+        $compiler = $this->createCompiler($html);
+        $actual = $compiler->convert();
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    /** @test */
     public function setBannerWithSingleLineAddsBannerCommentToTheTopOfTheTwigFile()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';

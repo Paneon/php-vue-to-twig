@@ -29,10 +29,13 @@ class Compiler
 
     /** @var string[] */
     protected $banner;
+
     /**
      * @var TwigBuilder
      */
     protected $builder;
+
+    protected $stripWhitespace = true;
 
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
@@ -74,6 +77,10 @@ class Compiler
         $html = $this->document->saveHTML($resultNode);
 
         $html = $this->replacePlaceholders($html);
+
+        if($this->stripWhitespace) {
+            $html = $this->stripWhitespace($html);
+        }
 
         if (!empty($this->banner)) {
             $html = $this->addBanner($html);
@@ -420,7 +427,7 @@ class Compiler
 
         $bannerLines[] = ' #}';
 
-        $html = implode("\n", $bannerLines)."\n".$html;
+        $html = implode(PHP_EOL, $bannerLines).PHP_EOL.$html;
 
         return $html;
     }
@@ -437,5 +444,34 @@ class Compiler
         }
 
         return $value;
+    }
+
+    public function stripWhitespace($html)
+    {
+        $html = preg_replace('/(\s)+/s', '\\1', $html);
+        $html = str_replace("\n", '', $html);
+
+        // Trim node text
+        $html = preg_replace('/\>[^\S ]+/s', ">", $html);
+        $html = preg_replace('/[^\S ]+\</s', "<", $html);
+
+        $html = preg_replace('/> </s', '><', $html);
+        $html = preg_replace('/} </s', '}<', $html);
+        $html = preg_replace('/> {/s', '>{', $html);
+        $html = preg_replace('/} {/s', '}{', $html);
+
+        return $html;
+    }
+
+    /**
+     * @param bool $stripWhitespace
+     *
+     * @return Compiler
+     */
+    public function setStripWhitespace(bool $stripWhitespace): Compiler
+    {
+        $this->stripWhitespace = $stripWhitespace;
+
+        return $this;
     }
 }
