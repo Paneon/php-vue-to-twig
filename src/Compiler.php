@@ -8,7 +8,9 @@ use DOMElement;
 use DOMNode;
 use DOMText;
 use Exception;
+use Paneon\VueToTwig\Models\Component;
 use Paneon\VueToTwig\Models\Replacements;
+use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
 
@@ -547,11 +549,11 @@ class Compiler
 
     protected function handleDefaultSlot(DOMElement $node)
     {
-        if($node->nodeName !== 'slot'){
+        if ($node->nodeName !== 'slot') {
             return;
         }
 
-        $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME);
+        $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME);
         $variableNode = $this->document->createTextNode($variable);
 
         $node->parentNode->insertBefore($variableNode, $node);
