@@ -1,6 +1,6 @@
 <?php
 
-namespace Paneon\VueToTwig;
+namespace Paneon\VueToTwig\Models;
 
 use Ramsey\Uuid\Uuid;
 

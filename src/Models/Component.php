@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Paneon\VueToTwig;
+namespace Paneon\VueToTwig\Models;
 
 
 use DOMDocument;
