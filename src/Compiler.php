@@ -78,7 +78,7 @@ class Compiler
 
         $html = $this->replacePlaceholders($html);
 
-        if($this->stripWhitespace) {
+        if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
         }
 
@@ -248,7 +248,12 @@ class Compiler
         }
 
         if ($node->hasAttribute('v-if')) {
-            $condition = $node->getAttribute('v-if');
+
+            if ($node->hasAttribute('data-twig-if')) {
+                $condition = $node->getAttribute('data-twig-if');
+            } else {
+                $condition = $node->getAttribute('v-if');
+            }
             $condition = $this->sanitizeCondition($condition);
 
             // Open with if
@@ -262,8 +267,14 @@ class Compiler
             $this->lastCloseIf = $closeIf;
 
             $node->removeAttribute('v-if');
+            $node->removeAttribute('data-twig-if');
         } elseif ($node->hasAttribute('v-else-if')) {
-            $condition = $node->getAttribute('v-else-if');
+
+            if ($node->hasAttribute('data-twig-if')) {
+                $condition = $node->getAttribute('data-twig-if');
+            } else {
+                $condition = $node->getAttribute('v-else-if');
+            }
             $condition = $this->sanitizeCondition($condition);
 
             // Replace old endif with else
@@ -275,6 +286,7 @@ class Compiler
             $this->lastCloseIf = $closeIf;
 
             $node->removeAttribute('v-else-if');
+            $node->removeAttribute('data-twig-if');
         } elseif ($node->hasAttribute('v-else')) {
             // Replace old endif with else
             $this->lastCloseIf->textContent = $this->builder->createElse();
