@@ -35,6 +35,8 @@ class Compiler
      */
     protected $builder;
 
+    protected $replaceVariables = [];
+
     protected $stripWhitespace = true;
 
     public function __construct(DOMDocument $document, LoggerInterface $logger)
@@ -78,7 +80,7 @@ class Compiler
 
         $html = $this->replacePlaceholders($html);
 
-        if($this->stripWhitespace) {
+        if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
         }
 
@@ -112,6 +114,11 @@ class Compiler
         $this->stripEventHandlers($node);
         //$this->handleRawHtml($node, $data);
 
+        $this->handleDefaultSlot($node);
+
+        /*
+         * Registered Component
+         */
         if (in_array($node->nodeName, array_keys($this->components))) {
             $matchedComponent = $this->components[$node->nodeName];
             $usedComponent = new Component($matchedComponent->getName(), $matchedComponent->getPath());
@@ -125,11 +132,29 @@ class Compiler
 
                         $usedComponent->addProperty($name, $value, true);
                     } else {
-                        $usedComponent->addProperty($attribute->name, '"'.$attribute->value.'"', false);
+                        $usedComponent->addProperty($attribute->name, '"' . $attribute->value . '"', false);
                     }
                 }
             }
 
+            /*
+             * Slots (Default)
+             */
+            if ($node->hasChildNodes()) {
+                $innerHtml = $this->innerHtmlOfNode($node);
+                $this->logger->debug('Add default slot:', [
+                    'nodeValue' => $node->nodeValue,
+                    'innerHtml' => $innerHtml,
+                ]);
+
+                $slot = $usedComponent->addDefaultSlot($innerHtml);
+
+                $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
+            }
+
+            /*
+             * Include Partial
+             */
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
@@ -138,6 +163,30 @@ class Compiler
             );
 
             $node->parentNode->insertBefore($include, $node);
+
+            if ($usedComponent->hasSlots()) {
+
+                foreach ($usedComponent->getSlots() as $slotName => $slot) {
+                    // Add variable which contains the content (set)
+                    $openSet = $this->document->createTextNode(
+                        $this->builder->createSet($slot->getSlotValueName())
+                    );
+                    $node->parentNode->insertBefore($openSet, $include);
+
+                    $setContent = $this->document->createTextNode($slot->getSlotContentVariableString());
+
+                    $node->parentNode->insertBefore($setContent, $include);
+
+                    // Close variable (endset)
+                    $closeSet = $this->document->createTextNode(
+                        $this->builder->closeSet()
+                    );
+                    $node->parentNode->insertBefore($closeSet, $include);
+                }
+
+            }
+
+            // Remove original node
             $node->parentNode->removeChild($node);
 
             return $node;
@@ -166,13 +215,13 @@ class Compiler
         foreach (iterator_to_array($node->attributes) as $attribute) {
 
             if (strpos($attribute->name, 'v-bind:') !== 0 && strpos($attribute->name, ':') !== 0) {
-                $this->logger->debug("- skip: ".$attribute->name);
+                $this->logger->debug("- skip: " . $attribute->name);
                 continue;
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
             $value = $attribute->value;
-            $this->logger->debug('- handle: '.$name.' = '.$value);
+            $this->logger->debug('- handle: ' . $name . ' = ' . $value);
 
 
             switch ($name) {
@@ -185,14 +234,14 @@ class Compiler
                     break;
                 default:
                     if ($value === 'true') {
-                        $this->logger->debug('- setAttribute '.$name);
+                        $this->logger->debug('- setAttribute ' . $name);
                         $node->setAttribute($name, $name);
                     } else {
-                        $this->logger->debug('- setAttribute "'.$name.'" with value');
+                        $this->logger->debug('- setAttribute "' . $name . '" with value');
                         $node->setAttribute(
                             $name,
-                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN').
-                            $value.
+                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
+                            $value .
                             Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE')
                         );
                     }
@@ -231,10 +280,10 @@ class Compiler
 
                 $node->setAttribute($name, $templateStringContent);
             } else {
-                $this->logger->debug('- No Handling for: '.$value);
+                $this->logger->debug('- No Handling for: ' . $value);
             }
 
-            $this->logger->debug('=> remove original '.$attribute->name);
+            $this->logger->debug('=> remove original ' . $attribute->name);
             $node->removeAttribute($attribute->name);
         }
     }
@@ -307,7 +356,7 @@ class Compiler
 
         // (2)
         if (preg_match('/(\d+)/', $listName)) {
-            $listName = '1..'.$listName;
+            $listName = '1..' . $listName;
         }
 
         // (1)
@@ -400,6 +449,10 @@ class Compiler
             $string = str_replace(Replacements::getSanitizedConstant($constant), $value, $string);
         }
 
+        foreach ($this->replaceVariables as $safeString => $value) {
+            $string = str_replace($safeString, $value, $string);
+        }
+
         return $string;
     }
 
@@ -410,7 +463,7 @@ class Compiler
 
     protected function addSingleLineBanner(string $html)
     {
-        return $this->builder->createComment(implode('', $this->banner))."\n".$html;
+        return $this->builder->createComment(implode('', $this->banner)) . "\n" . $html;
     }
 
     protected function addBanner(string $html)
@@ -422,12 +475,12 @@ class Compiler
         $bannerLines = ['{#'];
 
         foreach ($this->banner as $line) {
-            $bannerLines[] = ' # '.$line;
+            $bannerLines[] = ' # ' . $line;
         }
 
         $bannerLines[] = ' #}';
 
-        $html = implode(PHP_EOL, $bannerLines).PHP_EOL.$html;
+        $html = implode(PHP_EOL, $bannerLines) . PHP_EOL . $html;
 
         return $html;
     }
@@ -435,7 +488,7 @@ class Compiler
     public function refactorTemplateString($value)
     {
         if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
-            $templateStringContent = '"'.$matches['content'].'"';
+            $templateStringContent = '"' . $matches['content'] . '"';
             $value = preg_replace(
                 '/\$\{(.+)\}/',
                 '{{ $1 }}',
@@ -473,5 +526,36 @@ class Compiler
         $this->stripWhitespace = $stripWhitespace;
 
         return $this;
+    }
+
+    public function innerHtmlOfNode(DOMNode $element)
+    {
+        $innerHTML = "";
+        $children = $element->childNodes;
+
+        foreach ($children as $child) {
+            $innerHTML .= trim($element->ownerDocument->saveHTML($child));
+        }
+
+        return $innerHTML;
+    }
+
+    protected function addReplaceVariable($safeString, $value)
+    {
+        $this->replaceVariables[$safeString] = $value;
+    }
+
+    protected function handleDefaultSlot(DOMElement $node)
+    {
+        if($node->nodeName !== 'slot'){
+            return;
+        }
+
+        $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME);
+        $variableNode = $this->document->createTextNode($variable);
+
+        $node->parentNode->insertBefore($variableNode, $node);
+        $node->parentNode->removeChild($node);
+
     }
 }

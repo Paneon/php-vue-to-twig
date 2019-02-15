@@ -12,6 +12,7 @@ class Property
      * @var string
      */
     protected $value;
+
     /**
      * @var bool
      */

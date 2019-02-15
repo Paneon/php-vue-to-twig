@@ -1,0 +1,7 @@
+<div>
+  {% set slot_default_value %}
+    <h4>My default slot title</h4>
+    <p>some text</p>
+  {% endset %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': slot_default_value } %}
+</div>
