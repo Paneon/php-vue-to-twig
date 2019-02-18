@@ -39,6 +39,8 @@ class Compiler
 
     protected $replaceVariables = [];
 
+    protected $variables = [];
+
     protected $stripWhitespace = true;
 
     public function __construct(DOMDocument $document, LoggerInterface $logger)
@@ -80,6 +82,7 @@ class Compiler
         $resultNode = $this->convertNode($rootNode);
         $html = $this->document->saveHTML($resultNode);
 
+        $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
         if ($this->stripWhitespace) {
@@ -134,7 +137,7 @@ class Compiler
 
                         $usedComponent->addProperty($name, $value, true);
                     } else {
-                        $usedComponent->addProperty($attribute->name, '"' . $attribute->value . '"', false);
+                        $usedComponent->addProperty($attribute->name, '"'.$attribute->value.'"', false);
                     }
                 }
             }
@@ -217,13 +220,13 @@ class Compiler
         foreach (iterator_to_array($node->attributes) as $attribute) {
 
             if (strpos($attribute->name, 'v-bind:') !== 0 && strpos($attribute->name, ':') !== 0) {
-                $this->logger->debug("- skip: " . $attribute->name);
+                $this->logger->debug("- skip: ".$attribute->name);
                 continue;
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
             $value = $attribute->value;
-            $this->logger->debug('- handle: ' . $name . ' = ' . $value);
+            $this->logger->debug('- handle: '.$name.' = '.$value);
 
 
             switch ($name) {
@@ -236,14 +239,14 @@ class Compiler
                     break;
                 default:
                     if ($value === 'true') {
-                        $this->logger->debug('- setAttribute ' . $name);
+                        $this->logger->debug('- setAttribute '.$name);
                         $node->setAttribute($name, $name);
                     } else {
-                        $this->logger->debug('- setAttribute "' . $name . '" with value');
+                        $this->logger->debug('- setAttribute "'.$name.'" with value');
                         $node->setAttribute(
                             $name,
-                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
-                            $value .
+                            Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN').
+                            $value.
                             Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE')
                         );
                     }
@@ -282,10 +285,10 @@ class Compiler
 
                 $node->setAttribute($name, $templateStringContent);
             } else {
-                $this->logger->debug('- No Handling for: ' . $value);
+                $this->logger->debug('- No Handling for: '.$value);
             }
 
-            $this->logger->debug('=> remove original ' . $attribute->name);
+            $this->logger->debug('=> remove original '.$attribute->name);
             $node->removeAttribute($attribute->name);
         }
     }
@@ -358,7 +361,7 @@ class Compiler
 
         // (2)
         if (preg_match('/(\d+)/', $listName)) {
-            $listName = '1..' . $listName;
+            $listName = '1..'.$listName;
         }
 
         // (1)
@@ -465,7 +468,7 @@ class Compiler
 
     protected function addSingleLineBanner(string $html)
     {
-        return $this->builder->createComment(implode('', $this->banner)) . "\n" . $html;
+        return $this->builder->createComment(implode('', $this->banner))."\n".$html;
     }
 
     protected function addBanner(string $html)
@@ -477,12 +480,12 @@ class Compiler
         $bannerLines = ['{#'];
 
         foreach ($this->banner as $line) {
-            $bannerLines[] = ' # ' . $line;
+            $bannerLines[] = ' # '.$line;
         }
 
         $bannerLines[] = ' #}';
 
-        $html = implode(PHP_EOL, $bannerLines) . PHP_EOL . $html;
+        $html = implode(PHP_EOL, $bannerLines).PHP_EOL.$html;
 
         return $html;
     }
@@ -490,7 +493,7 @@ class Compiler
     public function refactorTemplateString($value)
     {
         if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
-            $templateStringContent = '"' . $matches['content'] . '"';
+            $templateStringContent = '"'.$matches['content'].'"';
             $value = preg_replace(
                 '/\$\{(.+)\}/',
                 '{{ $1 }}',
@@ -547,14 +550,44 @@ class Compiler
         $this->replaceVariables[$safeString] = $value;
     }
 
+    protected function addVariable($name, $value)
+    {
+        if (isset($this->variables[$name])) {
+            throw new Exception("The variable $name is already registered.", 500);
+        }
+
+        $this->variables[$name] = $value;
+    }
+
+    protected function addVariableBlocks(string $string): string
+    {
+        $blocks = [];
+
+        foreach ($this->variables as $varName => $varValue) {
+            $blocks[] = $this->builder->createMultilineVariable($varName, $varValue);
+        }
+
+        return implode('', $blocks). $string;
+    }
+
     protected function handleDefaultSlot(DOMElement $node)
     {
         if ($node->nodeName !== 'slot') {
             return;
         }
 
-        $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME);
+        $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
+
+        if ($slotFallback) {
+            $this->addVariable('slot_default_fallback', $slotFallback);
+            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME, 'slot_default_fallback');
+        }
+        else {
+            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME);
+        }
+
         $variableNode = $this->document->createTextNode($variable);
+
 
         $node->parentNode->insertBefore($variableNode, $node);
         $node->parentNode->removeChild($node);

@@ -157,8 +157,11 @@ class TwigBuilder
         return $condition;
     }
 
-    public function createVariableOutput($varName): string
+    public function createVariableOutput($varName, ?string $fallbackVariableName = null): string
     {
+        if($fallbackVariableName){
+            return '{{ '.$varName.'|default('.$fallbackVariableName.') }}';
+        }
         return '{{ '.$varName.' }}';
     }
 }
