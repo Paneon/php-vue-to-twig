@@ -224,7 +224,7 @@ class Compiler
                 $templateStringContent = $matches['content'];
 
                 $templateStringContent = preg_replace(
-                    '/\$\{(.+)\}/',
+                    '/\$\{([^}]+)\}/',
                     '{{ $1 }}',
                     $templateStringContent
                 );
