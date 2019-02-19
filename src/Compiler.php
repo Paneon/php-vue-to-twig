@@ -224,7 +224,7 @@ class Compiler
                 $templateStringContent = $matches['content'];
 
                 $templateStringContent = preg_replace(
-                    '/\$\{(.+)\}/',
+                    '/\$\{([^}]+)\}/',
                     '{{ $1 }}',
                     $templateStringContent
                 );
@@ -398,6 +398,8 @@ class Compiler
     {
         $condition = str_replace('&&', 'and', $condition);
         $condition = str_replace('||', 'or', $condition);
+        $condition = str_replace('!==', '!=', $condition);
+        $condition = preg_replace('/!([^=])/', 'not $1', $condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
