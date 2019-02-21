@@ -7,8 +7,8 @@ class CompilerPropsTest extends AbstractTestCase
     /** @test */
     public function registersProperties()
     {
-        $component = file_get_contents('./fixtures/vue-props/binding-props.vue');
-        $expected = file_get_contents('./fixtures/vue-props/binding-props.twig');
+        $component = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props.vue');
+        $expected = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props.twig');
 
         $compiler = $this->createCompiler($component);
 

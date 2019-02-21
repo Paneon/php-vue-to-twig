@@ -432,16 +432,18 @@ class Compiler
 
     protected function addDefaultsToVariable($varName, $string): string
     {
+        if (!in_array($varName, array_keys($this->properties))) {
+            return $string;
+        }
+
         $prop = $this->properties[$varName];
 
-        if ($prop) {
-            if ($prop->hasDefault()) {
-                $string = str_replace(
-                    $varName,
-                    $varName . '|default(' . $prop->getDefault() . ')',
-                    $string
-                );
-            }
+        if ($prop->hasDefault()) {
+            $string = str_replace(
+                $varName,
+                $varName . '|default(' . $prop->getDefault() . ')',
+                $string
+            );
         }
 
         return $string;
