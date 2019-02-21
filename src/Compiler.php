@@ -228,7 +228,11 @@ class Compiler
 
                 foreach ($items as $item) {
                     if(preg_match($regexObjectElements, $item, $matchElement)){
-                        $dynamicValues[] = sprintf('{{ %s ? \'%s\' }}', $matchElement['condition'], $matchElement['class']);
+                        $dynamicValues[] = sprintf(
+                            '{{ %s ? \'%s\' }}',
+                            $this->builder->refactorCondition($matchElement['condition']),
+                            $matchElement['class']
+                        );
                     }
                 }
 
