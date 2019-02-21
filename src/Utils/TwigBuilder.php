@@ -2,6 +2,7 @@
 
 namespace Paneon\VueToTwig\Utils;
 
+use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Property;
 
 class TwigBuilder
@@ -135,6 +136,14 @@ class TwigBuilder
     {
         $condition = str_replace('===', '==', $condition);
         $condition = str_replace('!==', '!=', $condition);
+        $condition = str_replace('&&', 'and', $condition);
+        $condition = str_replace('||', 'or', $condition);
+        $condition = preg_replace('/!([^=])/', 'not $1', $condition);
+        $condition = str_replace('.length', '|length', $condition);
+
+        foreach (Replacements::getConstants() as $constant => $value) {
+            $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
+        }
 
         return $condition;
     }

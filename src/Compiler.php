@@ -92,11 +92,9 @@ class Compiler
     public function convertNode(DOMNode $node): DOMNode
     {
         switch ($node->nodeType) {
+            // We don't need to handle either of these node-types
             case XML_TEXT_NODE:
-                $this->logger->debug('Text node found', ['name' => $node->nodeName]);
-                // fall through to next case, because we don't need to handle either of these node-types
             case XML_COMMENT_NODE:
-                $this->logger->debug('Comment node found', ['name' => $node->nodeName]);
                 return $node;
             case XML_ELEMENT_NODE:
                 /** @var DOMElement $node */
@@ -184,7 +182,6 @@ class Compiler
             switch ($name) {
                 case 'key':
                     // Not necessary in twig
-                    $this->logger->debug('- skip: key');
                     return;
                 case 'style':
                     break;
@@ -192,17 +189,22 @@ class Compiler
                     break;
             }
 
+            $regexArrayBinding = '/^\[([^\]]+)\]$/';
+            $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
+            $regexTemplateString = '/^`(?P<content>.+)`$/';
+            $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
+            $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?:\s*(?<condition>[^,]+)/x';
+
             if ($value === 'true') {
                 $this->logger->debug('- setAttribute ' . $name);
                 $node->setAttribute($name, $name);
-            } elseif (preg_match('/^\[([^\]]+)\]$/', $value, $matches)) {
-                $this->logger->debug('- is array '.$value);
+            } elseif (preg_match($regexArrayBinding, $value, $matches)) {
+                $this->logger->debug('- array binding ', ['value' => $value]);
 
-                if(preg_match_all('/((?:[\'"])(?<elements>[^\'"])[\'"])/', $value, $arrayMatch)){
+                if (preg_match_all($regexArrayElements, $value, $arrayMatch)) {
                     $value = $arrayMatch['elements'];
                     $this->logger->debug('- ', ['match' => $arrayMatch]);
-                }
-                else {
+                } else {
                     $value = [];
                 }
 
@@ -218,8 +220,23 @@ class Compiler
                         $dynamicValues[] = $className;
                     }
                 }
-            }
-            elseif (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
+            } elseif (preg_match($regexObjectBinding, $value, $matches)) {
+                $this->logger->debug('- object binding ', ['value' => $value]);
+
+                $items = explode(',', $matches['elements']);
+                $this->logger->debug(print_r($items,true));
+
+                foreach ($items as $item) {
+                    if(preg_match($regexObjectElements, $item, $matchElement)){
+                        $dynamicValues[] = sprintf(
+                            '{{ %s ? \'%s\' }}',
+                            $this->builder->refactorCondition($matchElement['condition']),
+                            $matchElement['class']
+                        );
+                    }
+                }
+
+            } elseif (preg_match($regexTemplateString, $value, $matches)) {
                 /*
                  * <div :class="`abc ${someDynamicClass}`">
                  */
@@ -262,7 +279,6 @@ class Compiler
             } else {
                 $condition = $node->getAttribute('v-if');
             }
-            $condition = $this->sanitizeCondition($condition);
 
             // Open with if
             $openIf = $this->document->createTextNode($this->builder->createIf($condition));
@@ -283,7 +299,6 @@ class Compiler
             } else {
                 $condition = $node->getAttribute('v-else-if');
             }
-            $condition = $this->sanitizeCondition($condition);
 
             // Replace old endif with else
             $this->lastCloseIf->textContent = $this->builder->createElseIf($condition);
@@ -402,29 +417,15 @@ class Compiler
         return $firstTagNode;
     }
 
-    protected function sanitizeCondition(string $condition)
-    {
-        $condition = str_replace('&&', 'and', $condition);
-        $condition = str_replace('||', 'or', $condition);
-        $condition = str_replace('!==', '!=', $condition);
-        $condition = preg_replace('/!([^=])/', 'not $1', $condition);
-
-        foreach (Replacements::getConstants() as $constant => $value) {
-            $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
-        }
-
-        return $condition;
-    }
-
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
     {
         $glue = ' ';
 
-        if($attribute === 'style') {
+        if ($attribute === 'style') {
             $glue = '; ';
         }
 
-        if(!empty($oldValue)) {
+        if (!empty($oldValue)) {
             $values = array_merge([$oldValue], $values);
         }
 

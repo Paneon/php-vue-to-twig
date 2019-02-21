@@ -3,6 +3,7 @@
     <div :class="`block block--${modifier}`" :style="`fill: ${color}`">
       Hello World
     </div>
+    <div :class="`${isTrue ? 'a' : 'b'}`"></div>
   </div>
 </template>
 
