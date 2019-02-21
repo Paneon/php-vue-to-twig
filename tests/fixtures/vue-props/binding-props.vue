@@ -1,6 +1,7 @@
 <template>
 <div>
   <div>
+    <p v-if="title === 'Something'">Default</p>
     <p>{{ title }}</p>
     <p v-if="req">Boolean</p>
   </div>
@@ -12,12 +13,15 @@
         props: {
             title: {
                 type: String,
-                default: 'Default title'
+                default: 'Default'
             },
             req: {
                 type: Boolean,
                 required: true,
             },
+            optionallyIgnore: {
+                type: String,
+            }
         },
     }
 </script>
