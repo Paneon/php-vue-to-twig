@@ -1,9 +1,8 @@
 <template>
   <div class="block">
-    <div :class="`block block--${modifier}`" :style="`fill: ${color}`">
+    <div :class="`block block--${modifier}`" :style="`fill: ${color}; height: ${height}`">
       Hello World
     </div>
-    <div :class="`${isTrue ? 'a' : 'b'}`"></div>
   </div>
 </template>
 

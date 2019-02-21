@@ -9,3 +9,4 @@
 # PHPUnit
 .phpcs-cache
 
+node_modules
