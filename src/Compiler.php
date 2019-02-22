@@ -9,6 +9,7 @@ use DOMNode;
 use DOMText;
 use Exception;
 use Paneon\VueToTwig\Models\Component;
+use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\TwigBuilder;
@@ -37,6 +38,9 @@ class Compiler
      */
     protected $builder;
 
+    /** @var Property[] */
+    protected $properties;
+
     protected $replaceVariables = [];
 
     protected $variables = [];
@@ -51,6 +55,7 @@ class Compiler
         $this->lastCloseIf = null;
         $this->components = [];
         $this->banner = [];
+        $this->properties = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
     }
@@ -73,6 +78,11 @@ class Compiler
     public function convert(): string
     {
         $templateElement = $this->document->getElementsByTagName('template')->item(0);
+        $scriptElement = $this->document->getElementsByTagName('script')->item(0);
+
+        if ($scriptElement) {
+            $this->registerProperties($scriptElement);
+        }
 
         if (!$templateElement) {
             throw new Exception('The template file does not contain a template tag.');
@@ -100,9 +110,11 @@ class Compiler
     {
         switch ($node->nodeType) {
             // We don't need to handle either of these node-types
-            case XML_TEXT_NODE:
             case XML_COMMENT_NODE:
                 return $node;
+            case XML_TEXT_NODE:
+                /** @var DOMText $node */
+                return $this->handleTextNode($node);
             case XML_ELEMENT_NODE:
                 /** @var DOMElement $node */
                 $this->replaceShowWithIf($node);
@@ -204,6 +216,34 @@ class Compiler
         return $node;
     }
 
+    public function registerProperties(DOMElement $scriptElement)
+    {
+        $content = $this->innerHtmlOfNode($scriptElement);
+
+        $regexProps = '/(?<prop>[^\s\:]+)\:\s*\{(?<definition>[^\{\}]+)\}/mx';
+
+        if (preg_match_all($regexProps, $content, $matches)) {
+            foreach ($matches['prop'] as $i => $propName) {
+                if (in_array($propName, ['props', 'methods', 'computed'])) {
+                    continue;
+                }
+
+                $definition = $matches['definition'][$i];
+                $property = new Property($propName, '', true);
+
+                if (preg_match('/required\:\s*true/m', $definition)) {
+                    $property->setIsRequired(true);
+                }
+
+                if (preg_match('/default\:\s*(?<default>[^,$]+)\s*,?/mx', $definition, $matchDefault)) {
+                    $property->setDefault(trim($matchDefault['default']));
+                }
+
+                $this->properties[$propName] = $property;
+            }
+        }
+    }
+
     public function replaceShowWithIf(DOMElement $node): void
     {
         if ($node->hasAttribute('v-show')) {
@@ -278,10 +318,9 @@ class Compiler
                 $this->logger->debug('- object binding ', ['value' => $value]);
 
                 $items = explode(',', $matches['elements']);
-                $this->logger->debug(print_r($items,true));
 
                 foreach ($items as $item) {
-                    if(preg_match($regexObjectElements, $item, $matchElement)){
+                    if (preg_match($regexObjectElements, $item, $matchElement)) {
                         $dynamicValues[] = sprintf(
                             '{{ %s ? \'%s\' }}',
                             $this->builder->refactorCondition($matchElement['condition']),
@@ -318,6 +357,19 @@ class Compiler
         }
     }
 
+    protected function handleTextNode(DOMText $node)
+    {
+        $regexVariables = '/\{\{\s*(?<variable>[^\}\s]+)\s*\}\}/mx';
+
+        if (preg_match_all($regexVariables, $node->nodeValue, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $i => $match) {
+                $node->nodeValue = $this->addDefaultsToVariable($match['variable'], $node->nodeValue);
+            }
+        }
+
+        return $node;
+    }
+
     private function handleIf(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-if') &&
@@ -333,6 +385,8 @@ class Compiler
             } else {
                 $condition = $node->getAttribute('v-if');
             }
+
+            $condition = $this->addDefaultsToVariables($condition);
 
             // Open with if
             $openIf = $this->document->createTextNode($this->builder->createIf($condition));
@@ -429,6 +483,34 @@ class Compiler
         $node->parentNode->insertBefore($endFor, $node->nextSibling);
 
         $node->removeAttribute('v-for');
+    }
+
+    protected function addDefaultsToVariable($varName, $string): string
+    {
+        if (!in_array($varName, array_keys($this->properties))) {
+            return $string;
+        }
+
+        $prop = $this->properties[$varName];
+
+        if ($prop->hasDefault()) {
+            $string = str_replace(
+                $varName,
+                $varName . '|default(' . $prop->getDefault() . ')',
+                $string
+            );
+        }
+
+        return $string;
+    }
+
+    protected function addDefaultsToVariables($string): string
+    {
+        foreach ($this->properties as $propName => $prop) {
+            $string = $this->addDefaultsToVariable($propName, $string);
+        }
+
+        return $string;
     }
 
     private function stripEventHandlers(DOMElement $node)
@@ -542,6 +624,18 @@ class Compiler
         return $value;
     }
 
+    public function innerHtmlOfNode(DOMNode $element)
+    {
+        $innerHTML = "";
+        $children = $element->childNodes;
+
+        foreach ($children as $child) {
+            $innerHTML .= trim($element->ownerDocument->saveHTML($child));
+        }
+
+        return $innerHTML;
+    }
+
     public function stripWhitespace($html)
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
@@ -569,18 +663,6 @@ class Compiler
         $this->stripWhitespace = $stripWhitespace;
 
         return $this;
-    }
-
-    public function innerHtmlOfNode(DOMNode $element)
-    {
-        $innerHTML = "";
-        $children = $element->childNodes;
-
-        foreach ($children as $child) {
-            $innerHTML .= trim($element->ownerDocument->saveHTML($child));
-        }
-
-        return $innerHTML;
     }
 
     protected function addReplaceVariable($safeString, $value)
