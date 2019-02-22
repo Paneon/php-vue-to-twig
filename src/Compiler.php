@@ -8,7 +8,10 @@ use DOMElement;
 use DOMNode;
 use DOMText;
 use Exception;
+use Paneon\VueToTwig\Models\Component;
+use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
+use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
 
@@ -38,8 +41,11 @@ class Compiler
     /** @var Property[] */
     protected $properties;
 
-    protected $stripWhitespace = true;
+    protected $replaceVariables = [];
 
+    protected $variables = [];
+
+    protected $stripWhitespace = true;
 
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
@@ -86,6 +92,7 @@ class Compiler
         $resultNode = $this->convertNode($rootNode);
         $html = $this->document->saveHTML($resultNode);
 
+        $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
         if ($this->stripWhitespace) {
@@ -106,6 +113,7 @@ class Compiler
             case XML_COMMENT_NODE:
                 return $node;
             case XML_TEXT_NODE:
+                /** @var DOMText $node */
                 return $this->handleTextNode($node);
             case XML_ELEMENT_NODE:
                 /** @var DOMElement $node */
@@ -121,6 +129,11 @@ class Compiler
         $this->stripEventHandlers($node);
         //$this->handleRawHtml($node, $data);
 
+        $this->handleDefaultSlot($node);
+
+        /*
+         * Registered Component
+         */
         if (in_array($node->nodeName, array_keys($this->components))) {
             $matchedComponent = $this->components[$node->nodeName];
             $usedComponent = new Component($matchedComponent->getName(), $matchedComponent->getPath());
@@ -139,6 +152,24 @@ class Compiler
                 }
             }
 
+            /*
+             * Slots (Default)
+             */
+            if ($node->hasChildNodes()) {
+                $innerHtml = $this->innerHtmlOfNode($node);
+                $this->logger->debug('Add default slot:', [
+                    'nodeValue' => $node->nodeValue,
+                    'innerHtml' => $innerHtml,
+                ]);
+
+                $slot = $usedComponent->addDefaultSlot($innerHtml);
+
+                $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
+            }
+
+            /*
+             * Include Partial
+             */
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
@@ -147,6 +178,30 @@ class Compiler
             );
 
             $node->parentNode->insertBefore($include, $node);
+
+            if ($usedComponent->hasSlots()) {
+
+                foreach ($usedComponent->getSlots() as $slotName => $slot) {
+                    // Add variable which contains the content (set)
+                    $openSet = $this->document->createTextNode(
+                        $this->builder->createSet($slot->getSlotValueName())
+                    );
+                    $node->parentNode->insertBefore($openSet, $include);
+
+                    $setContent = $this->document->createTextNode($slot->getSlotContentVariableString());
+
+                    $node->parentNode->insertBefore($setContent, $include);
+
+                    // Close variable (endset)
+                    $closeSet = $this->document->createTextNode(
+                        $this->builder->closeSet()
+                    );
+                    $node->parentNode->insertBefore($closeSet, $include);
+                }
+
+            }
+
+            // Remove original node
             $node->parentNode->removeChild($node);
 
             return $node;
@@ -519,6 +574,10 @@ class Compiler
             $string = str_replace(Replacements::getSanitizedConstant($constant), $value, $string);
         }
 
+        foreach ($this->replaceVariables as $safeString => $value) {
+            $string = str_replace($safeString, $value, $string);
+        }
+
         return $string;
     }
 
@@ -604,5 +663,54 @@ class Compiler
         $this->stripWhitespace = $stripWhitespace;
 
         return $this;
+    }
+
+    protected function addReplaceVariable($safeString, $value)
+    {
+        $this->replaceVariables[$safeString] = $value;
+    }
+
+    protected function addVariable($name, $value)
+    {
+        if (isset($this->variables[$name])) {
+            throw new Exception("The variable $name is already registered.", 500);
+        }
+
+        $this->variables[$name] = $value;
+    }
+
+    protected function addVariableBlocks(string $string): string
+    {
+        $blocks = [];
+
+        foreach ($this->variables as $varName => $varValue) {
+            $blocks[] = $this->builder->createMultilineVariable($varName, $varValue);
+        }
+
+        return implode('', $blocks). $string;
+    }
+
+    protected function handleDefaultSlot(DOMElement $node)
+    {
+        if ($node->nodeName !== 'slot') {
+            return;
+        }
+
+        $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
+
+        if ($slotFallback) {
+            $this->addVariable('slot_default_fallback', $slotFallback);
+            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME, 'slot_default_fallback');
+        }
+        else {
+            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME);
+        }
+
+        $variableNode = $this->document->createTextNode($variable);
+
+
+        $node->parentNode->insertBefore($variableNode, $node);
+        $node->parentNode->removeChild($node);
+
     }
 }

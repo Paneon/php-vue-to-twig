@@ -1,6 +1,6 @@
 <?php
 
-namespace Paneon\VueToTwig;
+namespace Paneon\VueToTwig\Models;
 
 class Property
 {
@@ -12,6 +12,7 @@ class Property
      * @var string
      */
     protected $value;
+
     /**
      * @var bool
      */

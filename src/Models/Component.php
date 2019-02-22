@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Paneon\VueToTwig;
+namespace Paneon\VueToTwig\Models;
 
 
 use DOMDocument;
@@ -8,6 +8,7 @@ use Exception;
 
 class Component
 {
+
     /** @var String[] */
     protected $components = [];
     /**
@@ -21,6 +22,9 @@ class Component
 
     /** @var Property[] */
     protected $properties = [];
+
+    /** @var Slot[] */
+    protected $slots = [];
 
     public function __construct(string $name = '', string $path = '')
     {
@@ -57,6 +61,24 @@ class Component
         );
     }
 
+    public function addDefaultSlot($value): Slot
+    {
+        return $this->addSlot(Slot::SLOT_DEFAULT_NAME, $value);
+    }
+
+    public function addSlot(string $name, $value): Slot
+    {
+        $this->slots[$name] = new Slot($name, $value);
+
+        $this->properties[] = new Property(
+            $this->slots[$name]->getSlotPropertyName(),
+            $this->slots[$name]->getSlotValueName(),
+            true
+        );
+
+        return $this->slots[$name];
+    }
+
     public function kebabToCamelCase($string, $capitalizeFirstCharacter = false)
     {
         $str = str_replace('-', '', ucwords($string, '-'));
@@ -66,5 +88,18 @@ class Component
         }
 
         return $str;
+    }
+
+    public function hasSlots()
+    {
+        return !empty($this->slots);
+    }
+
+    /**
+     * @return Slot[]
+     */
+    public function getSlots(): array
+    {
+        return $this->slots;
     }
 }
