@@ -83,6 +83,8 @@ class Compiler
     {
         $templateElement = $this->document->getElementsByTagName('template')->item(0);
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
+
+        /** @var \DOMNodeList $twigBlocks */
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
         if ($scriptElement) {
@@ -340,7 +342,7 @@ class Compiler
                         $dynamicValues[] = sprintf(
                             '{{ %s ? \'%s\' }}',
                             $this->builder->refactorCondition($matchElement['condition']),
-                            $matchElement['class']
+                            $matchElement['class'] . ' '
                         );
                     }
                 }
