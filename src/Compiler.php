@@ -47,6 +47,9 @@ class Compiler
 
     protected $stripWhitespace = true;
 
+    /** @var string[] */
+    protected $rawBlocks = [];
+
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
         $this->builder = new TwigBuilder();
@@ -56,6 +59,7 @@ class Compiler
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
+        $this->rawBlocks = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
     }
@@ -79,10 +83,19 @@ class Compiler
     {
         $templateElement = $this->document->getElementsByTagName('template')->item(0);
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
+        $twigBlocks = $this->document->getElementsByTagName('twig');
 
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
         }
+
+        if($twigBlocks->count()){
+            foreach($twigBlocks as $twigBlock){
+                /** @var DOMText $twigBlock */
+                $this->rawBlocks[] = trim($twigBlock->textContent);
+            }
+        }
+
 
         if (!$templateElement) {
             throw new Exception('The template file does not contain a template tag.');
@@ -92,6 +105,9 @@ class Compiler
         $resultNode = $this->convertNode($rootNode);
         $html = $this->document->saveHTML($resultNode);
 
+        if(count($this->rawBlocks)){
+            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
+        }
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
