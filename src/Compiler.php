@@ -512,8 +512,8 @@ class Compiler
         $prop = $this->properties[$varName];
 
         if ($prop->hasDefault()) {
-            $string = str_replace(
-                $varName,
+            $string = preg_replace(
+                '/\b('.$varName.')\b/',
                 $varName . '|default(' . $prop->getDefault() . ')',
                 $string
             );
