@@ -91,7 +91,7 @@ class Compiler
             $this->registerProperties($scriptElement);
         }
 
-        if($twigBlocks->count()){
+        if($twigBlocks->length){
             foreach($twigBlocks as $twigBlock){
                 /** @var DOMText $twigBlock */
                 $this->rawBlocks[] = trim($twigBlock->textContent);
