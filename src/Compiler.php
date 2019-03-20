@@ -378,14 +378,6 @@ class Compiler
 
     protected function handleTextNode(DOMText $node)
     {
-        $regexVariables = '/\{\{\s*(?<variable>[^\}\s]+)\s*\}\}/mx';
-
-        if (preg_match_all($regexVariables, $node->nodeValue, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $i => $match) {
-                $node->nodeValue = $this->addDefaultsToVariable($match['variable'], $node->nodeValue);
-            }
-        }
-
         return $node;
     }
 
