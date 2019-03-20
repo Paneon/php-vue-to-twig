@@ -3,10 +3,14 @@
   <div>
     <p v-if="title === 'Something'">Default</p>
     <p>{{ title }}</p>
-    <p v-if="req">Boolean</p>
+    <p v-if="req">{{ value }}</p>
   </div>
 </div>
 </template>
+
+<twig>
+  {% set optionallyIgnore = false %}
+</twig>
 
 <script>
     export default {
@@ -14,6 +18,10 @@
             title: {
                 type: String,
                 default: 'Default'
+            },
+            value: {
+                type: Number,
+                default: 80
             },
             req: {
                 type: Boolean,
