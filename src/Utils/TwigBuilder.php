@@ -25,7 +25,7 @@ class TwigBuilder
 
     public function createSet($name)
     {
-        return $this->createBlock('set '.$name);
+        return $this->createBlock('set ' . $name);
     }
 
     public function closeSet()
@@ -36,6 +36,11 @@ class TwigBuilder
     public function createVariable($name, $assignment)
     {
         return $this->createBlock('set ' . $name . ' = ' . $assignment);
+    }
+
+    public function createDefaultForVariable($name, $defaultValue)
+    {
+        return $this->createBlock('set ' . $name . ' = ' . $name . '|default(' . $defaultValue . ')');
     }
 
     public function createMultilineVariable($name, $assignment)
@@ -168,9 +173,9 @@ class TwigBuilder
 
     public function createVariableOutput($varName, ?string $fallbackVariableName = null): string
     {
-        if($fallbackVariableName){
-            return '{{ '.$varName.'|default('.$fallbackVariableName.') }}';
+        if ($fallbackVariableName) {
+            return '{{ ' . $varName . '|default(' . $fallbackVariableName . ') }}';
         }
-        return '{{ '.$varName.' }}';
+        return '{{ ' . $varName . ' }}';
     }
 }

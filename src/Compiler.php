@@ -89,10 +89,11 @@ class Compiler
 
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
+            $this->insertDefaultValues();
         }
 
-        if($twigBlocks->length){
-            foreach($twigBlocks as $twigBlock){
+        if ($twigBlocks->length) {
+            foreach ($twigBlocks as $twigBlock) {
                 /** @var DOMText $twigBlock */
                 $this->rawBlocks[] = trim($twigBlock->textContent);
             }
@@ -107,7 +108,7 @@ class Compiler
         $resultNode = $this->convertNode($rootNode);
         $html = $this->document->saveHTML($resultNode);
 
-        if(count($this->rawBlocks)){
+        if (count($this->rawBlocks)) {
             $html = implode("\n", $this->rawBlocks) . "\n" . $html;
         }
         $html = $this->addVariableBlocks($html);
@@ -127,7 +128,7 @@ class Compiler
     public function convertNode(DOMNode $node): DOMNode
     {
         switch ($node->nodeType) {
-            // We don't need to handle either of these node-types
+            // We don't need to handle this node-type
             case XML_COMMENT_NODE:
                 return $node;
             case XML_TEXT_NODE:
@@ -377,14 +378,6 @@ class Compiler
 
     protected function handleTextNode(DOMText $node)
     {
-        $regexVariables = '/\{\{\s*(?<variable>[^\}\s]+)\s*\}\}/mx';
-
-        if (preg_match_all($regexVariables, $node->nodeValue, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $i => $match) {
-                $node->nodeValue = $this->addDefaultsToVariable($match['variable'], $node->nodeValue);
-            }
-        }
-
         return $node;
     }
 
@@ -403,8 +396,6 @@ class Compiler
             } else {
                 $condition = $node->getAttribute('v-if');
             }
-
-            $condition = $this->addDefaultsToVariables($condition);
 
             // Open with if
             $openIf = $this->document->createTextNode($this->builder->createIf($condition));
@@ -513,19 +504,10 @@ class Compiler
 
         if ($prop->hasDefault()) {
             $string = preg_replace(
-                '/\b('.$varName.')\b/',
+                '/\b(' . $varName . ')\b/',
                 $varName . '|default(' . $prop->getDefault() . ')',
                 $string
             );
-        }
-
-        return $string;
-    }
-
-    protected function addDefaultsToVariables($string): string
-    {
-        foreach ($this->properties as $propName => $prop) {
-            $string = $this->addDefaultsToVariable($propName, $string);
         }
 
         return $string;
@@ -705,7 +687,7 @@ class Compiler
             $blocks[] = $this->builder->createMultilineVariable($varName, $varValue);
         }
 
-        return implode('', $blocks). $string;
+        return implode('', $blocks) . $string;
     }
 
     protected function handleDefaultSlot(DOMElement $node)
@@ -718,10 +700,9 @@ class Compiler
 
         if ($slotFallback) {
             $this->addVariable('slot_default_fallback', $slotFallback);
-            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME, 'slot_default_fallback');
-        }
-        else {
-            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX.Slot::SLOT_DEFAULT_NAME);
+            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME, 'slot_default_fallback');
+        } else {
+            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME);
         }
 
         $variableNode = $this->document->createTextNode($variable);
@@ -730,5 +711,15 @@ class Compiler
         $node->parentNode->insertBefore($variableNode, $node);
         $node->parentNode->removeChild($node);
 
+    }
+
+    protected function insertDefaultValues()
+    {
+        foreach ($this->properties as $property) {
+            if (!$property->hasDefault()) {
+                continue;
+            }
+            $this->rawBlocks[] = $this->builder->createDefaultForVariable($property->getName(), $property->getDefault());
+        }
     }
 }

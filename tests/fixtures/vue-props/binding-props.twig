@@ -1,11 +1,14 @@
+{% set title = title|default('Default') %}
+{% set value = value|default(80) %}
+{% set optionallyIgnore = false %}
 <div>
   <div>
-    {% if title|default('Default') == 'Something' %}
+    {% if title == 'Something' %}
     <p>Default</p>
     {% endif %}
-    <p>{{ title|default('Default') }}</p>
+    <p>{{ title }}</p>
     {% if req %}
-    <p>Boolean</p>
+      <p>{{ value }}</p>
     {% endif %}
   </div>
 </div>
