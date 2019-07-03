@@ -81,7 +81,10 @@ class Compiler
      */
     public function convert(): string
     {
+        /** @var DOMElement|null $templateElement */
         $templateElement = $this->document->getElementsByTagName('template')->item(0);
+
+        /** @var DOMElement|null $scriptElement */
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
 
         /** @var \DOMNodeList $twigBlocks */
@@ -127,28 +130,23 @@ class Compiler
 
     public function convertNode(DOMNode $node): DOMNode
     {
-        switch ($node->nodeType) {
-            // We don't need to handle this node-type
-            case XML_COMMENT_NODE:
-                return $node;
-            case XML_TEXT_NODE:
-                /** @var DOMText $node */
-                return $this->handleTextNode($node);
-            case XML_ELEMENT_NODE:
-                /** @var DOMElement $node */
-                $this->replaceShowWithIf($node);
-                $this->handleIf($node);
-                break;
-            case XML_HTML_DOCUMENT_NODE:
-                $this->logger->warning("Document node found.");
-                break;
+        if($node instanceof \DOMComment){
+            return $node;
         }
-
-        $this->handleFor($node);
-        $this->stripEventHandlers($node);
-        //$this->handleRawHtml($node, $data);
-
-        $this->handleDefaultSlot($node);
+        elseif($node instanceof DOMText){
+            return $this->handleTextNode($node);
+        }
+        elseif($node instanceof DOMDocument){
+            $this->logger->warning("Document node found.");
+        }
+        elseif($node instanceof DOMElement){
+            $this->replaceShowWithIf($node);
+            $this->handleIf($node);
+            $this->handleFor($node);
+            $this->stripEventHandlers($node);
+            //$this->handleRawHtml($node, $data);
+            $this->handleDefaultSlot($node);
+        }
 
         /*
          * Registered Component
@@ -233,7 +231,9 @@ class Compiler
             return $node;
         }
 
-        $this->handleAttributeBinding($node);
+        if($node instanceof DOMElement){
+            $this->handleAttributeBinding($node);
+        }
 
         foreach (iterator_to_array($node->childNodes) as $childNode) {
             $this->convertNode($childNode);
