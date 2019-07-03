@@ -109,7 +109,7 @@ class TwigBuilder
 
     public function createMultilineComment(array $comments)
     {
-        return $this->options['tag_comment'][self::OPEN] . ' ' . $comments . ' ' . $this->options['tag_comment'][self::CLOSE];
+        return $this->options['tag_comment'][self::OPEN] . ' ' . implode("\n", $comments) . ' ' . $this->options['tag_comment'][self::CLOSE];
     }
 
     public function createBlock($content)

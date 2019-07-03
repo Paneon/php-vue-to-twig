@@ -24,7 +24,7 @@ class Compiler
     /** @var DOMDocument */
     protected $document;
 
-    /** @var DOMText */
+    /** @var DOMText|null */
     protected $lastCloseIf;
 
     /** @var LoggerInterface */
