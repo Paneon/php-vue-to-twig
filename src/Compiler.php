@@ -114,6 +114,11 @@ class Compiler
         if (count($this->rawBlocks)) {
             $html = implode("\n", $this->rawBlocks) . "\n" . $html;
         }
+
+        if(!$html){
+            throw new Exception('Generating html during conversion process failed.');
+        }
+
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
@@ -278,6 +283,9 @@ class Compiler
         }
     }
 
+    /**
+     * @throws Exception
+     */
     private function handleAttributeBinding(DOMElement $node)
     {
         /** @var DOMAttr $attribute */
@@ -331,7 +339,7 @@ class Compiler
                 if ($name === 'style') {
                     foreach ($value as $prop => $setting) {
                         if ($setting) {
-                            $prop = strtolower(preg_replace('/([A-Z])/', '-$1', $prop));
+                            $prop = strtolower($this->transformCamelCaseToCSS($prop));
                             $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
                         }
                     }
@@ -520,6 +528,17 @@ class Compiler
         return $string;
     }
 
+    private function transformCamelCaseToCSS(string $property): string
+    {
+        $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
+
+        if(!$cssProperty){
+            throw new Exception(
+                sprintf('Failed to convert style property %s into css property name.', $property)
+            );
+        }
+    }
+
     private function stripEventHandlers(DOMElement $node)
     {
         /** @var DOMAttr $attribute */
@@ -637,7 +656,15 @@ class Compiler
         $children = $element->childNodes;
 
         foreach ($children as $child) {
-            $innerHTML .= trim($element->ownerDocument->saveHTML($child));
+            $html = $element->ownerDocument->saveHTML($child);
+
+            if(!$html){
+                throw new Exception(
+                    sprintf('Generation of html for child element %s failed', $child)
+                );
+            }
+
+            $innerHTML .= trim($html);
         }
 
         return $innerHTML;
