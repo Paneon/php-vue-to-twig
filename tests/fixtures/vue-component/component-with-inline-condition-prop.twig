@@ -1,0 +1,6 @@
+<div>
+  {% include "/templates/ChildComponent.twig" with {
+    'product': testProduct,
+    'showSomething': index > 5 and a == true,
+    'testA': "Hello", 'string': "Test" } %}
+</div>

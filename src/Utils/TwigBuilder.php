@@ -2,8 +2,8 @@
 
 namespace Paneon\VueToTwig\Utils;
 
+use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
-use Paneon\VueToTwig\Property;
 
 class TwigBuilder
 {
@@ -153,6 +153,13 @@ class TwigBuilder
         }
 
         return '{ ' . implode(', ', $props) . ' }';
+    }
+
+    public function sanitizeAttributeValue(string $value): string
+    {
+        $value = Replacements::sanitizeSingleReplacement($value, Replacements::PIPE);
+
+        return $value;
     }
 
     public function refactorCondition(string $condition): string

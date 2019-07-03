@@ -162,7 +162,14 @@ class Compiler
                 foreach ($node->attributes as $attribute) {
                     if (strpos($attribute->name, 'v-bind:') === 0 || strpos($attribute->name, ':') === 0) {
                         $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-                        $value = $this->refactorTemplateString($attribute->value);
+                        $value = $attribute->value;
+
+                        if(substr_count($value,'`')){
+                            $value = $this->refactorTemplateString($attribute->value);
+                        } else {
+
+                            $value = $this->builder->refactorCondition($value);
+                        }
 
                         $usedComponent->addProperty($name, $value, true);
                     } else {
@@ -282,7 +289,7 @@ class Compiler
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-            $value = $attribute->value;
+            $value = $this->builder->sanitizeAttributeValue($attribute->value);
             $this->logger->debug('- handle: ' . $name . ' = ' . $value);
 
             $staticValues = $node->hasAttribute($name) ? $node->getAttribute($name) : '';
@@ -362,7 +369,7 @@ class Compiler
 
                 $dynamicValues[] = $templateStringContent;
             } else {
-                $this->logger->debug('- setAttribute "' . $name . '" with value');
+                $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
                 $dynamicValues[] =
                     Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
                     $value .
