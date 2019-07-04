@@ -2,8 +2,8 @@
 
 namespace Paneon\VueToTwig\Utils;
 
+use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
-use Paneon\VueToTwig\Property;
 
 class TwigBuilder
 {
@@ -109,7 +109,7 @@ class TwigBuilder
 
     public function createMultilineComment(array $comments)
     {
-        return $this->options['tag_comment'][self::OPEN] . ' ' . $comments . ' ' . $this->options['tag_comment'][self::CLOSE];
+        return $this->options['tag_comment'][self::OPEN] . ' ' . implode("\n", $comments) . ' ' . $this->options['tag_comment'][self::CLOSE];
     }
 
     public function createBlock($content)
@@ -153,6 +153,13 @@ class TwigBuilder
         }
 
         return '{ ' . implode(', ', $props) . ' }';
+    }
+
+    public function sanitizeAttributeValue(string $value): string
+    {
+        $value = Replacements::sanitizeSingleReplacement($value, Replacements::PIPE);
+
+        return $value;
     }
 
     public function refactorCondition(string $condition): string

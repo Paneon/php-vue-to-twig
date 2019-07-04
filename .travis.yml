@@ -6,4 +6,5 @@ php:
 
 script:
   - composer install
+  - composer phpstan
   - phpunit

@@ -26,6 +26,17 @@ abstract class BasicEnum
         return self::$constCacheArray[$calledClass];
     }
 
+    public static function getNameForValue(string $value)
+    {
+        try {
+            $constants = self::getConstants();
+        } catch (ReflectionException $e) {
+            return false;
+        }
+
+        return array_search($value, $constants);
+    }
+
     public static function isValidName(string $name, bool $strict = false): bool
     {
         try {
