@@ -99,13 +99,11 @@ class Compiler
             }
         }
 
-
         if (!$templateElement) {
             throw new Exception('The template file does not contain a template tag.');
         }
 
-        $rootNode = $this->getRootNode($templateElement);
-        $resultNode = $this->convertNode($rootNode);
+        $resultNode = $this->convertNode($templateElement);
         $html = $this->document->saveHTML($resultNode);
 
         if (count($this->rawBlocks)) {
@@ -528,36 +526,6 @@ class Compiler
                 $node->removeAttribute($attribute->name);
             }
         }
-    }
-
-    /**
-     * @throws Exception
-     */
-    private function getRootNode(DOMElement $element): \DOMNode
-    {
-        /** @type \DOMNode[] */
-        $nodes = iterator_to_array($element->childNodes);
-
-        $tagNodes = 0;
-        $firstTagNode = null;
-
-        /** @var DOMNode $node */
-        foreach ($nodes as $node) {
-            if ($node->nodeType === XML_TEXT_NODE) {
-                continue;
-            } elseif (in_array($node->nodeName, ['script', 'style'])) {
-                continue;
-            } else {
-                $tagNodes++;
-                $firstTagNode = $node;
-            }
-        }
-
-        if ($tagNodes > 1) {
-            //throw new Exception('Template should have only one root node');
-        }
-
-        return $firstTagNode;
     }
 
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
