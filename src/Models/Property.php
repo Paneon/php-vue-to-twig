@@ -85,7 +85,7 @@ class Property
     }
 
     /**
-     * @param null $default
+     * @param mixed $default
      */
     public function setDefault($default): void
     {

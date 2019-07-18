@@ -42,7 +42,7 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         return $vueDocument;
     }
 
-    protected function normalizeHtml($html): string
+    protected function normalizeHtml(string $html): string
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
         $html = str_replace("\n", '', $html);
@@ -56,7 +56,7 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         $html = preg_replace('/> {/s', '>{', $html);
         $html = preg_replace('/} {/s', '}{', $html);
 
-        return $html;
+        return $html ?? '';
     }
 
     protected function loadFixturesFromDir(string $dir): array

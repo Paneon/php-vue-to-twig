@@ -81,7 +81,10 @@ class Compiler
      */
     public function convert(): string
     {
+        /** @var DOMElement|null $templateElement */
         $templateElement = $this->document->getElementsByTagName('template')->item(0);
+
+        /** @var DOMElement|null $scriptElement */
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
 
         /** @var \DOMNodeList $twigBlocks */
@@ -109,6 +112,11 @@ class Compiler
         if (count($this->rawBlocks)) {
             $html = implode("\n", $this->rawBlocks) . "\n" . $html;
         }
+
+        if(!$html){
+            throw new Exception('Generating html during conversion process failed.');
+        }
+
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
@@ -127,28 +135,23 @@ class Compiler
 
     public function convertNode(DOMNode $node): DOMNode
     {
-        switch ($node->nodeType) {
-            // We don't need to handle this node-type
-            case XML_COMMENT_NODE:
-                return $node;
-            case XML_TEXT_NODE:
-                /** @var DOMText $node */
-                return $this->handleTextNode($node);
-            case XML_ELEMENT_NODE:
-                /** @var DOMElement $node */
-                $this->replaceShowWithIf($node);
-                $this->handleIf($node);
-                break;
-            case XML_HTML_DOCUMENT_NODE:
-                $this->logger->warning("Document node found.");
-                break;
+        if($node instanceof \DOMComment){
+            return $node;
         }
-
-        $this->handleFor($node);
-        $this->stripEventHandlers($node);
-        //$this->handleRawHtml($node, $data);
-
-        $this->handleDefaultSlot($node);
+        elseif($node instanceof DOMText){
+            return $this->handleTextNode($node);
+        }
+        elseif($node instanceof DOMDocument){
+            $this->logger->warning("Document node found.");
+        }
+        elseif($node instanceof DOMElement){
+            $this->replaceShowWithIf($node);
+            $this->handleIf($node);
+            $this->handleFor($node);
+            $this->stripEventHandlers($node);
+            //$this->handleRawHtml($node, $data);
+            $this->handleDefaultSlot($node);
+        }
 
         /*
          * Registered Component
@@ -233,7 +236,9 @@ class Compiler
             return $node;
         }
 
-        $this->handleAttributeBinding($node);
+        if($node instanceof DOMElement){
+            $this->handleAttributeBinding($node);
+        }
 
         foreach (iterator_to_array($node->childNodes) as $childNode) {
             $this->convertNode($childNode);
@@ -278,6 +283,9 @@ class Compiler
         }
     }
 
+    /**
+     * @throws Exception
+     */
     private function handleAttributeBinding(DOMElement $node)
     {
         /** @var DOMAttr $attribute */
@@ -331,7 +339,7 @@ class Compiler
                 if ($name === 'style') {
                     foreach ($value as $prop => $setting) {
                         if ($setting) {
-                            $prop = strtolower(preg_replace('/([A-Z])/', '-$1', $prop));
+                            $prop = strtolower($this->transformCamelCaseToCSS($prop));
                             $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
                         }
                     }
@@ -520,6 +528,17 @@ class Compiler
         return $string;
     }
 
+    private function transformCamelCaseToCSS(string $property): string
+    {
+        $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
+
+        if(!$cssProperty){
+            throw new Exception(
+                sprintf('Failed to convert style property %s into css property name.', $property)
+            );
+        }
+    }
+
     private function stripEventHandlers(DOMElement $node)
     {
         /** @var DOMAttr $attribute */
@@ -607,7 +626,15 @@ class Compiler
         $children = $element->childNodes;
 
         foreach ($children as $child) {
-            $innerHTML .= trim($element->ownerDocument->saveHTML($child));
+            $html = $element->ownerDocument->saveHTML($child);
+
+            if(!$html){
+                throw new Exception(
+                    sprintf('Generation of html for child element %s failed', $child)
+                );
+            }
+
+            $innerHTML .= trim($html);
         }
 
         return $innerHTML;
