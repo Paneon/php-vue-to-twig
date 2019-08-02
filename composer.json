@@ -40,6 +40,6 @@
     "scripts": {
         "cs:fix": "phpcbf --standard=phpcs.xml",
         "cs:check": "phpcs --standard=phpcs.xml --colors -ps",
-        "phpstan": "@php vendor/bin/phpstan analyse src tests --level 4"
+        "phpstan": "@php vendor/bin/phpstan analyse src tests --level 6"
     }
 }
