@@ -307,10 +307,11 @@ class Compiler
             $this->logger->debug('- remove original ' . $attribute->name);
             $node->removeAttribute($attribute->name);
 
+            if ($name === 'key') {
+                continue;
+            }
+
             switch ($name) {
-                case 'key':
-                    // Not necessary in twig
-                    return;
                 case 'style':
                     break;
                 case 'class':
