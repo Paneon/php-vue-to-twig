@@ -120,7 +120,7 @@ class Compiler
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
-        $html = trim(preg_replace('/\<template\>(.*)\<\/template\>/ism', '$1', $html));
+        $html = preg_replace('/\<template\>\s*(.*?)\s*\<\/template\>/ism', '$1', $html);
 
         if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
@@ -307,10 +307,11 @@ class Compiler
             $this->logger->debug('- remove original ' . $attribute->name);
             $node->removeAttribute($attribute->name);
 
+            if ($name === 'key') {
+                continue;
+            }
+
             switch ($name) {
-                case 'key':
-                    // Not necessary in twig
-                    return;
                 case 'style':
                     break;
                 case 'class':
