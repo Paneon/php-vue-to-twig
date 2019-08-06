@@ -1,4 +1,4 @@
 {% set slot_default_fallback %}Default Content{% endset %}
-<div>
+<div class="{{class|default('')}}">
   {{ slot_default|default(slot_default_fallback) }}
 </div>
