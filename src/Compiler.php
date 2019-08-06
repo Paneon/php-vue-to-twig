@@ -238,10 +238,10 @@ class Compiler
         }
 
         if ($node instanceof DOMElement){
-            if ($level === 1) {
-                $node = $this->handleRootNodeClassAttribute($node);
-            }
             $this->handleAttributeBinding($node);
+            if ($level === 1) {
+                $this->handleRootNodeClassAttribute($node);
+            }
         }
 
         foreach (iterator_to_array($node->childNodes) as $childNode) {
@@ -726,11 +726,12 @@ class Compiler
     }
 
     protected function handleRootNodeClassAttribute($node) {
-        if ($node->hasAttribute(':class')) {
-            $attributeVClass = $node->getAttributeNode(':class');
-            $attributeVClass->value .= " ~ ' ' ~ class|default('')";
+        $classString = "__DOUBLE_CURLY_OPEN__class__PIPE__default('')__DOUBLE_CURLY_CLOSE__";
+        if ($node->hasAttribute('class')) {
+            $attributeVClass = $node->getAttributeNode('class');
+            $attributeVClass->value .= ' ' . $classString;
         } else {
-            $attributeVClass = new DOMAttr(':class', "class|default('')");
+            $attributeVClass = new DOMAttr('class', $classString);
         }
         $node->setAttributeNode($attributeVClass);
         return $node;
