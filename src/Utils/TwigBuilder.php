@@ -170,6 +170,7 @@ class TwigBuilder
         $condition = str_replace('||', 'or', $condition);
         $condition = preg_replace('/!([^=])/', 'not $1', $condition);
         $condition = str_replace('.length', '|length', $condition);
+        $condition = str_replace('.trim', '|trim', $condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
