@@ -179,6 +179,14 @@ class TwigBuilder
         return $condition;
     }
 
+    public function refactorTextNode(string $content): string
+    {
+        $content = str_replace('.length', '|length', $content);
+        $content = str_replace('.trim', '|trim', $content);
+
+        return $content;
+    }
+
     public function createVariableOutput($varName, ?string $fallbackVariableName = null): string
     {
         if ($fallbackVariableName) {
