@@ -170,12 +170,21 @@ class TwigBuilder
         $condition = str_replace('||', 'or', $condition);
         $condition = preg_replace('/!([^=])/', 'not $1', $condition);
         $condition = str_replace('.length', '|length', $condition);
+        $condition = str_replace('.trim', '|trim', $condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
         }
 
         return $condition;
+    }
+
+    public function refactorTextNode(string $content): string
+    {
+        $content = str_replace('.length', '|length', $content);
+        $content = str_replace('.trim', '|trim', $content);
+
+        return $content;
     }
 
     public function createVariableOutput($varName, ?string $fallbackVariableName = null): string

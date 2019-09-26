@@ -391,6 +391,9 @@ class Compiler
 
     protected function handleTextNode(DOMText $node)
     {
+        if (!empty(trim($node->textContent))) {
+            $node->textContent = $this->builder->refactorTextNode($node->textContent);
+        }
         return $node;
     }
 
