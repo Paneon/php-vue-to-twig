@@ -3,6 +3,7 @@
 namespace Paneon\VueToTwig;
 
 use DOMAttr;
+use DOMComment;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
@@ -133,9 +134,9 @@ class Compiler
         return $html;
     }
 
-    public function convertNode(DOMNode $node): DOMNode
+    public function convertNode(DOMNode $node, int $level = 0): DOMNode
     {
-        if($node instanceof \DOMComment){
+        if($node instanceof DOMComment){
             return $node;
         }
         elseif($node instanceof DOMText){
@@ -236,12 +237,15 @@ class Compiler
             return $node;
         }
 
-        if($node instanceof DOMElement){
+        if ($node instanceof DOMElement){
             $this->handleAttributeBinding($node);
+            if ($level === 1) {
+                $this->handleRootNodeClassAttribute($node);
+            }
         }
 
         foreach (iterator_to_array($node->childNodes) as $childNode) {
-            $this->convertNode($childNode);
+            $this->convertNode($childNode, $level + 1);
         }
 
         return $node;
@@ -309,13 +313,6 @@ class Compiler
 
             if ($name === 'key') {
                 continue;
-            }
-
-            switch ($name) {
-                case 'style':
-                    break;
-                case 'class':
-                    break;
             }
 
             $regexArrayBinding = '/^\[([^\]]+)\]$/';
@@ -394,6 +391,9 @@ class Compiler
 
     protected function handleTextNode(DOMText $node)
     {
+        if (!empty(trim($node->textContent))) {
+            $node->textContent = $this->builder->refactorTextNode($node->textContent);
+        }
         return $node;
     }
 
@@ -726,5 +726,17 @@ class Compiler
             }
             $this->rawBlocks[] = $this->builder->createDefaultForVariable($property->getName(), $property->getDefault());
         }
+    }
+
+    protected function handleRootNodeClassAttribute($node) {
+        $classString = "__DOUBLE_CURLY_OPEN__class__PIPE__default('')__DOUBLE_CURLY_CLOSE__";
+        if ($node->hasAttribute('class')) {
+            $attributeVClass = $node->getAttributeNode('class');
+            $attributeVClass->value .= ' ' . $classString;
+        } else {
+            $attributeVClass = new DOMAttr('class', $classString);
+        }
+        $node->setAttributeNode($attributeVClass);
+        return $node;
     }
 }

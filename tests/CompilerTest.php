@@ -8,7 +8,7 @@ class CompilerTest extends AbstractTestCase
     public function leavesMustacheVariablesIntact()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';
-        $expected = '<div>{{ someVariable }}</div>';
+        $expected = '<div class="{{class|default(\'\')}}">{{ someVariable }}</div>';
         $compiler = $this->createCompiler($html);
 
         $actual = $compiler->convert();
@@ -28,7 +28,7 @@ class CompilerTest extends AbstractTestCase
   
 </template>';
 
-        $expected = '<div>{{ someVariable }}</div>';
+        $expected = '<div class="{{class|default(\'\')}}">{{ someVariable }}</div>';
 
         $compiler = $this->createCompiler($html);
         $actual = $compiler->convert();
@@ -40,7 +40,7 @@ class CompilerTest extends AbstractTestCase
     public function setBannerWithSingleLineAddsBannerCommentToTheTopOfTheTwigFile()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';
-        $expected = '{# This file was generated using VueToTwig #}<div>{{ someVariable }}</div>';
+        $expected = '{# This file was generated using VueToTwig #}<div class="{{class|default(\'\')}}">{{ someVariable }}</div>';
         $compiler = $this->createCompiler($html);
         $compiler->setBanner('This file was generated using VueToTwig');
 
@@ -58,7 +58,7 @@ class CompilerTest extends AbstractTestCase
  # This file was generated using VueToTwig
  # Source: assets/js/SomeComponent.vue
  #}
-<div>{{ someVariable }}</div>';
+<div class="{{class|default(\'\')}}">{{ someVariable }}</div>';
 
         $compiler = $this->createCompiler($html);
         $compiler->setBanner([
@@ -76,7 +76,7 @@ class CompilerTest extends AbstractTestCase
     public function canHandleUTF8()
     {
         $html = '<template><div>Äöü: 10,00€</div></template>';
-        $expected = '<div>Äöü: 10,00€</div>';
+        $expected = '<div class="{{class|default(\'\')}}">Äöü: 10,00€</div>';
 
         $compiler = $this->createCompiler($html);
         $actual = $compiler->convert();
