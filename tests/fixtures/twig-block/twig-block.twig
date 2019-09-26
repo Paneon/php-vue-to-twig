@@ -1,5 +1,5 @@
 {% set myCustomComputedProperty = false %}
-<div>
+<div class="{{class|default('')}}">
   <div>
     {% if myCustomComputedProperty %}
     <p>Show something</p>
