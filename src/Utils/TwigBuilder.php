@@ -125,8 +125,15 @@ class TwigBuilder
      */
     public function createIncludePartial(string $partialPath, array $variables = [])
     {
-        if (empty($variables)) {
-            return $this->createBlock('include "' . $partialPath . '"');
+        $hasClassProperty = false;
+        foreach ($variables as $variable) {
+            if ($variable->getName() === 'class') {
+                $hasClassProperty = true;
+            }
+        }
+
+        if (!$hasClassProperty) {
+            $variables[] = new Property('class', '""', false);
         }
 
         $serializedProperties = $this->serializeComponentProperties($variables);
