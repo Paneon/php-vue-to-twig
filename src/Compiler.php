@@ -277,6 +277,17 @@ class Compiler
                 $this->properties[$propName] = $property;
             }
         }
+
+        $typeScriptRegexProps = '/\@Prop\(.*?default\s*\:\s*(\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[^\s,]+).*?\)[^;]*?([a-zA-Z0-9_$]+)\!?\:[^;]*;/msx';
+
+        if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER )) {
+            $this->properties = [];
+            foreach ($typeScriptMatches as $typeScriptMatch) {
+                $property = new Property($typeScriptMatch[2], '', true);
+                $property->setDefault(trim($typeScriptMatch[1]));
+                $this->properties[$typeScriptMatch[2]] = $property;
+            }
+        }
     }
 
     public function replaceShowWithIf(DOMElement $node): void

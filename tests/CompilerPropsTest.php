@@ -20,6 +20,23 @@ class CompilerPropsTest extends AbstractTestCase
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
+    }
 
+    /** @test */
+    public function registersTypeScriptProperties()
+    {
+        $component = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props-typescript-default.vue');
+        $expected = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props-typescript-default.twig');
+
+        if(!$component){
+            self::fail('Component not found.');
+            return;
+        }
+
+        $compiler = $this->createCompiler($component);
+
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
     }
 }
