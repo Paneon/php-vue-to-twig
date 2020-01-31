@@ -278,7 +278,7 @@ class Compiler
             }
         }
 
-        $typeScriptRegexProps = '/\@Prop\(.*?default\s*\:\s*(\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[^\s,]+).*?\)[^;]*?([a-zA-Z0-9_$]+)\!?\:[^;]*;/msx';
+        $typeScriptRegexProps = '/\@Prop\(.*?default\s*\:\s*(?<defaultValue>\'(?:[^@](?!(?<![\\\\])\'))*.?\'|"(?:[^@](?!(?<![\\\\])"))*.?"|[^\s,]+).*?\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:[^;\@]*;/msx';
 
         if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER )) {
             $this->properties = [];

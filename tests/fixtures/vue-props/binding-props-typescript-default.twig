@@ -1,4 +1,8 @@
-{% set test = test|default('foo') %}
+{% set propBoolean = propBoolean|default(false) %}
+{% set propPresent = propPresent|default('') %}
+{% set propWithTypeNumber = propWithTypeNumber|default(0) %}
+{% set propPresentWithTypeAndDefault = propPresentWithTypeAndDefault|default('foo') %}
 <div class="{{class|default('')}}">
   {{ test }}
 </div>
+
