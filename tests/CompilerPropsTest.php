@@ -39,4 +39,5 @@ class CompilerPropsTest extends AbstractTestCase
 
         $this->assertEqualHtml($expected, $actual);
     }
+
 }
