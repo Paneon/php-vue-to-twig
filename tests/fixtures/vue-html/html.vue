@@ -5,7 +5,7 @@
 </template>
 
 <twig>
-  {% set rawHtml = '<strong>text</strong>' %}
+  {% set rawHtml = '&lt;strong&gt;text&lt;/strong&gt;' %}
 </twig>
 
 <script>

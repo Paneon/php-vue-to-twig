@@ -1,8 +1,6 @@
 {% set rawHtml = '<strong>text</strong>' %}
-<template>
-  <div>
-    <span>
-      {{ rawHtml|raw }}
-    </span>
-  </div>
-</template>
+<div class="{{class|default('')}}">
+  <span>
+    {{ rawHtml|raw }}
+  </span>
+</div>
