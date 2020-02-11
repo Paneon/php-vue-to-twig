@@ -149,6 +149,7 @@ class Compiler
             $this->replaceShowWithIf($node);
             $this->handleIf($node);
             $this->handleFor($node);
+            $this->handleHtml($node);
             $this->stripEventHandlers($node);
             //$this->handleRawHtml($node, $data);
             $this->handleDefaultSlot($node);
@@ -520,6 +521,21 @@ class Compiler
 
         $node->removeAttribute('v-for');
     }
+
+    private function handleHtml(DOMElement $node)
+    {
+        if (!$node->hasAttribute('v-html')) {
+            return;
+        }
+
+        $html = $node->getAttribute('v-html');
+        $node->removeAttribute('v-html');
+        while ($node->hasChildNodes()) {
+            $node->removeChild($node->firstChild);
+        }
+        $node->appendChild(new DOMText('{{ ' . $html . '|raw }}'));
+    }
+
 
     protected function addDefaultsToVariable($varName, $string): string
     {
