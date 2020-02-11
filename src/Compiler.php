@@ -152,6 +152,7 @@ class Compiler
             $this->stripEventHandlers($node);
             //$this->handleRawHtml($node, $data);
             $this->handleDefaultSlot($node);
+            $this->cleanupAttributes($node);
         }
 
         /*
@@ -406,6 +407,12 @@ class Compiler
             $node->textContent = $this->builder->refactorTextNode($node->textContent);
         }
         return $node;
+    }
+
+    private function cleanupAttributes(DOMElement $node) {
+        if ($node->hasAttribute('v-ref')) {
+            $node->removeAttribute('ref');
+        }
     }
 
     private function handleIf(DOMElement $node): void
