@@ -410,7 +410,7 @@ class Compiler
     }
 
     private function cleanupAttributes(DOMElement $node) {
-        if ($node->hasAttribute('v-ref')) {
+        if ($node->hasAttribute('ref')) {
             $node->removeAttribute('ref');
         }
     }
