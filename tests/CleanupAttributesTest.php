@@ -6,7 +6,7 @@ class CleanupAttributesTest extends AbstractTestCase
 {
     public function testCleanupAttributes()
     {
-        $vueTemplate = '<template><div ref="reference">dummy</div></template>';
+        $vueTemplate = '<template><div v-foo="bar" ref="reference">dummy</div></template>';
 
         $expected = '<div class="{{class|default(\'\')}}">dummy</div>';
 

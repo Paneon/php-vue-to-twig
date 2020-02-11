@@ -410,14 +410,20 @@ class Compiler
     }
 
     private function cleanupAttributes(DOMElement $node) {
-        if ($node->hasAttribute('ref')) {
-            $node->removeAttribute('ref');
+        $removeAttributes = [];
+        /** @var DOMAttr $attribute */
+        foreach ($node->attributes as $attribute) {
+            if (
+                strpos($attribute->name, 'v-') === 0
+                || preg_match('/^[:]?ref$/', $attribute->name) === 1
+            ) {
+                $removeAttributes[] = $attribute->name;
+            }
         }
-        if ($node->hasAttribute(':ref')) {
-            $node->removeAttribute(':ref');
+        foreach ($removeAttributes as $removeAttribute) {
+            $node->removeAttribute($removeAttribute);
         }
     }
-
     private function handleIf(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-if') &&
