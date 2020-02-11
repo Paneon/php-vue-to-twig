@@ -413,6 +413,9 @@ class Compiler
         if ($node->hasAttribute('ref')) {
             $node->removeAttribute('ref');
         }
+        if ($node->hasAttribute(':ref')) {
+            $node->removeAttribute(':ref');
+        }
     }
 
     private function handleIf(DOMElement $node): void
