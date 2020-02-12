@@ -150,7 +150,6 @@ class Compiler
             $this->handleIf($node);
             $this->handleFor($node);
             $this->stripEventHandlers($node);
-            //$this->handleRawHtml($node, $data);
             $this->handleDefaultSlot($node);
             $this->cleanupAttributes($node);
         }
@@ -413,6 +412,9 @@ class Compiler
         $removeAttributes = [];
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
+            if(strpos($attribute->name, 'v-bind:') === 0) {
+                continue;
+            }
             if (
                 strpos($attribute->name, 'v-') === 0
                 || preg_match('/^[:]?ref$/', $attribute->name) === 1
