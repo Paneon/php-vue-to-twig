@@ -1,7 +1,9 @@
 <div class="{{class|default('')}}">
   {% set slot_default_value %}
     <h4>My default slot title</h4>
-    <p>some text</p>
+    {% if true %}
+      <p>some text</p>
+    {% endif %}
   {% endset %}
   {% include "/templates/ChildComponent.twig" with { 'slot_default': slot_default_value, 'class': "" } %}
 </div>
