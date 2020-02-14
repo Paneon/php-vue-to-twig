@@ -754,11 +754,9 @@ class Compiler
 
     private function handleCommentNode(DOMComment $node)
     {
-        if (
-            stripos($node->nodeValue, 'eslint-disable') !== false
-            || stripos($node->nodeValue, 'todo') !== false
-        ) {
-            $node->deleteData(0, $node->length);
+        $nodeValue = trim($node->nodeValue);
+        if (stripos($nodeValue, 'eslint-disable') === 0 || stripos($nodeValue, 'todo') === 0) {
+            $node->parentNode->removeChild($node);
         }
     }
 }
