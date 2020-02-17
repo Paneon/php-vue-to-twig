@@ -755,7 +755,7 @@ class Compiler
     private function handleCommentNode(DOMComment $node)
     {
         $nodeValue = trim($node->nodeValue);
-        if (preg_match('/^(eslint-disable|@?todo)/', $nodeValue) === 1) {
+        if (preg_match('/^(eslint-disable|@?todo)/i', $nodeValue) === 1) {
             $node->parentNode->removeChild($node);
         }
     }
