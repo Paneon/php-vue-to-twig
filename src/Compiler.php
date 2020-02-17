@@ -121,7 +121,7 @@ class Compiler
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
 
-        $html = preg_replace('/\<template\>\s*(.*?)\s*\<\/template\>/ism', '$1', $html);
+        $html = trim(preg_replace('/<\/?template[^>]*?>/i', '', $html));
 
         if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
