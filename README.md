@@ -8,7 +8,7 @@ Compile vue files to twig templates with PHP
 
 |Directive|Implemented|
 |---------|:---------:|
-|v-text||
+|v-text|:white_check_mark:|
 |v-html|:white_check_mark:|
 |v-show|:white_check_mark:|
 |v-if|:white_check_mark:|
