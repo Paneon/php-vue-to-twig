@@ -314,8 +314,7 @@ class Compiler
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-            $value = $this->builder->refactorCondition($attribute->value);
-            $value = $this->builder->sanitizeAttributeValue($value);
+            $value = $this->builder->sanitizeAttributeValue($attribute->value);
             $this->logger->debug('- handle: ' . $name . ' = ' . $value);
 
             $staticValues = $node->hasAttribute($name) ? $node->getAttribute($name) : '';
@@ -389,6 +388,7 @@ class Compiler
 
                 $dynamicValues[] = $templateStringContent;
             } else {
+                $value = $this->builder->refactorCondition($value);
                 $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
                 $dynamicValues[] =
                     Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
