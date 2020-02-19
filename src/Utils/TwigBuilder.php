@@ -218,7 +218,6 @@ class TwigBuilder
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
         }
 
-
         return $condition;
     }
 
