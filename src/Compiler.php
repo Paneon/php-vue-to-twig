@@ -314,7 +314,8 @@ class Compiler
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-            $value = $this->builder->sanitizeAttributeValue($attribute->value);
+            $value = $this->builder->refactorCondition($attribute->value);
+            $value = $this->builder->sanitizeAttributeValue($value);
             $this->logger->debug('- handle: ' . $name . ' = ' . $value);
 
             $staticValues = $node->hasAttribute($name) ? $node->getAttribute($name) : '';
@@ -579,11 +580,15 @@ class Compiler
 
     private function stripEventHandlers(DOMElement $node)
     {
+        $removeAttributes = [];
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
             if (strpos($attribute->name, 'v-on:') === 0 || strpos($attribute->name, '@') === 0) {
-                $node->removeAttribute($attribute->name);
+                $removeAttributes[] = $attribute->name;
             }
+        }
+        foreach ($removeAttributes as $removeAttribute) {
+            $node->removeAttribute($removeAttribute);
         }
     }
 
