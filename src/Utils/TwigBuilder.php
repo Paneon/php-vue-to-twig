@@ -179,13 +179,7 @@ class TwigBuilder
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
 
-        if (preg_match_all('/(\S+)\s*\+\s*(\S+)/', $condition, $matches, PREG_SET_ORDER )) {
-            foreach ($matches as $match) {
-                if (!is_numeric($match[1]) || !is_numeric($match[2])) {
-                    $condition = str_replace($match[0], str_replace('+', '~', $match[0]), $condition);
-                }
-            }
-        }
+        $condition = $this->convertConcat($condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
@@ -219,7 +213,8 @@ class TwigBuilder
                 }
                 if ($quoteChar === null && $char === '}' && $lastChar === '}') {
                     $open = false;
-                    $refactoredContent .= $this->refactorCondition(trim($buffer, '}')) . '}}';
+                    $buffer = $this->convertTemplateString(trim($buffer, '}'));
+                    $refactoredContent .= $this->refactorCondition($buffer) . '}}';
                     $buffer = '';
                 }
             }
@@ -227,6 +222,43 @@ class TwigBuilder
         }
 
         return $refactoredContent;
+    }
+
+    private function convertConcat($content) {
+        if (preg_match_all('/(\S+)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER )) {
+            foreach ($matches as $match) {
+                $parts = explode('+', $match[0]);
+                $lastPart = null;
+                $convertedContent = '';
+                foreach ($parts as $part) {
+                    $part = trim($part);
+                    if ($lastPart !== null) {
+                        if (is_numeric($lastPart) && is_numeric($part)) {
+                            $convertedContent .= ' + ' . $part;
+                        } else {
+                            $convertedContent .= ' ~ ' . $part;
+                        }
+                    } else {
+                        $convertedContent = $part;
+                    }
+                    $lastPart = $part;
+                }
+                $content = str_replace($match[0], $convertedContent, $content);
+            }
+        }
+
+        return $content;
+    }
+
+    private function convertTemplateString($content) {
+        if (preg_match_all('/\`([^\`]+)\`/', $content, $matches, PREG_SET_ORDER )) {
+            foreach ($matches as $match) {
+                $match[1] = str_replace('${', '" ~ ', $match[1]);
+                $match[1] = str_replace('}', ' ~ "', $match[1]);
+                $content = str_replace($match[0], '"' . $match[1] . '"', $content);
+            }
+        }
+        return $content;
     }
 
     public function createVariableOutput($varName, ?string $fallbackVariableName = null): string

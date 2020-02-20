@@ -51,4 +51,16 @@ class TextNodeTest extends AbstractTestCase
 
         $this->assertEqualHtml($expected, $actual);
     }
+
+    public function testTextNodeWithTemplateString()
+    {
+        $html = '<template><div>{{ `Var = ${var}` }}</div></template>';
+        $expected = '<div class="{{class|default(\'\')}}">{{ "Var = " ~ var ~ "" }}</div>';
+
+        $compiler = $this->createCompiler($html);
+
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
+    }
 }
