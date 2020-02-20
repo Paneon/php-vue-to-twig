@@ -176,6 +176,7 @@ class TwigBuilder
         $condition = str_replace('&&', 'and', $condition);
         $condition = str_replace('||', 'or', $condition);
         $condition = preg_replace('/!([^=])/', 'not $1', $condition);
+        $condition = str_replace('+', '~', $condition);
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
 
@@ -188,10 +189,37 @@ class TwigBuilder
 
     public function refactorTextNode(string $content): string
     {
-        $content = str_replace('.length', '|length', $content);
-        $content = str_replace('.trim', '|trim', $content);
+        $refactoredContent = '';
+        $charsCount = mb_strlen($content, 'UTF-8');
+        $open = false;
+        $lastChar = null;
+        $quoteChar = null;
+        $buffer = '';
 
-        return $content;
+        for ($i = 0; $i < $charsCount; $i++) {
+            $char = mb_substr($content, $i, 1, 'UTF-8');
+            if ($open === false) {
+                $refactoredContent .= $char;
+                if ($char === '{' && $lastChar === '{') {
+                    $open = true;
+                }
+            } else {
+                $buffer .= $char;
+                if ($quoteChar === null && ($char === '"' || $char === '\'')) {
+                    $quoteChar = $char;
+                } elseif ($quoteChar === $char && $lastChar !== '\\') {
+                    $quoteChar = null;
+                }
+                if ($quoteChar === null && $char === '}' && $lastChar === '}') {
+                    $open = false;
+                    $refactoredContent .= $this->refactorCondition(trim($buffer, '}')) . '}}';
+                    $buffer = '';
+                }
+            }
+            $lastChar = $char;
+        }
+
+        return $refactoredContent;
     }
 
     public function createVariableOutput($varName, ?string $fallbackVariableName = null): string
