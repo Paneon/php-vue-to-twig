@@ -176,9 +176,16 @@ class TwigBuilder
         $condition = str_replace('&&', 'and', $condition);
         $condition = str_replace('||', 'or', $condition);
         $condition = preg_replace('/!([^=])/', 'not $1', $condition);
-        $condition = str_replace('+', '~', $condition);
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
+
+        if (preg_match_all('/(\S+)\s*\+\s*(\S+)/', $condition, $matches, PREG_SET_ORDER )) {
+            foreach ($matches as $match) {
+                if (!is_numeric($match[1]) || !is_numeric($match[2])) {
+                    $condition = str_replace($match[0], str_replace('+', '~', $match[0]), $condition);
+                }
+            }
+        }
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);

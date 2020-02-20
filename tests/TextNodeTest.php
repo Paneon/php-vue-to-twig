@@ -39,4 +39,16 @@ class TextNodeTest extends AbstractTestCase
 
         $this->assertEqualHtml($expected, $actual);
     }
+
+    public function testTextNodeNumbers()
+    {
+        $html = '<template><div>{{ 1 + 1 }}</div></template>';
+        $expected = '<div class="{{class|default(\'\')}}">{{ 1 + 1 }}</div>';
+
+        $compiler = $this->createCompiler($html);
+
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
+    }
 }
