@@ -179,7 +179,8 @@ class TwigBuilder
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
 
-        $condition = $this->convertConcat($condition);
+        $condition = str_replace('+', '~', $condition);
+//        $condition = $this->convertConcat($condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
@@ -253,9 +254,9 @@ class TwigBuilder
     private function convertTemplateString($content) {
         if (preg_match_all('/\`([^\`]+)\`/', $content, $matches, PREG_SET_ORDER )) {
             foreach ($matches as $match) {
-                $match[1] = str_replace('${', '" ~ ', $match[1]);
-                $match[1] = str_replace('}', ' ~ "', $match[1]);
-                $content = str_replace($match[0], '"' . $match[1] . '"', $content);
+                $match[1] = str_replace('${', '\' ~ ', $match[1]);
+                $match[1] = str_replace('}', ' ~ \'', $match[1]);
+                $content = str_replace($match[0], '\'' . $match[1] . '\'', $content);
             }
         }
         return $content;
