@@ -184,11 +184,16 @@ class Compiler
                 }
             }
 
+            foreach (iterator_to_array($node->childNodes) as $childNode) {
+                $this->convertNode($childNode, $level + 1);
+            }
+
             /*
              * Slots (Default)
              */
             if ($node->hasChildNodes()) {
                 $innerHtml = $this->innerHtmlOfNode($node);
+                $innerHtml = $this->replacePlaceholders($innerHtml);
                 $this->logger->debug('Add default slot:', [
                     'nodeValue' => $node->nodeValue,
                     'innerHtml' => $innerHtml,
