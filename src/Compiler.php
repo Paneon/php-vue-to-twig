@@ -395,6 +395,7 @@ class Compiler
 
                 $dynamicValues[] = $templateStringContent;
             } else {
+                $value = $this->builder->refactorCondition($value);
                 $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
                 $dynamicValues[] =
                     Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
@@ -605,11 +606,15 @@ class Compiler
 
     private function stripEventHandlers(DOMElement $node)
     {
+        $removeAttributes = [];
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
             if (strpos($attribute->name, 'v-on:') === 0 || strpos($attribute->name, '@') === 0) {
-                $node->removeAttribute($attribute->name);
+                $removeAttributes[] = $attribute->name;
             }
+        }
+        foreach ($removeAttributes as $removeAttribute) {
+            $node->removeAttribute($removeAttribute);
         }
     }
 
