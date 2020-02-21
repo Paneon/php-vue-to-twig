@@ -152,6 +152,7 @@ class Compiler
             $this->handleIf($node);
             $this->handleFor($node);
             $this->handleHtml($node);
+            $this->handleText($node);
             $this->stripEventHandlers($node);
             $this->handleDefaultSlot($node);
             $this->cleanupAttributes($node);
@@ -555,9 +556,22 @@ class Compiler
         while ($node->hasChildNodes()) {
             $node->removeChild($node->firstChild);
         }
-        $node->appendChild(new DOMText('{{ ' . $html . '|raw }}'));
+        $node->appendChild(new DOMText('{{' . $html . '|raw}}'));
     }
 
+    private function handleText(DOMElement $node)
+    {
+        if (!$node->hasAttribute('v-text')) {
+            return;
+        }
+
+        $text = $node->getAttribute('v-text');
+        $node->removeAttribute('v-text');
+        while ($node->hasChildNodes()) {
+            $node->removeChild($node->firstChild);
+        }
+        $node->appendChild(new DOMText('{{' . $text . '}}'));
+    }
 
     protected function addDefaultsToVariable($varName, $string): string
     {
