@@ -171,6 +171,41 @@ class TwigBuilder
 
     public function refactorCondition(string $condition): string
     {
+        $refactoredCondition = '';
+        $charsCount = mb_strlen($condition, 'UTF-8');
+        $quoteChar = null;
+        $lastChar = null;
+        $buffer = '';
+
+        for ($i = 0; $i < $charsCount; $i++) {
+            $char = mb_substr($condition, $i, 1, 'UTF-8');
+            if ($quoteChar === null && ($char === '"' || $char === '\'')) {
+                $quoteChar = $char;
+                if ($buffer !== '') {
+                    $refactoredCondition .= $this->refactorConditionPart($buffer);
+                    $buffer = '';
+                }
+                $refactoredCondition .= $char;
+            } elseif ($quoteChar === $char && $lastChar !== '\\') {
+                $quoteChar = null;
+                $refactoredCondition .= $char;
+            } else {
+                if ($quoteChar === null) {
+                    $buffer .= $char;
+                } else {
+                    $refactoredCondition .= $char;
+                }
+            }
+            $lastChar = $char;
+        }
+        if ($buffer !== '') {
+            $refactoredCondition .= $this->refactorConditionPart($buffer);
+        }
+
+        return $refactoredCondition;
+    }
+
+    private function refactorConditionPart($condition) {
         $condition = str_replace('===', '==', $condition);
         $condition = str_replace('!==', '!=', $condition);
         $condition = str_replace('&&', 'and', $condition);
