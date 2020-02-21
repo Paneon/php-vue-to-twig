@@ -30,8 +30,8 @@ class TextNodeTest extends AbstractTestCase
 
     public function testTextNodeDontCloseInQuote()
     {
-        $html = '<template><div>{{ \'}}\' + foo.trim }}</div></template>';
-        $expected = '<div class="{{class|default(\'\')}}">{{ \'}}\' ~ foo|trim }}</div>';
+        $html = '<template><div>{{ \'}}\' || foo.length }}</div></template>';
+        $expected = '<div class="{{class|default(\'\')}}">{{ \'}}\' or foo|length }}</div>';
 
         $compiler = $this->createCompiler($html);
 
@@ -44,6 +44,19 @@ class TextNodeTest extends AbstractTestCase
     {
         $html = '<template><div>{{ `Var = ${var}` }}</div></template>';
         $expected = '<div class="{{class|default(\'\')}}">{{ \'Var = \' ~ var ~ \'\' }}</div>';
+
+        $compiler = $this->createCompiler($html);
+
+        $actual = $compiler->convert();
+
+        $this->assertEqualHtml($expected, $actual);
+    }
+
+
+    public function testTextNodeNumbers()
+    {
+        $html = '<template><div>{{ 1 + 1 }}</div></template>';
+        $expected = '<div class="{{class|default(\'\')}}">{{ 1 + 1 }}</div>';
 
         $compiler = $this->createCompiler($html);
 

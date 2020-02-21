@@ -214,7 +214,6 @@ class TwigBuilder
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
 
-        $condition = str_replace('+', '~', $condition);
 //        $condition = $this->convertConcat($condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
@@ -261,7 +260,7 @@ class TwigBuilder
     }
 
     private function convertConcat($content) {
-        if (preg_match_all('/(\S+)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER )) {
+        if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER )) {
             foreach ($matches as $match) {
                 $parts = explode('+', $match[0]);
                 $lastPart = null;
