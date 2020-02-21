@@ -151,7 +151,6 @@ class Compiler
             $this->handleFor($node);
             $this->handleHtml($node);
             $this->stripEventHandlers($node);
-            //$this->handleRawHtml($node, $data);
             $this->handleDefaultSlot($node);
             $this->cleanupAttributes($node);
         }
@@ -416,14 +415,20 @@ class Compiler
     }
 
     private function cleanupAttributes(DOMElement $node) {
-        if ($node->hasAttribute('ref')) {
-            $node->removeAttribute('ref');
+        $removeAttributes = [];
+        /** @var DOMAttr $attribute */
+        foreach ($node->attributes as $attribute) {
+            if (
+                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind')
+                || preg_match('/^[:]?ref$/', $attribute->name) === 1
+            ) {
+                $removeAttributes[] = $attribute->name;
+            }
         }
-        if ($node->hasAttribute(':ref')) {
-            $node->removeAttribute(':ref');
+        foreach ($removeAttributes as $removeAttribute) {
+            $node->removeAttribute($removeAttribute);
         }
     }
-
     private function handleIf(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-if') &&
