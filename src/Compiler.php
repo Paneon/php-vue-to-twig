@@ -137,6 +137,7 @@ class Compiler
     public function convertNode(DOMNode $node, int $level = 0): DOMNode
     {
         if($node instanceof DOMComment){
+            $this->handleCommentNode($node);
             return $node;
         }
         elseif($node instanceof DOMText){
@@ -785,5 +786,13 @@ class Compiler
         }
         $node->setAttributeNode($attributeVClass);
         return $node;
+    }
+
+    private function handleCommentNode(DOMComment $node)
+    {
+        $nodeValue = trim($node->nodeValue);
+        if (preg_match('/^(eslint-disable|@?todo)/i', $nodeValue) === 1) {
+            $node->parentNode->removeChild($node);
+        }
     }
 }
