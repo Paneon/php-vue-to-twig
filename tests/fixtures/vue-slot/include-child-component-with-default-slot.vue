@@ -2,7 +2,7 @@
   <div>
     <ChildComponent>
       <h4>My default slot title</h4>
-      <p>some text</p>
+      <p v-if="true">some text</p>
     </ChildComponent>
   </div>
 </template>
