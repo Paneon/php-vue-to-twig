@@ -5,5 +5,7 @@
     <img src="{{imageSrc}}">
     <div class="a b c"></div>
     <div title="Title" class="category-filter-list categories {{ isSomething ? 'block ' }} {{ not isSomething ? 'block2 ' }}"></div>
+    <div class="{{getClasses(not hasSomething)}}"></div>
+    <div style="{{'display: none !important'}}">Hidden</div>
   </div>
 </div>

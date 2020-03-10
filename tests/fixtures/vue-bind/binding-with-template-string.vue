@@ -4,6 +4,7 @@
       Hello World
     </div>
     <div :class="`${isTrue ? 'a' : 'b'}`"></div>
+    <div :style="`${isTrue ? 'display: block;' : 'display: none !important;'}`"></div>
   </div>
 </template>
 

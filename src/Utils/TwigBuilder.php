@@ -171,6 +171,41 @@ class TwigBuilder
 
     public function refactorCondition(string $condition): string
     {
+        $refactoredCondition = '';
+        $charsCount = mb_strlen($condition, 'UTF-8');
+        $quoteChar = null;
+        $lastChar = null;
+        $buffer = '';
+
+        for ($i = 0; $i < $charsCount; $i++) {
+            $char = mb_substr($condition, $i, 1, 'UTF-8');
+            if ($quoteChar === null && ($char === '"' || $char === '\'')) {
+                $quoteChar = $char;
+                if ($buffer !== '') {
+                    $refactoredCondition .= $this->refactorConditionPart($buffer);
+                    $buffer = '';
+                }
+                $refactoredCondition .= $char;
+            } elseif ($quoteChar === $char && $lastChar !== '\\') {
+                $quoteChar = null;
+                $refactoredCondition .= $char;
+            } else {
+                if ($quoteChar === null) {
+                    $buffer .= $char;
+                } else {
+                    $refactoredCondition .= $char;
+                }
+            }
+            $lastChar = $char;
+        }
+        if ($buffer !== '') {
+            $refactoredCondition .= $this->refactorConditionPart($buffer);
+        }
+
+        return $refactoredCondition;
+    }
+
+    private function refactorConditionPart($condition) {
         $condition = str_replace('===', '==', $condition);
         $condition = str_replace('!==', '!=', $condition);
         $condition = str_replace('&&', 'and', $condition);
@@ -178,6 +213,8 @@ class TwigBuilder
         $condition = preg_replace('/!([^=])/', 'not $1', $condition);
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
+
+//        $condition = $this->convertConcat($condition);
 
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
@@ -188,9 +225,74 @@ class TwigBuilder
 
     public function refactorTextNode(string $content): string
     {
-        $content = str_replace('.length', '|length', $content);
-        $content = str_replace('.trim', '|trim', $content);
+        $refactoredContent = '';
+        $charsCount = mb_strlen($content, 'UTF-8');
+        $open = false;
+        $lastChar = null;
+        $quoteChar = null;
+        $buffer = '';
 
+        for ($i = 0; $i < $charsCount; $i++) {
+            $char = mb_substr($content, $i, 1, 'UTF-8');
+            if ($open === false) {
+                $refactoredContent .= $char;
+                if ($char === '{' && $lastChar === '{') {
+                    $open = true;
+                }
+            } else {
+                $buffer .= $char;
+                if ($quoteChar === null && ($char === '"' || $char === '\'')) {
+                    $quoteChar = $char;
+                } elseif ($quoteChar === $char && $lastChar !== '\\') {
+                    $quoteChar = null;
+                }
+                if ($quoteChar === null && $char === '}' && $lastChar === '}') {
+                    $open = false;
+                    $buffer = $this->convertTemplateString(trim($buffer, '}'));
+                    $refactoredContent .= $this->refactorCondition($buffer) . '}}';
+                    $buffer = '';
+                }
+            }
+            $lastChar = $char;
+        }
+
+        return $refactoredContent;
+    }
+
+    private function convertConcat($content) {
+        if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER )) {
+            foreach ($matches as $match) {
+                $parts = explode('+', $match[0]);
+                $lastPart = null;
+                $convertedContent = '';
+                foreach ($parts as $part) {
+                    $part = trim($part);
+                    if ($lastPart !== null) {
+                        if (is_numeric($lastPart) && is_numeric($part)) {
+                            $convertedContent .= ' + ' . $part;
+                        } else {
+                            $convertedContent .= ' ~ ' . $part;
+                        }
+                    } else {
+                        $convertedContent = $part;
+                    }
+                    $lastPart = $part;
+                }
+                $content = str_replace($match[0], $convertedContent, $content);
+            }
+        }
+
+        return $content;
+    }
+
+    private function convertTemplateString($content) {
+        if (preg_match_all('/\`([^\`]+)\`/', $content, $matches, PREG_SET_ORDER )) {
+            foreach ($matches as $match) {
+                $match[1] = str_replace('${', '\' ~ ', $match[1]);
+                $match[1] = str_replace('}', ' ~ \'', $match[1]);
+                $content = str_replace($match[0], '\'' . $match[1] . '\'', $content);
+            }
+        }
         return $content;
     }
 
