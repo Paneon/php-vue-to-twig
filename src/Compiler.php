@@ -407,7 +407,7 @@ class Compiler
             }
 
             $node->setAttribute(
-                $name,
+                $name === 'src' ? Replacements::getSanitizedConstant('SRC_ATTRIBUTE_NAME') : $name,
                 $this->implodeAttributeValue($name, $dynamicValues, $staticValues)
             );
         }

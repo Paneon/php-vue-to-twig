@@ -12,6 +12,7 @@ abstract class Replacements extends BasicEnum
     public const SMALLER = '<';
     public const AMPERSAND = '&';
     public const PIPE = '|';
+    public const SRC_ATTRIBUTE_NAME = 'src';
 
     /**
      * Removes all instances of replacements from target
