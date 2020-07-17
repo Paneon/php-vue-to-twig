@@ -387,11 +387,14 @@ class Compiler
                  */
                 $templateStringContent = $matches['content'];
 
-                $templateStringContent = preg_replace(
-                    '/\$\{([^}]+)\}/',
-                    '{{ $1 }}',
-                    $templateStringContent
-                );
+                preg_match_all('/\$\{([^}]+)\}/', $templateStringContent, $matches, PREG_SET_ORDER);
+                foreach ($matches as $match) {
+                    $templateStringContent = str_replace(
+                        $match[0],
+                        '{{ ' . $this->builder->refactorCondition($match[1]) . ' }}',
+                        $templateStringContent
+                    );
+                }
 
                 $dynamicValues[] = $templateStringContent;
             } else {
@@ -404,7 +407,7 @@ class Compiler
             }
 
             $node->setAttribute(
-                $name,
+                $name === 'src' ? Replacements::getSanitizedConstant('SRC_ATTRIBUTE_NAME') : $name,
                 $this->implodeAttributeValue($name, $dynamicValues, $staticValues)
             );
         }
