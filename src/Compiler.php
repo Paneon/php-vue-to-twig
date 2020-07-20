@@ -406,10 +406,27 @@ class Compiler
                     Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
             }
 
-            $node->setAttribute(
-                $name === 'src' ? Replacements::getSanitizedConstant('SRC_ATTRIBUTE_NAME') : $name,
-                $this->implodeAttributeValue($name, $dynamicValues, $staticValues)
-            );
+            /** @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
+            switch ($name) {
+                case 'href':
+                    $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_HREF');
+                    break;
+                case 'action':
+                    $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_ACTION');
+                    break;
+                case 'src':
+                    $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_SRC');
+                    break;
+                case 'name':
+                    if ($node->tagName === 'a') {
+                        $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_A_NAME');
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            $node->setAttribute($name, $this->implodeAttributeValue($name, $dynamicValues, $staticValues));
         }
     }
 
