@@ -1,0 +1,19 @@
+<div class="{{class|default('')}}">
+  {% if someCondition %}
+    <div>
+      <h1>Headline</h1>
+    </div>
+  {% elseif someOtherCondition %}
+  <div>
+    {% if yetAnotherCondition %}
+      <h2>Headline 2.1</h2>
+    {% else %}
+      <h2>Headline 2.2</h2>
+    {% endif %}
+  </div>
+  {% else %}
+  <div>
+    <h3>Headline 3</h3>
+  </div>
+  {% endif %}
+</div>
