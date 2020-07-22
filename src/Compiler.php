@@ -17,23 +17,34 @@ use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
+use ReflectionException;
 use RuntimeException;
 
 class Compiler
 {
-    /** @var Component[] */
+    /**
+     * @var Component[]
+     */
     protected $components;
 
-    /** @var DOMDocument */
+    /**
+     * @var DOMDocument
+     */
     protected $document;
 
-    /** @var DOMText[]|null */
+    /**
+     * @var DOMText[]|null
+     */
     protected $lastCloseIf;
 
-    /** @var LoggerInterface */
+    /**
+     * @var LoggerInterface
+     */
     protected $logger;
 
-    /** @var string[] */
+    /**
+     * @var string[]
+     */
     protected $banner;
 
     /**
@@ -41,7 +52,9 @@ class Compiler
      */
     protected $builder;
 
-    /** @var Property[] */
+    /**
+     * @var Property[]
+     */
     protected $properties;
 
     /**
@@ -59,7 +72,9 @@ class Compiler
      */
     protected $stripWhitespace = true;
 
-    /** @var string[] */
+    /**
+     * @var string[]
+     */
     protected $rawBlocks = [];
 
     /**
@@ -95,7 +110,10 @@ class Compiler
     }
 
     /**
+     * @throws ReflectionException
      * @throws Exception
+     *
+     * @return string
      */
     public function convert(): string
     {
@@ -278,6 +296,9 @@ class Compiler
         return $node;
     }
 
+    /**
+     * @param DOMElement $scriptElement
+     */
     public function registerProperties(DOMElement $scriptElement): void
     {
         $content = $this->innerHtmlOfNode($scriptElement);
@@ -317,6 +338,9 @@ class Compiler
         }
     }
 
+    /**
+     * @param DOMElement $node
+     */
     public function replaceShowWithIf(DOMElement $node): void
     {
         if ($node->hasAttribute('v-show')) {
@@ -326,7 +350,9 @@ class Compiler
     }
 
     /**
-     * @throws Exception
+     * @param DOMElement $node
+     *
+     * @throws ReflectionException
      */
     private function handleAttributeBinding(DOMElement $node): void
     {
@@ -449,6 +475,13 @@ class Compiler
         }
     }
 
+    /**
+     * @param DOMText $node
+     *
+     * @throws ReflectionException
+     *
+     * @return DOMText
+     */
     protected function handleTextNode(DOMText $node): DOMText
     {
         if (!empty(trim($node->textContent))) {
@@ -458,6 +491,9 @@ class Compiler
         return $node;
     }
 
+    /**
+     * @param DOMElement $node
+     */
     private function cleanupAttributes(DOMElement $node): void
     {
         $removeAttributes = [];
@@ -475,6 +511,12 @@ class Compiler
         }
     }
 
+    /**
+     * @param DOMElement $node
+     * @param int        $level
+     *
+     * @throws ReflectionException
+     */
     private function handleIf(DOMElement $node, int $level): void
     {
         if (!$node->hasAttribute('v-if') &&
@@ -532,6 +574,9 @@ class Compiler
         }
     }
 
+    /**
+     * @param DOMElement $node
+     */
     private function handleFor(DOMElement $node): void
     {
         /** @var DOMElement $node */
@@ -586,6 +631,9 @@ class Compiler
         $node->removeAttribute('v-for');
     }
 
+    /**
+     * @param DOMElement $node
+     */
     private function handleHtml(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-html')) {
@@ -600,6 +648,9 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $html . '|raw}}'));
     }
 
+    /**
+     * @param DOMElement $node
+     */
     private function handleText(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-text')) {
@@ -614,6 +665,12 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $text . '}}'));
     }
 
+    /**
+     * @param string $varName
+     * @param string $string
+     *
+     * @return string
+     */
     protected function addDefaultsToVariable(string $varName, string $string): string
     {
         if (!in_array($varName, array_keys($this->properties))) {
@@ -633,6 +690,11 @@ class Compiler
         return $string;
     }
 
+    /**
+     * @param string $property
+     *
+     * @return string
+     */
     private function transformCamelCaseToCSS(string $property): string
     {
         $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
@@ -646,6 +708,9 @@ class Compiler
         return $cssProperty;
     }
 
+    /**
+     * @param DOMElement $node
+     */
     private function stripEventHandlers(DOMElement $node): void
     {
         $removeAttributes = [];
@@ -685,7 +750,7 @@ class Compiler
     /**
      * @param string $string
      *
-     * @throws \ReflectionException
+     * @throws ReflectionException
      *
      * @return string
      */
