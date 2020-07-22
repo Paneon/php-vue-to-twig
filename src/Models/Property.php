@@ -18,8 +18,14 @@ class Property
      */
     protected $isBinding;
 
+    /**
+     * @var bool
+     */
     protected $isRequired;
 
+    /**
+     * @var null
+     */
     protected $default;
 
     public function __construct(string $name, string $value, bool $isBinding)
@@ -72,7 +78,7 @@ class Property
     }
 
     /**
-     * @return null
+     * @return null|mixed
      */
     public function getDefault()
     {

@@ -10,81 +10,92 @@ class TwigBuilder
     protected const OPEN = 0;
     protected const CLOSE = 1;
 
+    /**
+     * @var mixed[]
+     */
     protected $options;
 
+    /**
+     * TwigBuilder constructor.
+     *
+     * @param mixed[] $options
+     */
     public function __construct(array $options = [])
     {
-        $this->options = array_merge([
-            'tag_comment' => ['{#', '#}'],
-            'tag_block' => ['{%', '%}'],
-            'tag_variable' => ['{{', '}}'],
-            'whitespace_trim' => '-',
-            'interpolation' => ['#{', '}'],
-        ], $options);
+        $this->options = array_merge(
+            [
+                'tag_comment' => ['{#', '#}'],
+                'tag_block' => ['{%', '%}'],
+                'tag_variable' => ['{{', '}}'],
+                'whitespace_trim' => '-',
+                'interpolation' => ['#{', '}'],
+            ],
+            $options
+        );
     }
 
-    public function createSet($name)
+    public function createSet(string $name): string
     {
         return $this->createBlock('set ' . $name);
     }
 
-    public function closeSet()
+    public function closeSet(): string
     {
         return $this->createBlock('endset');
     }
 
-    public function createVariable($name, $assignment)
+    public function createVariable(string $name, string $assignment): string
     {
         return $this->createBlock('set ' . $name . ' = ' . $assignment);
     }
 
-    public function createDefaultForVariable($name, $defaultValue)
+    public function createDefaultForVariable(string $name, string $defaultValue): string
     {
         return $this->createBlock('set ' . $name . ' = ' . $name . '|default(' . $defaultValue . ')');
     }
 
-    public function createMultilineVariable($name, $assignment)
+    public function createMultilineVariable(string $name, string $assignment): string
     {
         return $this->createBlock('set ' . $name)
             . $assignment
             . $this->createBlock('endset');
     }
 
-    public function createIf(string $condition)
+    public function createIf(string $condition): string
     {
         $condition = $this->refactorCondition($condition);
 
         return $this->createBlock('if ' . $condition);
     }
 
-    public function createElseIf(string $condition)
+    public function createElseIf(string $condition): string
     {
         $condition = $this->refactorCondition($condition);
 
         return $this->createBlock('elseif ' . $condition);
     }
 
-    public function createElse()
+    public function createElse(): string
     {
         return $this->createBlock('else');
     }
 
-    public function createEndIf()
+    public function createEndIf(): string
     {
         return $this->createBlock('endif');
     }
 
-    public function createForItemInList(string $item, string $list)
+    public function createForItemInList(string $item, string $list): string
     {
         return $this->createBlock('for ' . $item . ' in ' . $list);
     }
 
-    public function createForKeyInList(string $key, string $list)
+    public function createForKeyInList(string $key, string $list): string
     {
         return $this->createBlock('for ' . $key . ' in ' . $list);
     }
 
-    public function createFor(string $list, ?string $item = null, ?string $key = null)
+    public function createFor(string $list, ?string $item = null, ?string $key = null): ?string
     {
         if ($item !== null && $key !== null) {
             return $this->createBlock('for ' . $key . ', ' . $item . ' in ' . $list);
@@ -97,22 +108,28 @@ class TwigBuilder
         return null;
     }
 
-    public function createEndFor()
+    public function createEndFor(): string
     {
         return $this->createBlock('endfor');
     }
 
-    public function createComment(string $comment)
+    public function createComment(string $comment): string
     {
         return $this->options['tag_comment'][self::OPEN] . ' ' . $comment . ' ' . $this->options['tag_comment'][self::CLOSE];
     }
 
-    public function createMultilineComment(array $comments)
+    /**
+     * @param string[] $comments
+     */
+    public function createMultilineComment(array $comments): string
     {
-        return $this->options['tag_comment'][self::OPEN] . ' ' . implode("\n", $comments) . ' ' . $this->options['tag_comment'][self::CLOSE];
+        return $this->options['tag_comment'][self::OPEN] . ' ' . implode(
+                "\n",
+                $comments
+            ) . ' ' . $this->options['tag_comment'][self::CLOSE];
     }
 
-    public function createBlock($content)
+    public function createBlock(string $content): string
     {
         return "\n" . $this->options['tag_block'][self::OPEN] . ' ' . $content . ' ' . $this->options['tag_block'][self::CLOSE];
     }
@@ -123,7 +140,7 @@ class TwigBuilder
      *
      * @return string
      */
-    public function createIncludePartial(string $partialPath, array $variables = [])
+    public function createIncludePartial(string $partialPath, array $variables = []): string
     {
         $hasClassProperty = false;
         foreach ($variables as $variable) {
@@ -205,7 +222,8 @@ class TwigBuilder
         return $refactoredCondition;
     }
 
-    private function refactorConditionPart($condition) {
+    private function refactorConditionPart(string $condition): string
+    {
         $condition = str_replace('===', '==', $condition);
         $condition = str_replace('!==', '!=', $condition);
         $condition = str_replace('&&', 'and', $condition);
@@ -259,8 +277,9 @@ class TwigBuilder
         return $refactoredContent;
     }
 
-    private function convertConcat($content) {
-        if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER )) {
+    private function convertConcat(string $content): string
+    {
+        if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $parts = explode('+', $match[0]);
                 $lastPart = null;
@@ -285,8 +304,9 @@ class TwigBuilder
         return $content;
     }
 
-    private function convertTemplateString($content) {
-        if (preg_match_all('/\`([^\`]+)\`/', $content, $matches, PREG_SET_ORDER )) {
+    private function convertTemplateString(string $content): string
+    {
+        if (preg_match_all('/\`([^\`]+)\`/', $content, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $match[1] = str_replace('${', '\' ~ ', $match[1]);
                 $match[1] = str_replace('}', ' ~ \'', $match[1]);
@@ -296,7 +316,7 @@ class TwigBuilder
         return $content;
     }
 
-    public function createVariableOutput($varName, ?string $fallbackVariableName = null): string
+    public function createVariableOutput(string $varName, ?string $fallbackVariableName = null): string
     {
         if ($fallbackVariableName) {
             return '{{ ' . $varName . '|default(' . $fallbackVariableName . ') }}';
