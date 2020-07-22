@@ -35,11 +35,11 @@
         "ext-simplexml": "*",
         "phpunit/phpunit": "^7",
         "monolog/monolog": "^1.24",
-        "phpstan/phpstan": "^0.11.8"
+        "phpstan/phpstan": "^0.12"
     },
     "scripts": {
         "cs:fix": "phpcbf --standard=phpcs.xml",
         "cs:check": "phpcs --standard=phpcs.xml --colors -ps",
-        "phpstan": "@php vendor/bin/phpstan analyse src tests --level 6"
+        "phpstan": "@php vendor/bin/phpstan analyse src --level 6"
     }
 }
