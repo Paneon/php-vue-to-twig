@@ -18,14 +18,13 @@ use Psr\Log\LoggerInterface;
 
 class Compiler
 {
-
     /** @var Component[] */
     protected $components;
 
     /** @var DOMDocument */
     protected $document;
 
-    /** @var DOMText|null */
+    /** @var DOMText[]|null */
     protected $lastCloseIf;
 
     /** @var LoggerInterface */
@@ -56,7 +55,7 @@ class Compiler
         $this->builder = new TwigBuilder();
         $this->document = $document;
         $this->logger = $logger;
-        $this->lastCloseIf = null;
+        $this->lastCloseIf = [];
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
@@ -149,7 +148,7 @@ class Compiler
         }
         elseif($node instanceof DOMElement){
             $this->replaceShowWithIf($node);
-            $this->handleIf($node);
+            $this->handleIf($node, $level);
             $this->handleFor($node);
             $this->handleHtml($node);
             $this->handleText($node);
@@ -436,7 +435,8 @@ class Compiler
             $node->removeAttribute($removeAttribute);
         }
     }
-    private function handleIf(DOMElement $node): void
+
+    private function handleIf(DOMElement $node, int $level): void
     {
         if (!$node->hasAttribute('v-if') &&
             !$node->hasAttribute('v-else-if') &&
@@ -460,7 +460,7 @@ class Compiler
             $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
 
-            $this->lastCloseIf = $closeIf;
+            $this->lastCloseIf[$level] = $closeIf;
 
             $node->removeAttribute('v-if');
             $node->removeAttribute('data-twig-if');
@@ -473,23 +473,23 @@ class Compiler
             }
 
             // Replace old endif with else
-            $this->lastCloseIf->textContent = $this->builder->createElseIf($condition);
+            $this->lastCloseIf[$level]->textContent = $this->builder->createElseIf($condition);
 
             // Close with new endif
             $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
-            $this->lastCloseIf = $closeIf;
+            $this->lastCloseIf[$level] = $closeIf;
 
             $node->removeAttribute('v-else-if');
             $node->removeAttribute('data-twig-if');
         } elseif ($node->hasAttribute('v-else')) {
             // Replace old endif with else
-            $this->lastCloseIf->textContent = $this->builder->createElse();
+            $this->lastCloseIf[$level]->textContent = $this->builder->createElse();
 
             // Close with new endif
             $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
-            $this->lastCloseIf = $closeIf;
+            $this->lastCloseIf[$level] = $closeIf;
 
             $node->removeAttribute('v-else');
         }
