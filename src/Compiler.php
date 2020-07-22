@@ -15,17 +15,17 @@ use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 class Compiler
 {
-
     /** @var Component[] */
     protected $components;
 
     /** @var DOMDocument */
     protected $document;
 
-    /** @var DOMText|null */
+    /** @var DOMText[]|null */
     protected $lastCloseIf;
 
     /** @var LoggerInterface */
@@ -42,10 +42,19 @@ class Compiler
     /** @var Property[] */
     protected $properties;
 
+    /**
+     * @var mixed[]
+     */
     protected $replaceVariables = [];
 
+    /**
+     * @var mixed[]
+     */
     protected $variables = [];
 
+    /**
+     * @var bool
+     */
     protected $stripWhitespace = true;
 
     /** @var string[] */
@@ -56,7 +65,7 @@ class Compiler
         $this->builder = new TwigBuilder();
         $this->document = $document;
         $this->logger = $logger;
-        $this->lastCloseIf = null;
+        $this->lastCloseIf = [];
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
@@ -88,7 +97,6 @@ class Compiler
         /** @var DOMElement|null $scriptElement */
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
 
-        /** @var \DOMNodeList $twigBlocks */
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
         if ($scriptElement) {
@@ -114,7 +122,7 @@ class Compiler
             $html = implode("\n", $this->rawBlocks) . "\n" . $html;
         }
 
-        if(!$html){
+        if (!$html) {
             throw new Exception('Generating html during conversion process failed.');
         }
 
@@ -137,19 +145,16 @@ class Compiler
 
     public function convertNode(DOMNode $node, int $level = 0): DOMNode
     {
-        if($node instanceof DOMComment){
+        if ($node instanceof DOMComment) {
             $this->handleCommentNode($node);
             return $node;
-        }
-        elseif($node instanceof DOMText){
+        } elseif ($node instanceof DOMText) {
             return $this->handleTextNode($node);
-        }
-        elseif($node instanceof DOMDocument){
+        } elseif ($node instanceof DOMDocument) {
             $this->logger->warning("Document node found.");
-        }
-        elseif($node instanceof DOMElement){
+        } elseif ($node instanceof DOMElement) {
             $this->replaceShowWithIf($node);
-            $this->handleIf($node);
+            $this->handleIf($node, $level);
             $this->handleFor($node);
             $this->handleHtml($node);
             $this->handleText($node);
@@ -172,7 +177,7 @@ class Compiler
                         $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
                         $value = $attribute->value;
 
-                        if(substr_count($value,'`')){
+                        if (substr_count($value, '`')) {
                             $value = $this->refactorTemplateString($attribute->value);
                         } else {
 
@@ -196,10 +201,13 @@ class Compiler
             if ($node->hasChildNodes()) {
                 $innerHtml = $this->innerHtmlOfNode($node);
                 $innerHtml = $this->replacePlaceholders($innerHtml);
-                $this->logger->debug('Add default slot:', [
-                    'nodeValue' => $node->nodeValue,
-                    'innerHtml' => $innerHtml,
-                ]);
+                $this->logger->debug(
+                    'Add default slot:',
+                    [
+                        'nodeValue' => $node->nodeValue,
+                        'innerHtml' => $innerHtml,
+                    ]
+                );
 
                 $slot = $usedComponent->addDefaultSlot($innerHtml);
 
@@ -246,7 +254,7 @@ class Compiler
             return $node;
         }
 
-        if ($node instanceof DOMElement){
+        if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             if ($level === 1) {
                 $this->handleRootNodeClassAttribute($node);
@@ -260,7 +268,7 @@ class Compiler
         return $node;
     }
 
-    public function registerProperties(DOMElement $scriptElement)
+    public function registerProperties(DOMElement $scriptElement): void
     {
         $content = $this->innerHtmlOfNode($scriptElement);
 
@@ -289,7 +297,7 @@ class Compiler
 
         $typeScriptRegexProps = '/\@Prop\(.*?default\s*\:\s*(?<defaultValue>\'(?:[^\n](?!(?<![\\\\])\'))*.?\'|"(?:[^\n](?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+).*?\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:[^;\@]*;/msx';
 
-        if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER )) {
+        if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER)) {
             $this->properties = [];
             foreach ($typeScriptMatches as $typeScriptMatch) {
                 $property = new Property($typeScriptMatch['propName'], '', true);
@@ -310,7 +318,7 @@ class Compiler
     /**
      * @throws Exception
      */
-    private function handleAttributeBinding(DOMElement $node)
+    private function handleAttributeBinding(DOMElement $node): void
     {
         /** @var DOMAttr $attribute */
         foreach (iterator_to_array($node->attributes) as $attribute) {
@@ -406,14 +414,31 @@ class Compiler
                     Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
             }
 
-            $node->setAttribute(
-                $name === 'src' ? Replacements::getSanitizedConstant('SRC_ATTRIBUTE_NAME') : $name,
-                $this->implodeAttributeValue($name, $dynamicValues, $staticValues)
-            );
+            /** @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
+            switch ($name) {
+                case 'href':
+                    $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_HREF');
+                    break;
+                case 'action':
+                    $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_ACTION');
+                    break;
+                case 'src':
+                    $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_SRC');
+                    break;
+                case 'name':
+                    if ($node->tagName === 'a') {
+                        $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_A_NAME');
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+            $node->setAttribute($name, $this->implodeAttributeValue($name, $dynamicValues, $staticValues));
         }
     }
 
-    protected function handleTextNode(DOMText $node)
+    protected function handleTextNode(DOMText $node): DOMText
     {
         if (!empty(trim($node->textContent))) {
             $node->textContent = $this->builder->refactorTextNode($node->textContent);
@@ -421,7 +446,8 @@ class Compiler
         return $node;
     }
 
-    private function cleanupAttributes(DOMElement $node) {
+    private function cleanupAttributes(DOMElement $node): void
+    {
         $removeAttributes = [];
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
@@ -436,7 +462,8 @@ class Compiler
             $node->removeAttribute($removeAttribute);
         }
     }
-    private function handleIf(DOMElement $node): void
+
+    private function handleIf(DOMElement $node, int $level): void
     {
         if (!$node->hasAttribute('v-if') &&
             !$node->hasAttribute('v-else-if') &&
@@ -460,7 +487,7 @@ class Compiler
             $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
 
-            $this->lastCloseIf = $closeIf;
+            $this->lastCloseIf[$level] = $closeIf;
 
             $node->removeAttribute('v-if');
             $node->removeAttribute('data-twig-if');
@@ -473,29 +500,29 @@ class Compiler
             }
 
             // Replace old endif with else
-            $this->lastCloseIf->textContent = $this->builder->createElseIf($condition);
+            $this->lastCloseIf[$level]->textContent = $this->builder->createElseIf($condition);
 
             // Close with new endif
             $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
-            $this->lastCloseIf = $closeIf;
+            $this->lastCloseIf[$level] = $closeIf;
 
             $node->removeAttribute('v-else-if');
             $node->removeAttribute('data-twig-if');
         } elseif ($node->hasAttribute('v-else')) {
             // Replace old endif with else
-            $this->lastCloseIf->textContent = $this->builder->createElse();
+            $this->lastCloseIf[$level]->textContent = $this->builder->createElse();
 
             // Close with new endif
             $closeIf = $this->document->createTextNode($this->builder->createEndIf());
             $node->parentNode->insertBefore($closeIf, $node->nextSibling);
-            $this->lastCloseIf = $closeIf;
+            $this->lastCloseIf[$level] = $closeIf;
 
             $node->removeAttribute('v-else');
         }
     }
 
-    private function handleFor(DOMElement $node)
+    private function handleFor(DOMElement $node): void
     {
         /** @var DOMElement $node */
         if (!$node->hasAttribute('v-for')) {
@@ -549,7 +576,7 @@ class Compiler
         $node->removeAttribute('v-for');
     }
 
-    private function handleHtml(DOMElement $node)
+    private function handleHtml(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-html')) {
             return;
@@ -563,7 +590,7 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $html . '|raw}}'));
     }
 
-    private function handleText(DOMElement $node)
+    private function handleText(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-text')) {
             return;
@@ -577,7 +604,7 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $text . '}}'));
     }
 
-    protected function addDefaultsToVariable($varName, $string): string
+    protected function addDefaultsToVariable(string $varName, string $string): string
     {
         if (!in_array($varName, array_keys($this->properties))) {
             return $string;
@@ -600,14 +627,16 @@ class Compiler
     {
         $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
 
-        if(!$cssProperty){
-            throw new Exception(
+        if (!$cssProperty) {
+            throw new RuntimeException(
                 sprintf('Failed to convert style property %s into css property name.', $property)
             );
         }
+
+        return $cssProperty;
     }
 
-    private function stripEventHandlers(DOMElement $node)
+    private function stripEventHandlers(DOMElement $node): void
     {
         $removeAttributes = [];
         /** @var DOMAttr $attribute */
@@ -621,6 +650,9 @@ class Compiler
         }
     }
 
+    /**
+     * @param mixed[] $values
+     */
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
     {
         $glue = ' ';
@@ -636,7 +668,7 @@ class Compiler
         return implode($glue, $values);
     }
 
-    protected function replacePlaceholders(string $string)
+    protected function replacePlaceholders(string $string): string
     {
         foreach (Replacements::getConstants() as $constant => $value) {
             $string = str_replace(Replacements::getSanitizedConstant($constant), $value, $string);
@@ -649,17 +681,17 @@ class Compiler
         return $string;
     }
 
-    public function registerComponent(string $componentName, string $componentPath)
+    public function registerComponent(string $componentName, string $componentPath): void
     {
         $this->components[strtolower($componentName)] = new Component($componentName, $componentPath);
     }
 
-    protected function addSingleLineBanner(string $html)
+    protected function addSingleLineBanner(string $html): string
     {
         return $this->builder->createComment(implode('', $this->banner)) . "\n" . $html;
     }
 
-    protected function addBanner(string $html)
+    protected function addBanner(string $html): string
     {
         if (count($this->banner) === 1) {
             return $this->addSingleLineBanner($html);
@@ -678,7 +710,7 @@ class Compiler
         return $html;
     }
 
-    public function refactorTemplateString($value)
+    public function refactorTemplateString(string $value): string
     {
         if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
             $templateStringContent = '"' . $matches['content'] . '"';
@@ -692,17 +724,18 @@ class Compiler
         return $value;
     }
 
-    public function innerHtmlOfNode(DOMNode $element)
+    public function innerHtmlOfNode(DOMNode $element): string
     {
         $innerHTML = "";
         $children = $element->childNodes;
 
         foreach ($children as $child) {
+            /** @var DOMNode $child */
             $html = $element->ownerDocument->saveHTML($child);
 
-            if(!$html){
-                throw new Exception(
-                    sprintf('Generation of html for child element %s failed', $child)
+            if (!$html) {
+                throw new RuntimeException(
+                    sprintf('Generation of html for child element %s failed', $child->nodeName)
                 );
             }
 
@@ -712,7 +745,7 @@ class Compiler
         return $innerHTML;
     }
 
-    public function stripWhitespace($html)
+    public function stripWhitespace(string $html): string
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
         $html = str_replace("\n", '', $html);
@@ -741,12 +774,21 @@ class Compiler
         return $this;
     }
 
-    protected function addReplaceVariable($safeString, $value)
+
+    /**
+     * @param mixed $value
+     */
+    protected function addReplaceVariable(string $safeString, $value): void
     {
         $this->replaceVariables[$safeString] = $value;
     }
 
-    protected function addVariable($name, $value)
+    /**
+     * @param mixed $value
+     *
+     * @throws Exception
+     */
+    protected function addVariable(string $name, $value): void
     {
         if (isset($this->variables[$name])) {
             throw new Exception("The variable $name is already registered.", 500);
@@ -766,7 +808,7 @@ class Compiler
         return implode('', $blocks) . $string;
     }
 
-    protected function handleDefaultSlot(DOMElement $node)
+    protected function handleDefaultSlot(DOMElement $node): void
     {
         if ($node->nodeName !== 'slot') {
             return;
@@ -776,7 +818,10 @@ class Compiler
 
         if ($slotFallback) {
             $this->addVariable('slot_default_fallback', $slotFallback);
-            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME, 'slot_default_fallback');
+            $variable = $this->builder->createVariableOutput(
+                Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME,
+                'slot_default_fallback'
+            );
         } else {
             $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME);
         }
@@ -789,17 +834,21 @@ class Compiler
 
     }
 
-    protected function insertDefaultValues()
+    protected function insertDefaultValues(): void
     {
         foreach ($this->properties as $property) {
             if (!$property->hasDefault()) {
                 continue;
             }
-            $this->rawBlocks[] = $this->builder->createDefaultForVariable($property->getName(), $property->getDefault());
+            $this->rawBlocks[] = $this->builder->createDefaultForVariable(
+                $property->getName(),
+                $property->getDefault()
+            );
         }
     }
 
-    protected function handleRootNodeClassAttribute($node) {
+    protected function handleRootNodeClassAttribute(DOMElement $node): DOMElement
+    {
         $classString = "__DOUBLE_CURLY_OPEN__class__PIPE__default('')__DOUBLE_CURLY_CLOSE__";
         if ($node->hasAttribute('class')) {
             $attributeVClass = $node->getAttributeNode('class');
@@ -808,10 +857,11 @@ class Compiler
             $attributeVClass = new DOMAttr('class', $classString);
         }
         $node->setAttributeNode($attributeVClass);
+
         return $node;
     }
 
-    private function handleCommentNode(DOMComment $node)
+    private function handleCommentNode(DOMComment $node): void
     {
         $nodeValue = trim($node->nodeValue);
         if (preg_match('/^(eslint-disable|@?todo)/i', $nodeValue) === 1) {

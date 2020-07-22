@@ -26,6 +26,9 @@ abstract class BasicEnum
         return self::$constCacheArray[$calledClass];
     }
 
+    /**
+     * @return bool|false|int|string
+     */
     public static function getNameForValue(string $value)
     {
         try {
