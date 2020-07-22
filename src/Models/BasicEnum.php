@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Models;
 
@@ -11,8 +13,9 @@ abstract class BasicEnum
     private static $constCacheArray = [];
 
     /**
-     * @return mixed[]
      * @throws ReflectionException
+     *
+     * @return mixed[]
      */
     public static function getConstants(): array
     {
@@ -27,6 +30,8 @@ abstract class BasicEnum
     }
 
     /**
+     * @param string $value
+     *
      * @return bool|false|int|string
      */
     public static function getNameForValue(string $value)
@@ -40,6 +45,12 @@ abstract class BasicEnum
         return array_search($value, $constants);
     }
 
+    /**
+     * @param string $name
+     * @param bool   $strict
+     *
+     * @return bool
+     */
     public static function isValidName(string $name, bool $strict = false): bool
     {
         try {
@@ -59,6 +70,8 @@ abstract class BasicEnum
 
     /**
      * @param mixed $value
+     *
+     * @return bool
      */
     public static function isValidValue($value): bool
     {

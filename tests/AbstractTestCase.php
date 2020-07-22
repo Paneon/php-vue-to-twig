@@ -1,15 +1,26 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Tests;
 
 use DirectoryIterator;
 use DOMDocument;
+use Exception;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Paneon\VueToTwig\Compiler;
+use PHPUnit\Framework\TestCase;
 
-abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
+abstract class AbstractTestCase extends TestCase
 {
+    /**
+     * @param string $template
+     *
+     * @throws Exception
+     *
+     * @return Compiler
+     */
     protected function createCompiler(string $template): Compiler
     {
         $document = $this->createDocumentWithHtml($template);
@@ -18,14 +29,23 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         return $compiler;
     }
 
+    /**
+     * @throws Exception
+     *
+     * @return Logger
+     */
     protected function createLogger(): Logger
     {
         $logger = new Logger('test');
-        $logger->pushHandler(new StreamHandler(__DIR__.'/../var/dev/test.log'));
+        $logger->pushHandler(new StreamHandler(__DIR__ . '/../var/dev/test.log'));
 
         return $logger;
     }
 
+    /**
+     * @param $expected
+     * @param $actual
+     */
     protected function assertEqualHtml($expected, $actual)
     {
         $this->assertEquals(
@@ -34,22 +54,32 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         );
     }
 
+    /**
+     * @param string $html
+     *
+     * @return DOMDocument
+     */
     protected function createDocumentWithHtml(string $html): DOMDocument
     {
         $vueDocument = new DOMDocument('1.0', 'utf-8');
-        @$vueDocument->loadHTML('<?xml encoding="utf-8" ?>'.$html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
+        @$vueDocument->loadHTML('<?xml encoding="utf-8" ?>' . $html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
 
         return $vueDocument;
     }
 
+    /**
+     * @param string $html
+     *
+     * @return string
+     */
     protected function normalizeHtml(string $html): string
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
         $html = str_replace("\n", '', $html);
 
         // Trim node text
-        $html = preg_replace('/\>[^\S ]+/s', ">", $html);
-        $html = preg_replace('/[^\S ]+\</s', "<", $html);
+        $html = preg_replace('/>[^\S ]+/s', '>', $html);
+        $html = preg_replace('/[^\S ]+</s', '<', $html);
 
         $html = preg_replace('/> </s', '><', $html);
         $html = preg_replace('/} </s', '}<', $html);
@@ -59,9 +89,14 @@ abstract class AbstractTestCase extends \PHPUnit\Framework\TestCase
         return $html ?? '';
     }
 
+    /**
+     * @param string $dir
+     *
+     * @return array
+     */
     protected function loadFixturesFromDir(string $dir): array
     {
-        $fixtureDir = __DIR__.'/fixtures/'.$dir;
+        $fixtureDir = __DIR__ . '/fixtures/' . $dir;
 
         $cases = [];
 

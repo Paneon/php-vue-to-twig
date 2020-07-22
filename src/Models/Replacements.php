@@ -1,24 +1,42 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paneon\VueToTwig\Models;
 
 use InvalidArgumentException;
+use ReflectionException;
 
 abstract class Replacements extends BasicEnum
 {
     public const DOUBLE_CURLY_OPEN = '{{';
+
     public const DOUBLE_CURLY_CLOSE = '}}';
+
     public const GREATER = '>';
+
     public const SMALLER = '<';
+
     public const AMPERSAND = '&';
+
     public const PIPE = '|';
+
     public const ATTRIBUTE_NAME_HREF = 'href';
+
     public const ATTRIBUTE_NAME_ACTION = 'action';
+
     public const ATTRIBUTE_NAME_SRC = 'src';
+
     public const ATTRIBUTE_NAME_A_NAME = 'name';
 
     /**
-     * Removes all instances of replacements from target
+     * Removes all instances of replacements from target.
+     *
+     * @param string $target
+     *
+     * @throws ReflectionException
+     *
+     * @return string
      */
     public static function sanitize(string $target): string
     {
@@ -29,19 +47,29 @@ abstract class Replacements extends BasicEnum
         return $target;
     }
 
+    /**
+     * @param string $constant
+     *
+     * @return string
+     */
     public static function getSanitizedConstant(string $constant): string
     {
         return '__' . $constant . '__';
     }
 
     /**
-     * Removes all instances of one specified replacement from target
+     * Removes all instances of one specified replacement from target.
+     *
+     * @param string $target
+     * @param string $singleReplacement
+     *
+     * @return string
      */
     public static function sanitizeSingleReplacement(string $target, string $singleReplacement): string
     {
         if (!Replacements::isValidValue($singleReplacement)) {
             throw new InvalidArgumentException(
-                sprintf("%s is not a valid Replacement value.", $singleReplacement)
+                sprintf('%s is not a valid Replacement value.', $singleReplacement)
             );
         }
 

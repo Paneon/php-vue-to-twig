@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paneon\VueToTwig\Models;
 
 class Property
@@ -8,6 +10,7 @@ class Property
      * @var string
      */
     protected $name;
+
     /**
      * @var string
      */
@@ -24,10 +27,17 @@ class Property
     protected $isRequired;
 
     /**
-     * @var null
+     * @var string|null
      */
     protected $default;
 
+    /**
+     * Property constructor.
+     *
+     * @param string $name
+     * @param string $value
+     * @param bool   $isBinding
+     */
     public function __construct(string $name, string $value, bool $isBinding)
     {
         $this->name = $name;
@@ -78,24 +88,26 @@ class Property
     }
 
     /**
-     * @return null|mixed
+     * @return string|null
      */
     public function getDefault()
     {
         return $this->default;
     }
 
+    /**
+     * @return bool
+     */
     public function hasDefault(): bool
     {
         return $this->default !== null;
     }
 
     /**
-     * @param mixed $default
+     * @param string $default
      */
-    public function setDefault($default): void
+    public function setDefault(string $default): void
     {
         $this->default = $default;
     }
-
 }

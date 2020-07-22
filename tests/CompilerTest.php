@@ -2,9 +2,15 @@
 
 namespace Paneon\VueToTwig\Tests;
 
+use Exception;
+
 class CompilerTest extends AbstractTestCase
 {
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function leavesMustacheVariablesIntact()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';
@@ -16,7 +22,11 @@ class CompilerTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function stripsOutWhitespaceBetweenTags()
     {
         $html = '
@@ -36,7 +46,11 @@ class CompilerTest extends AbstractTestCase
         $this->assertEquals($expected, $actual);
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function setBannerWithSingleLineAddsBannerCommentToTheTopOfTheTwigFile()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';
@@ -47,10 +61,13 @@ class CompilerTest extends AbstractTestCase
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
-
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function setBannerAddsMultipleCommentsToTheTopOfTheTwigFile()
     {
         $html = '<template><div>{{ someVariable }}</div></template>';
@@ -69,10 +86,13 @@ class CompilerTest extends AbstractTestCase
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
-
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function canHandleUTF8()
     {
         $html = '<template><div>Äöü: 10,00€</div></template>';

@@ -35,7 +35,8 @@
         "ext-simplexml": "*",
         "phpunit/phpunit": "^7",
         "monolog/monolog": "^1.24",
-        "phpstan/phpstan": "^0.12"
+        "phpstan/phpstan": "^0.12",
+        "friendsofphp/php-cs-fixer": "^2.16"
     },
     "scripts": {
         "cs:fix": "phpcbf --standard=phpcs.xml",
