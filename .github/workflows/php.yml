@@ -29,13 +29,13 @@ jobs:
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest
-    
+
     - name: Run PHPUnit
       run: phpunit
-    
+
     - name: Run PHPStan
       uses: actions-x/phpstan@v1
       with:
-        paths: src tests
+        paths: src
         level: 6
         phpstanVersion: ^0.12
