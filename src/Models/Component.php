@@ -3,18 +3,17 @@
 namespace Paneon\VueToTwig\Models;
 
 
-use DOMDocument;
-use Exception;
-
 class Component
 {
 
     /** @var String[] */
     protected $components = [];
+
     /**
      * @var string
      */
     protected $name;
+
     /**
      * @var string
      */
@@ -32,11 +31,13 @@ class Component
         $this->path = $path;
     }
 
-    public function getName(){
+    public function getName(): string
+    {
         return $this->name;
     }
 
-    public function getPath(){
+    public function getPath(): string
+    {
         return $this->path;
     }
 
@@ -48,12 +49,13 @@ class Component
         return $this->properties;
     }
 
-    public function registerComponents(string $name, string $path)
+    public function registerComponents(string $name, string $path): void
     {
         $this->components[$name] = $path;
     }
 
-    public function addProperty(string $name, string $value, bool $isBinding = false) {
+    public function addProperty(string $name, string $value, bool $isBinding = false): void
+    {
         $this->properties[] = new Property(
             $this->kebabToCamelCase($name),
             $value,
@@ -61,12 +63,12 @@ class Component
         );
     }
 
-    public function addDefaultSlot($value): Slot
+    public function addDefaultSlot(string $value): Slot
     {
         return $this->addSlot(Slot::SLOT_DEFAULT_NAME, $value);
     }
 
-    public function addSlot(string $name, $value): Slot
+    public function addSlot(string $name, string $value): Slot
     {
         $this->slots[$name] = new Slot($name, $value);
 
@@ -79,7 +81,7 @@ class Component
         return $this->slots[$name];
     }
 
-    public function kebabToCamelCase($string, $capitalizeFirstCharacter = false)
+    public function kebabToCamelCase(string $string, bool $capitalizeFirstCharacter = false): string
     {
         $str = str_replace('-', '', ucwords($string, '-'));
 
@@ -90,7 +92,7 @@ class Component
         return $str;
     }
 
-    public function hasSlots()
+    public function hasSlots(): bool
     {
         return !empty($this->slots);
     }
