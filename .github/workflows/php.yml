@@ -36,6 +36,6 @@ jobs:
     - name: Run PHPStan
       uses: actions-x/phpstan@v1
       with:
-        directories: src tests
+        paths: src tests
         level: 6
         phpstanVersion: ^0.12
