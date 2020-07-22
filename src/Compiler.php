@@ -890,7 +890,8 @@ class Compiler
     }
 
     /**
-     * @param mixed $value
+     * @param string $safeString
+     * @param mixed  $value
      */
     protected function addReplaceVariable(string $safeString, $value): void
     {
@@ -898,7 +899,8 @@ class Compiler
     }
 
     /**
-     * @param mixed $value
+     * @param string $name
+     * @param mixed  $value
      *
      * @throws Exception
      */
