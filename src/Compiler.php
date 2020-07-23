@@ -173,11 +173,9 @@ class Compiler
             $this->handleCommentNode($node);
 
             return $node;
-        }
-        if ($node instanceof DOMText) {
+        } elseif ($node instanceof DOMText) {
             return $this->handleTextNode($node);
-        }
-        if ($node instanceof DOMDocument) {
+        } elseif ($node instanceof DOMDocument) {
             $this->logger->warning('Document node found.');
         } elseif ($node instanceof DOMElement) {
             $this->replaceShowWithIf($node);
