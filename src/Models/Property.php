@@ -33,10 +33,6 @@ class Property
 
     /**
      * Property constructor.
-     *
-     * @param string $name
-     * @param string $value
-     * @param bool   $isBinding
      */
     public function __construct(string $name, string $value, bool $isBinding)
     {
@@ -47,41 +43,26 @@ class Property
         $this->default = null;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @return string
-     */
     public function getValue(): string
     {
         return $this->value;
     }
 
-    /**
-     * @return bool
-     */
     public function isBinding(): bool
     {
         return $this->isBinding;
     }
 
-    /**
-     * @return bool
-     */
     public function isRequired(): bool
     {
         return $this->isRequired;
     }
 
-    /**
-     * @param bool $isRequired
-     */
     public function setIsRequired(bool $isRequired): void
     {
         $this->isRequired = $isRequired;
@@ -95,17 +76,11 @@ class Property
         return $this->default;
     }
 
-    /**
-     * @return bool
-     */
     public function hasDefault(): bool
     {
         return $this->default !== null;
     }
 
-    /**
-     * @param string $default
-     */
     public function setDefault(string $default): void
     {
         $this->default = $default;

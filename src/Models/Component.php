@@ -35,9 +35,6 @@ class Component
 
     /**
      * Component constructor.
-     *
-     * @param string $name
-     * @param string $path
      */
     public function __construct(string $name = '', string $path = '')
     {
@@ -45,17 +42,11 @@ class Component
         $this->path = $path;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
     }
 
-    /**
-     * @return string
-     */
     public function getPath(): string
     {
         return $this->path;
@@ -69,20 +60,11 @@ class Component
         return $this->properties;
     }
 
-    /**
-     * @param string $name
-     * @param string $path
-     */
     public function registerComponents(string $name, string $path): void
     {
         $this->components[$name] = $path;
     }
 
-    /**
-     * @param string $name
-     * @param string $value
-     * @param bool   $isBinding
-     */
     public function addProperty(string $name, string $value, bool $isBinding = false): void
     {
         $this->properties[] = new Property(
@@ -93,11 +75,7 @@ class Component
     }
 
     /**
-     * @param string $value
-     *
      * @throws Exception
-     *
-     * @return Slot
      */
     public function addDefaultSlot(string $value): Slot
     {
@@ -105,12 +83,7 @@ class Component
     }
 
     /**
-     * @param string $name
-     * @param string $value
-     *
      * @throws Exception
-     *
-     * @return Slot
      */
     public function addSlot(string $name, string $value): Slot
     {
@@ -125,12 +98,6 @@ class Component
         return $this->slots[$name];
     }
 
-    /**
-     * @param string $string
-     * @param bool   $capitalizeFirstCharacter
-     *
-     * @return string
-     */
     public function kebabToCamelCase(string $string, bool $capitalizeFirstCharacter = false): string
     {
         $str = str_replace('-', '', ucwords($string, '-'));
@@ -142,9 +109,6 @@ class Component
         return $str;
     }
 
-    /**
-     * @return bool
-     */
     public function hasSlots(): bool
     {
         return !empty($this->slots);

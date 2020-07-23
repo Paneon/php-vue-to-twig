@@ -32,11 +32,7 @@ abstract class Replacements extends BasicEnum
     /**
      * Removes all instances of replacements from target.
      *
-     * @param string $target
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     public static function sanitize(string $target): string
     {
@@ -47,11 +43,6 @@ abstract class Replacements extends BasicEnum
         return $target;
     }
 
-    /**
-     * @param string $constant
-     *
-     * @return string
-     */
     public static function getSanitizedConstant(string $constant): string
     {
         return '__' . $constant . '__';
@@ -59,18 +50,11 @@ abstract class Replacements extends BasicEnum
 
     /**
      * Removes all instances of one specified replacement from target.
-     *
-     * @param string $target
-     * @param string $singleReplacement
-     *
-     * @return string
      */
     public static function sanitizeSingleReplacement(string $target, string $singleReplacement): string
     {
         if (!Replacements::isValidValue($singleReplacement)) {
-            throw new InvalidArgumentException(
-                sprintf('%s is not a valid Replacement value.', $singleReplacement)
-            );
+            throw new InvalidArgumentException(sprintf('%s is not a valid Replacement value.', $singleReplacement));
         }
 
         $constantName = Replacements::getNameForValue($singleReplacement);

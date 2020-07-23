@@ -38,9 +38,6 @@ class Slot
     /**
      * Slot constructor.
      *
-     * @param string $name
-     * @param string $value
-     *
      * @throws Exception
      */
     public function __construct(string $name, string $value)
@@ -50,9 +47,6 @@ class Slot
         $this->value = $value;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
@@ -63,33 +57,21 @@ class Slot
         return $this->value;
     }
 
-    /**
-     * @return string
-     */
     public function getSlotPropertyName(): string
     {
         return self::SLOT_PREFIX . $this->name;
     }
 
-    /**
-     * @return string
-     */
     public function getSlotValueName(): string
     {
         return self::SLOT_PREFIX . $this->name . self::SLOT_VALUE_SUFFIX;
     }
 
-    /**
-     * @return string
-     */
     public function getSlotContentVariableString(): string
     {
         return '__SLOT_' . $this->uuid . '__';
     }
 
-    /**
-     * @return string
-     */
     public function getUuid(): string
     {
         return $this->uuid;

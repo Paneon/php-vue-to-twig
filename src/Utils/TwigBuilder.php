@@ -38,52 +38,26 @@ class TwigBuilder
         );
     }
 
-    /**
-     * @param string $name
-     *
-     * @return string
-     */
     public function createSet(string $name): string
     {
         return $this->createBlock('set ' . $name);
     }
 
-    /**
-     * @return string
-     */
     public function closeSet(): string
     {
         return $this->createBlock('endset');
     }
 
-    /**
-     * @param string $name
-     * @param string $assignment
-     *
-     * @return string
-     */
     public function createVariable(string $name, string $assignment): string
     {
         return $this->createBlock('set ' . $name . ' = ' . $assignment);
     }
 
-    /**
-     * @param string $name
-     * @param string $defaultValue
-     *
-     * @return string
-     */
     public function createDefaultForVariable(string $name, string $defaultValue): string
     {
         return $this->createBlock('set ' . $name . ' = ' . $name . '|default(' . $defaultValue . ')');
     }
 
-    /**
-     * @param string $name
-     * @param string $assignment
-     *
-     * @return string
-     */
     public function createMultilineVariable(string $name, string $assignment): string
     {
         return $this->createBlock('set ' . $name)
@@ -92,11 +66,7 @@ class TwigBuilder
     }
 
     /**
-     * @param string $condition
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     public function createIf(string $condition): string
     {
@@ -106,11 +76,7 @@ class TwigBuilder
     }
 
     /**
-     * @param string $condition
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     public function createElseIf(string $condition): string
     {
@@ -119,51 +85,26 @@ class TwigBuilder
         return $this->createBlock('elseif ' . $condition);
     }
 
-    /**
-     * @return string
-     */
     public function createElse(): string
     {
         return $this->createBlock('else');
     }
 
-    /**
-     * @return string
-     */
     public function createEndIf(): string
     {
         return $this->createBlock('endif');
     }
 
-    /**
-     * @param string $item
-     * @param string $list
-     *
-     * @return string
-     */
     public function createForItemInList(string $item, string $list): string
     {
         return $this->createBlock('for ' . $item . ' in ' . $list);
     }
 
-    /**
-     * @param string $key
-     * @param string $list
-     *
-     * @return string
-     */
     public function createForKeyInList(string $key, string $list): string
     {
         return $this->createBlock('for ' . $key . ' in ' . $list);
     }
 
-    /**
-     * @param string      $list
-     * @param string|null $item
-     * @param string|null $key
-     *
-     * @return string|null
-     */
     public function createFor(string $list, ?string $item = null, ?string $key = null): ?string
     {
         if ($item !== null && $key !== null) {
@@ -179,19 +120,11 @@ class TwigBuilder
         return null;
     }
 
-    /**
-     * @return string
-     */
     public function createEndFor(): string
     {
         return $this->createBlock('endfor');
     }
 
-    /**
-     * @param string $comment
-     *
-     * @return string
-     */
     public function createComment(string $comment): string
     {
         return $this->options['tag_comment'][self::OPEN] . ' ' . $comment . ' ' . $this->options['tag_comment'][self::CLOSE];
@@ -199,8 +132,6 @@ class TwigBuilder
 
     /**
      * @param string[] $comments
-     *
-     * @return string
      */
     public function createMultilineComment(array $comments): string
     {
@@ -210,21 +141,13 @@ class TwigBuilder
         ) . ' ' . $this->options['tag_comment'][self::CLOSE];
     }
 
-    /**
-     * @param string $content
-     *
-     * @return string
-     */
     public function createBlock(string $content): string
     {
         return "\n" . $this->options['tag_block'][self::OPEN] . ' ' . $content . ' ' . $this->options['tag_block'][self::CLOSE];
     }
 
     /**
-     * @param string     $partialPath
      * @param Property[] $variables
-     *
-     * @return string
      */
     public function createIncludePartial(string $partialPath, array $variables = []): string
     {
@@ -246,8 +169,6 @@ class TwigBuilder
 
     /**
      * @param Property[] $properties
-     *
-     * @return string
      */
     public function serializeComponentProperties(array $properties): string
     {
@@ -265,11 +186,6 @@ class TwigBuilder
         return '{ ' . implode(', ', $props) . ' }';
     }
 
-    /**
-     * @param string $value
-     *
-     * @return string
-     */
     public function sanitizeAttributeValue(string $value): string
     {
         $value = Replacements::sanitizeSingleReplacement($value, Replacements::PIPE);
@@ -278,11 +194,7 @@ class TwigBuilder
     }
 
     /**
-     * @param string $condition
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     public function refactorCondition(string $condition): string
     {
@@ -321,11 +233,7 @@ class TwigBuilder
     }
 
     /**
-     * @param string $condition
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     private function refactorConditionPart(string $condition): string
     {
@@ -347,11 +255,7 @@ class TwigBuilder
     }
 
     /**
-     * @param string $content
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     public function refactorTextNode(string $content): string
     {
@@ -389,11 +293,6 @@ class TwigBuilder
         return $refactoredContent;
     }
 
-    /**
-     * @param string $content
-     *
-     * @return string
-     */
     public function convertConcat(string $content): string
     {
         if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER)) {
@@ -421,11 +320,6 @@ class TwigBuilder
         return $content;
     }
 
-    /**
-     * @param string $content
-     *
-     * @return string
-     */
     private function convertTemplateString(string $content): string
     {
         if (preg_match_all('/`([^`]+)`/', $content, $matches, PREG_SET_ORDER)) {
@@ -439,12 +333,6 @@ class TwigBuilder
         return $content;
     }
 
-    /**
-     * @param string      $varName
-     * @param string|null $fallbackVariableName
-     *
-     * @return string
-     */
     public function createVariableOutput(string $varName, ?string $fallbackVariableName = null): string
     {
         if ($fallbackVariableName) {

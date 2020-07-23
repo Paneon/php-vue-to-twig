@@ -12,7 +12,6 @@ class VueIfTest extends AbstractTestCase
      * @param mixed $html
      * @param mixed $expected
      *
-     *
      * @throws Exception
      */
     public function testIf($html, $expected)

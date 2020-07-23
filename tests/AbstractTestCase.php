@@ -15,11 +15,7 @@ use PHPUnit\Framework\TestCase;
 abstract class AbstractTestCase extends TestCase
 {
     /**
-     * @param string $template
-     *
      * @throws Exception
-     *
-     * @return Compiler
      */
     protected function createCompiler(string $template): Compiler
     {
@@ -31,8 +27,6 @@ abstract class AbstractTestCase extends TestCase
 
     /**
      * @throws Exception
-     *
-     * @return Logger
      */
     protected function createLogger(): Logger
     {
@@ -54,11 +48,6 @@ abstract class AbstractTestCase extends TestCase
         );
     }
 
-    /**
-     * @param string $html
-     *
-     * @return DOMDocument
-     */
     protected function createDocumentWithHtml(string $html): DOMDocument
     {
         $vueDocument = new DOMDocument('1.0', 'utf-8');
@@ -67,11 +56,6 @@ abstract class AbstractTestCase extends TestCase
         return $vueDocument;
     }
 
-    /**
-     * @param string $html
-     *
-     * @return string
-     */
     protected function normalizeHtml(string $html): string
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
@@ -89,11 +73,6 @@ abstract class AbstractTestCase extends TestCase
         return $html ?? '';
     }
 
-    /**
-     * @param string $dir
-     *
-     * @return array
-     */
     protected function loadFixturesFromDir(string $dir): array
     {
         $fixtureDir = __DIR__ . '/fixtures/' . $dir;

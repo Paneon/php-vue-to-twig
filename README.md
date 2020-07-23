@@ -1,5 +1,7 @@
 # php-vue-to-twig
 
+![CI](https://github.com/Paneon/php-vue-to-twig/workflows/PHP%20Composer/badge.svg)
+
 Compile vue files to twig templates with PHP
 
 ## Directives

@@ -79,9 +79,6 @@ class Compiler
 
     /**
      * Compiler constructor.
-     *
-     * @param DOMDocument     $document
-     * @param LoggerInterface $logger
      */
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
@@ -112,8 +109,6 @@ class Compiler
     /**
      * @throws ReflectionException
      * @throws Exception
-     *
-     * @return string
      */
     public function convert(): string
     {
@@ -132,7 +127,7 @@ class Compiler
 
         if ($twigBlocks->length) {
             foreach ($twigBlocks as $twigBlock) {
-                /** @var DOMText $twigBlock */
+                /* @var DOMText $twigBlock */
                 $this->rawBlocks[] = trim($twigBlock->textContent);
             }
         }
@@ -170,12 +165,7 @@ class Compiler
     }
 
     /**
-     * @param DOMNode $node
-     * @param int     $level
-     *
      * @throws Exception
-     *
-     * @return DOMNode
      */
     public function convertNode(DOMNode $node, int $level = 0): DOMNode
     {
@@ -296,9 +286,6 @@ class Compiler
         return $node;
     }
 
-    /**
-     * @param DOMElement $scriptElement
-     */
     public function registerProperties(DOMElement $scriptElement): void
     {
         $content = $this->innerHtmlOfNode($scriptElement);
@@ -338,9 +325,6 @@ class Compiler
         }
     }
 
-    /**
-     * @param DOMElement $node
-     */
     public function replaceShowWithIf(DOMElement $node): void
     {
         if ($node->hasAttribute('v-show')) {
@@ -350,8 +334,6 @@ class Compiler
     }
 
     /**
-     * @param DOMElement $node
-     *
      * @throws ReflectionException
      */
     private function handleAttributeBinding(DOMElement $node): void
@@ -447,7 +429,7 @@ class Compiler
                     Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
             }
 
-            /** @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
+            /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {
                 case 'href':
                     $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_HREF');
@@ -476,11 +458,7 @@ class Compiler
     }
 
     /**
-     * @param DOMText $node
-     *
      * @throws ReflectionException
-     *
-     * @return DOMText
      */
     protected function handleTextNode(DOMText $node): DOMText
     {
@@ -491,9 +469,6 @@ class Compiler
         return $node;
     }
 
-    /**
-     * @param DOMElement $node
-     */
     private function cleanupAttributes(DOMElement $node): void
     {
         $removeAttributes = [];
@@ -512,9 +487,6 @@ class Compiler
     }
 
     /**
-     * @param DOMElement $node
-     * @param int        $level
-     *
      * @throws ReflectionException
      */
     private function handleIf(DOMElement $node, int $level): void
@@ -574,9 +546,6 @@ class Compiler
         }
     }
 
-    /**
-     * @param DOMElement $node
-     */
     private function handleFor(DOMElement $node): void
     {
         /** @var DOMElement $node */
@@ -631,9 +600,6 @@ class Compiler
         $node->removeAttribute('v-for');
     }
 
-    /**
-     * @param DOMElement $node
-     */
     private function handleHtml(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-html')) {
@@ -648,9 +614,6 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $html . '|raw}}'));
     }
 
-    /**
-     * @param DOMElement $node
-     */
     private function handleText(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-text')) {
@@ -665,12 +628,6 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $text . '}}'));
     }
 
-    /**
-     * @param string $varName
-     * @param string $string
-     *
-     * @return string
-     */
     protected function addDefaultsToVariable(string $varName, string $string): string
     {
         if (!in_array($varName, array_keys($this->properties))) {
@@ -690,27 +647,17 @@ class Compiler
         return $string;
     }
 
-    /**
-     * @param string $property
-     *
-     * @return string
-     */
     private function transformCamelCaseToCSS(string $property): string
     {
         $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
 
         if (!$cssProperty) {
-            throw new RuntimeException(
-                sprintf('Failed to convert style property %s into css property name.', $property)
-            );
+            throw new RuntimeException(sprintf('Failed to convert style property %s into css property name.', $property));
         }
 
         return $cssProperty;
     }
 
-    /**
-     * @param DOMElement $node
-     */
     private function stripEventHandlers(DOMElement $node): void
     {
         $removeAttributes = [];
@@ -726,11 +673,7 @@ class Compiler
     }
 
     /**
-     * @param string  $attribute
      * @param mixed[] $values
-     * @param string  $oldValue
-     *
-     * @return string
      */
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
     {
@@ -748,11 +691,7 @@ class Compiler
     }
 
     /**
-     * @param string $string
-     *
      * @throws ReflectionException
-     *
-     * @return string
      */
     protected function replacePlaceholders(string $string): string
     {
@@ -767,30 +706,16 @@ class Compiler
         return $string;
     }
 
-    /**
-     * @param string $componentName
-     * @param string $componentPath
-     */
     public function registerComponent(string $componentName, string $componentPath): void
     {
         $this->components[strtolower($componentName)] = new Component($componentName, $componentPath);
     }
 
-    /**
-     * @param string $html
-     *
-     * @return string
-     */
     protected function addSingleLineBanner(string $html): string
     {
         return $this->builder->createComment(implode('', $this->banner)) . "\n" . $html;
     }
 
-    /**
-     * @param string $html
-     *
-     * @return string
-     */
     protected function addBanner(string $html): string
     {
         if (count($this->banner) === 1) {
@@ -810,11 +735,6 @@ class Compiler
         return $html;
     }
 
-    /**
-     * @param string $value
-     *
-     * @return string
-     */
     public function refactorTemplateString(string $value): string
     {
         if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
@@ -829,11 +749,6 @@ class Compiler
         return $value;
     }
 
-    /**
-     * @param DOMNode $element
-     *
-     * @return string
-     */
     public function innerHtmlOfNode(DOMNode $element): string
     {
         $innerHTML = '';
@@ -844,9 +759,7 @@ class Compiler
             $html = $element->ownerDocument->saveHTML($child);
 
             if (!$html) {
-                throw new RuntimeException(
-                    sprintf('Generation of html for child element %s failed', $child->nodeName)
-                );
+                throw new RuntimeException(sprintf('Generation of html for child element %s failed', $child->nodeName));
             }
 
             $innerHTML .= trim($html);
@@ -855,11 +768,6 @@ class Compiler
         return $innerHTML;
     }
 
-    /**
-     * @param string $html
-     *
-     * @return string
-     */
     public function stripWhitespace(string $html): string
     {
         $html = preg_replace('/(\s)+/s', '\\1', $html);
@@ -877,11 +785,6 @@ class Compiler
         return $html;
     }
 
-    /**
-     * @param bool $stripWhitespace
-     *
-     * @return Compiler
-     */
     public function setStripWhitespace(bool $stripWhitespace): Compiler
     {
         $this->stripWhitespace = $stripWhitespace;
@@ -890,8 +793,7 @@ class Compiler
     }
 
     /**
-     * @param string $safeString
-     * @param mixed  $value
+     * @param mixed $value
      */
     protected function addReplaceVariable(string $safeString, $value): void
     {
@@ -899,8 +801,7 @@ class Compiler
     }
 
     /**
-     * @param string $name
-     * @param mixed  $value
+     * @param mixed $value
      *
      * @throws Exception
      */
@@ -913,11 +814,6 @@ class Compiler
         $this->variables[$name] = $value;
     }
 
-    /**
-     * @param string $string
-     *
-     * @return string
-     */
     protected function addVariableBlocks(string $string): string
     {
         $blocks = [];
@@ -930,8 +826,6 @@ class Compiler
     }
 
     /**
-     * @param DOMElement $node
-     *
      * @throws Exception
      */
     protected function handleDefaultSlot(DOMElement $node): void
@@ -971,11 +865,6 @@ class Compiler
         }
     }
 
-    /**
-     * @param DOMElement $node
-     *
-     * @return DOMElement
-     */
     protected function handleRootNodeClassAttribute(DOMElement $node): DOMElement
     {
         $classString = "__DOUBLE_CURLY_OPEN__class__PIPE__default('')__DOUBLE_CURLY_CLOSE__";
@@ -990,9 +879,6 @@ class Compiler
         return $node;
     }
 
-    /**
-     * @param DOMComment $node
-     */
     private function handleCommentNode(DOMComment $node): void
     {
         $nodeValue = trim($node->nodeValue);
