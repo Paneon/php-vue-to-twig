@@ -108,11 +108,9 @@ class TwigBuilder
     {
         if ($item !== null && $key !== null) {
             return $this->createBlock('for ' . $key . ', ' . $item . ' in ' . $list);
-        }
-        if ($item !== null) {
+        } elseif ($item !== null) {
             return $this->createForItemInList($item, $list);
-        }
-        if ($key !== null) {
+        } elseif ($key !== null) {
             return $this->createForKeyInList($key, $list);
         }
 
