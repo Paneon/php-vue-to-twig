@@ -10,9 +10,7 @@ use Ramsey\Uuid\Uuid;
 class Slot
 {
     public const SLOT_DEFAULT_NAME = 'default';
-
     public const SLOT_PREFIX = 'slot_';
-
     public const SLOT_VALUE_SUFFIX = '_value';
 
     /**

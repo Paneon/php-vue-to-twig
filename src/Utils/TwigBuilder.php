@@ -11,7 +11,6 @@ use ReflectionException;
 class TwigBuilder
 {
     protected const OPEN = 0;
-
     protected const CLOSE = 1;
 
     /**

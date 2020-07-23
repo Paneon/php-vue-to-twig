@@ -9,7 +9,9 @@ use ReflectionException;
 
 abstract class BasicEnum
 {
-    /** @var mixed[] */
+    /**
+     * @var mixed[]
+     */
     private static $constCacheArray = [];
 
     /**
