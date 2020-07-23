@@ -8,6 +8,8 @@
       <div title="Title" :class="{ 'block': isSomething, 'block2': !isSomething}" class="category-filter-list categories"></div>
       <div :class="getClasses(!hasSomething)" ></div>
       <div :style="'display: none !important'">Hidden</div>
+      <div :class="{'foo': bar}"></div>
+      <div :class="{'foo' : bar}"></div>
       </div>
   </div>
 </template>
