@@ -1,3 +1,5 @@
 <div class="{{class|default('')}}">
   {% include "/templates/ChildComponent.twig" with { 'style': "fill:{{ color }};", 'test': "test", 'class': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ "bar" } %}
+  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ bar } %}
 </div>

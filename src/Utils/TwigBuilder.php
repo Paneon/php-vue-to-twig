@@ -148,16 +148,19 @@ class TwigBuilder
      */
     public function createIncludePartial(string $partialPath, array $variables = []): string
     {
-        $hasClassProperty = false;
-        foreach ($variables as $variable) {
+        $classValues = [];
+        foreach ($variables as $key => $variable) {
             if ($variable->getName() === 'class') {
-                $hasClassProperty = true;
+                $classValues[] = $variable->getValue();
+                unset($variables[$key]);
             }
         }
 
-        if (!$hasClassProperty) {
-            $variables[] = new Property('class', '""', false);
-        }
+        $variables[] = new Property(
+            'class',
+            count($classValues) ? implode(' ~ " " ~ ', $classValues) : '""',
+            false
+        );
 
         $serializedProperties = $this->serializeComponentProperties($variables);
 
