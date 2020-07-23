@@ -433,21 +433,17 @@ class Compiler
             switch ($name) {
                 case 'href':
                     $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_HREF');
-
                     break;
                 case 'action':
                     $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_ACTION');
-
                     break;
                 case 'src':
                     $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_SRC');
-
                     break;
                 case 'name':
                     if ($node->tagName === 'a') {
                         $name = Replacements::getSanitizedConstant('ATTRIBUTE_NAME_A_NAME');
                     }
-
                     break;
                 default:
                     break;
