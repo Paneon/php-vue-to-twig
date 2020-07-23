@@ -10,23 +10,14 @@ use ReflectionException;
 abstract class Replacements extends BasicEnum
 {
     public const DOUBLE_CURLY_OPEN = '{{';
-
     public const DOUBLE_CURLY_CLOSE = '}}';
-
     public const GREATER = '>';
-
     public const SMALLER = '<';
-
     public const AMPERSAND = '&';
-
     public const PIPE = '|';
-
     public const ATTRIBUTE_NAME_HREF = 'href';
-
     public const ATTRIBUTE_NAME_ACTION = 'action';
-
     public const ATTRIBUTE_NAME_SRC = 'src';
-
     public const ATTRIBUTE_NAME_A_NAME = 'name';
 
     /**
