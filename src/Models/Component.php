@@ -1,12 +1,16 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Models;
 
+use Exception;
 
 class Component
 {
-
-    /** @var String[] */
+    /**
+     * @var string[]
+     */
     protected $components = [];
 
     /**
@@ -19,12 +23,19 @@ class Component
      */
     protected $path;
 
-    /** @var Property[] */
+    /**
+     * @var Property[]
+     */
     protected $properties = [];
 
-    /** @var Slot[] */
+    /**
+     * @var Slot[]
+     */
     protected $slots = [];
 
+    /**
+     * Component constructor.
+     */
     public function __construct(string $name = '', string $path = '')
     {
         $this->name = $name;
@@ -63,11 +74,17 @@ class Component
         );
     }
 
+    /**
+     * @throws Exception
+     */
     public function addDefaultSlot(string $value): Slot
     {
         return $this->addSlot(Slot::SLOT_DEFAULT_NAME, $value);
     }
 
+    /**
+     * @throws Exception
+     */
     public function addSlot(string $name, string $value): Slot
     {
         $this->slots[$name] = new Slot($name, $value);

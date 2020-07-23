@@ -2,10 +2,17 @@
 
 namespace Paneon\VueToTwig\Tests;
 
+use Exception;
+
 class VueIfTest extends AbstractTestCase
 {
     /**
      * @dataProvider ifProvider
+     *
+     * @param mixed $html
+     * @param mixed $expected
+     *
+     * @throws Exception
      */
     public function testIf($html, $expected)
     {

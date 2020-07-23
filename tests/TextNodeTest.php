@@ -2,8 +2,13 @@
 
 namespace Paneon\VueToTwig\Tests;
 
+use Exception;
+
 class TextNodeTest extends AbstractTestCase
 {
+    /**
+     * @throws Exception
+     */
     public function testTextNode()
     {
         $html = '<template><div>foo {{ bar.trim }}</div></template>';
@@ -16,6 +21,9 @@ class TextNodeTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testTextNodeNoReplace()
     {
         $html = '<template><div>foo.trim {{ \'foo === bar\' }}</div></template>';
@@ -28,6 +36,9 @@ class TextNodeTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testTextNodeDontCloseInQuote()
     {
         $html = '<template><div>{{ \'}}\' || foo.length }}</div></template>';
@@ -40,6 +51,9 @@ class TextNodeTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
+    /**
+     * @throws Exception
+     */
     public function testTextNodeWithTemplateString()
     {
         $html = '<template><div>{{ `Var = ${var}` }}</div></template>';
@@ -52,7 +66,9 @@ class TextNodeTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
-
+    /**
+     * @throws Exception
+     */
     public function testTextNodeNumbers()
     {
         $html = '<template><div>{{ 1 + 1 }}</div></template>';

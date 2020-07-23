@@ -2,16 +2,23 @@
 
 namespace Paneon\VueToTwig\Tests;
 
+use Exception;
+
 class CompilerPropsTest extends AbstractTestCase
 {
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function registersProperties()
     {
-        $component = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props.vue');
-        $expected = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props.twig');
+        $component = file_get_contents(__DIR__ . '/fixtures/vue-props/binding-props.vue');
+        $expected = file_get_contents(__DIR__ . '/fixtures/vue-props/binding-props.twig');
 
-        if(!$component){
+        if (!$component) {
             self::fail('Component not found.');
+
             return;
         }
 
@@ -22,14 +29,19 @@ class CompilerPropsTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function registersTypeScriptProperties()
     {
-        $component = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props-typescript-default.vue');
-        $expected = file_get_contents(__DIR__.'/fixtures/vue-props/binding-props-typescript-default.twig');
+        $component = file_get_contents(__DIR__ . '/fixtures/vue-props/binding-props-typescript-default.vue');
+        $expected = file_get_contents(__DIR__ . '/fixtures/vue-props/binding-props-typescript-default.twig');
 
-        if(!$component){
+        if (!$component) {
             self::fail('Component not found.');
+
             return;
         }
 
@@ -39,5 +51,4 @@ class CompilerPropsTest extends AbstractTestCase
 
         $this->assertEqualHtml($expected, $actual);
     }
-
 }

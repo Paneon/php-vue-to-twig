@@ -2,16 +2,23 @@
 
 namespace Paneon\VueToTwig\Tests;
 
+use Exception;
+
 class CompilerTwigBlockTest extends AbstractTestCase
 {
-    /** @test */
+    /**
+     * @test
+     *
+     * @throws Exception
+     */
     public function registersProperties()
     {
-        $component = file_get_contents(__DIR__.'/fixtures/twig-block/twig-block.vue');
-        $expected = file_get_contents(__DIR__.'/fixtures/twig-block/twig-block.twig');
+        $component = file_get_contents(__DIR__ . '/fixtures/twig-block/twig-block.vue');
+        $expected = file_get_contents(__DIR__ . '/fixtures/twig-block/twig-block.twig');
 
-        if(!$component){
+        if (!$component) {
             self::fail('Component not found.');
+
             return;
         }
 
@@ -20,6 +27,5 @@ class CompilerTwigBlockTest extends AbstractTestCase
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
-
     }
 }

@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paneon\VueToTwig\Utils;
 
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
+use ReflectionException;
 
 class TwigBuilder
 {
@@ -61,6 +64,9 @@ class TwigBuilder
             . $this->createBlock('endset');
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function createIf(string $condition): string
     {
         $condition = $this->refactorCondition($condition);
@@ -68,6 +74,9 @@ class TwigBuilder
         return $this->createBlock('if ' . $condition);
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function createElseIf(string $condition): string
     {
         $condition = $this->refactorCondition($condition);
@@ -124,9 +133,9 @@ class TwigBuilder
     public function createMultilineComment(array $comments): string
     {
         return $this->options['tag_comment'][self::OPEN] . ' ' . implode(
-                "\n",
-                $comments
-            ) . ' ' . $this->options['tag_comment'][self::CLOSE];
+            "\n",
+            $comments
+        ) . ' ' . $this->options['tag_comment'][self::CLOSE];
     }
 
     public function createBlock(string $content): string
@@ -135,10 +144,7 @@ class TwigBuilder
     }
 
     /**
-     * @param string     $partialPath
      * @param Property[] $variables
-     *
-     * @return string
      */
     public function createIncludePartial(string $partialPath, array $variables = []): string
     {
@@ -160,8 +166,6 @@ class TwigBuilder
 
     /**
      * @param Property[] $properties
-     *
-     * @return string
      */
     public function serializeComponentProperties(array $properties): string
     {
@@ -186,6 +190,9 @@ class TwigBuilder
         return $value;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function refactorCondition(string $condition): string
     {
         $refactoredCondition = '';
@@ -194,7 +201,7 @@ class TwigBuilder
         $lastChar = null;
         $buffer = '';
 
-        for ($i = 0; $i < $charsCount; $i++) {
+        for ($i = 0; $i < $charsCount; ++$i) {
             $char = mb_substr($condition, $i, 1, 'UTF-8');
             if ($quoteChar === null && ($char === '"' || $char === '\'')) {
                 $quoteChar = $char;
@@ -222,6 +229,9 @@ class TwigBuilder
         return $refactoredCondition;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function refactorConditionPart(string $condition): string
     {
         $condition = str_replace('===', '==', $condition);
@@ -241,6 +251,9 @@ class TwigBuilder
         return $condition;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     public function refactorTextNode(string $content): string
     {
         $refactoredContent = '';
@@ -250,7 +263,7 @@ class TwigBuilder
         $quoteChar = null;
         $buffer = '';
 
-        for ($i = 0; $i < $charsCount; $i++) {
+        for ($i = 0; $i < $charsCount; ++$i) {
             $char = mb_substr($content, $i, 1, 'UTF-8');
             if ($open === false) {
                 $refactoredContent .= $char;
@@ -277,7 +290,7 @@ class TwigBuilder
         return $refactoredContent;
     }
 
-    private function convertConcat(string $content): string
+    public function convertConcat(string $content): string
     {
         if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
@@ -306,13 +319,14 @@ class TwigBuilder
 
     private function convertTemplateString(string $content): string
     {
-        if (preg_match_all('/\`([^\`]+)\`/', $content, $matches, PREG_SET_ORDER)) {
+        if (preg_match_all('/`([^`]+)`/', $content, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $match[1] = str_replace('${', '\' ~ ', $match[1]);
                 $match[1] = str_replace('}', ' ~ \'', $match[1]);
                 $content = str_replace($match[0], '\'' . $match[1] . '\'', $content);
             }
         }
+
         return $content;
     }
 
@@ -321,6 +335,7 @@ class TwigBuilder
         if ($fallbackVariableName) {
             return '{{ ' . $varName . '|default(' . $fallbackVariableName . ') }}';
         }
+
         return '{{ ' . $varName . ' }}';
     }
 }

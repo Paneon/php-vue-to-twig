@@ -6,7 +6,7 @@
 !bin/console
 /vendor/
 
-# PHPUnit
-.phpcs-cache
+# PHP CS Fixer
+.php_cs.cache
 
 node_modules
