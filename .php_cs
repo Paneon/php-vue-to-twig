@@ -12,9 +12,7 @@ return PhpCsFixer\Config::create()
     ->setRiskyAllowed(true)
     ->setRules([
         '@PHP56Migration' => true,
-        '@PHPUnit60Migration:risky' => false,
         '@Symfony' => true,
-        '@Symfony:risky' => false,
         'concat_space' => ['spacing' => 'one'],
         'yoda_style' => null,
     ])
