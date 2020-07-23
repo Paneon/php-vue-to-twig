@@ -547,7 +547,7 @@ class Compiler
             return;
         }
 
-        list($forLeft, $listName) = explode(' in ', $node->getAttribute('v-for'));
+        [$forLeft, $listName] = explode(' in ', $node->getAttribute('v-for'));
 
         /*
          * Variations:
