@@ -2,11 +2,17 @@
 
 namespace Paneon\VueToTwig\Tests;
 
+use Exception;
+
 class VueComponentTest extends AbstractTestCase
 {
     /**
      * @dataProvider dataProvider
-     * @throws \Exception
+     *
+     * @param mixed $html
+     * @param mixed $expected
+     *
+     * @throws Exception
      */
     public function testComponent($html, $expected)
     {
@@ -19,6 +25,9 @@ class VueComponentTest extends AbstractTestCase
         $this->assertEqualHtml($expected, $actual);
     }
 
+    /**
+     * @return array
+     */
     public function dataProvider()
     {
         return $this->loadFixturesFromDir('vue-component');

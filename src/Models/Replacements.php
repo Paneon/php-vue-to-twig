@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paneon\VueToTwig\Models;
 
 use InvalidArgumentException;
+use ReflectionException;
 
 abstract class Replacements extends BasicEnum
 {
@@ -18,7 +21,9 @@ abstract class Replacements extends BasicEnum
     public const ATTRIBUTE_NAME_A_NAME = 'name';
 
     /**
-     * Removes all instances of replacements from target
+     * Removes all instances of replacements from target.
+     *
+     * @throws ReflectionException
      */
     public static function sanitize(string $target): string
     {
@@ -35,14 +40,12 @@ abstract class Replacements extends BasicEnum
     }
 
     /**
-     * Removes all instances of one specified replacement from target
+     * Removes all instances of one specified replacement from target.
      */
     public static function sanitizeSingleReplacement(string $target, string $singleReplacement): string
     {
         if (!Replacements::isValidValue($singleReplacement)) {
-            throw new InvalidArgumentException(
-                sprintf("%s is not a valid Replacement value.", $singleReplacement)
-            );
+            throw new InvalidArgumentException(sprintf('%s is not a valid Replacement value.', $singleReplacement));
         }
 
         $constantName = Replacements::getNameForValue($singleReplacement);

@@ -1,6 +1,6 @@
 # php-vue-to-twig
 
-[![Build Status](https://travis-ci.org/Paneon/php-vue-to-twig.svg?branch=master)](https://travis-ci.org/Paneon/php-vue-to-twig)
+![CI](https://github.com/Paneon/php-vue-to-twig/workflows/PHP%20Composer/badge.svg)
 
 Compile vue files to twig templates with PHP
 
@@ -22,7 +22,7 @@ Compile vue files to twig templates with PHP
 |v-model||
 |v-pre||
 |v-cloak||
-|v-once||
+|v-once|:white_check_mark:|
 
 
 ## Other Functionalities

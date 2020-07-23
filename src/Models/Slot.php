@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Paneon\VueToTwig\Models;
 
+use Exception;
 use Ramsey\Uuid\Uuid;
 
 class Slot
@@ -10,13 +13,16 @@ class Slot
     public const SLOT_PREFIX = 'slot_';
     public const SLOT_VALUE_SUFFIX = '_value';
 
-    /** @var string */
+    /**
+     * @var string
+     */
     protected $uuid;
 
     /**
      * @var string
      */
     protected $name;
+
     /**
      * @var string
      */
@@ -27,6 +33,11 @@ class Slot
      */
     protected $isBinding;
 
+    /**
+     * Slot constructor.
+     *
+     * @throws Exception
+     */
     public function __construct(string $name, string $value)
     {
         $this->uuid = Uuid::uuid4()->toString();
@@ -34,9 +45,6 @@ class Slot
         $this->value = $value;
     }
 
-    /**
-     * @return string
-     */
     public function getName(): string
     {
         return $this->name;
@@ -59,12 +67,11 @@ class Slot
 
     public function getSlotContentVariableString(): string
     {
-        return '__SLOT_'.$this->uuid.'__';
+        return '__SLOT_' . $this->uuid . '__';
     }
 
     public function getUuid(): string
     {
         return $this->uuid;
     }
-
 }

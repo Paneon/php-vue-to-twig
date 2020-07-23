@@ -1,4 +1,6 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Models;
 
@@ -7,12 +9,15 @@ use ReflectionException;
 
 abstract class BasicEnum
 {
-    /** @var mixed[] */
+    /**
+     * @var mixed[]
+     */
     private static $constCacheArray = [];
 
     /**
-     * @return mixed[]
      * @throws ReflectionException
+     *
+     * @return mixed[]
      */
     public static function getConstants(): array
     {
