@@ -22,8 +22,6 @@ use RuntimeException;
 
 class Compiler
 {
-    protected const INCLUDE_BINDING = 'include';
-
     /**
      * @var Component[]
      */
