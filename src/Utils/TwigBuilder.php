@@ -4,12 +4,9 @@ declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Utils;
 
-use DOMElement;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
-use Psr\Log\LoggerInterface;
 use ReflectionException;
-use RuntimeException;
 
 class TwigBuilder
 {
@@ -20,11 +17,6 @@ class TwigBuilder
      * @var mixed[]
      */
     protected $options;
-
-    /**
-     * @var LoggerInterface
-     */
-    private $logger;
 
     /**
      * TwigBuilder constructor.
@@ -153,33 +145,9 @@ class TwigBuilder
 
     /**
      * @param Property[] $variables
-     *
-     * @throws ReflectionException
      */
     public function createIncludePartial(string $partialPath, array $variables = []): string
     {
-        $classValues = [];
-        foreach ($variables as $key => $variable) {
-            if ($variable->getName() === 'class') {
-                if ($variable->isBinding()) {
-                    $classValues[] = str_replace(
-                        ['{{', '}}', '__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'],
-                        ['(', ')', '', ''],
-                        $this->handleBinding($variable->getValue(), $variable->getName())[0]
-                    );
-                } else {
-                    $classValues[] = $variable->getValue();
-                }
-                unset($variables[$key]);
-            }
-        }
-
-        $variables[] = new Property(
-            'class',
-            count($classValues) ? implode(' ~ " " ~ ', $classValues) : '""',
-            false
-        );
-
         $serializedProperties = $this->serializeComponentProperties($variables);
 
         return $this->createBlock('include "' . $partialPath . '" with ' . $serializedProperties);
@@ -358,104 +326,5 @@ class TwigBuilder
         }
 
         return '{{ ' . $varName . ' }}';
-    }
-
-    public function setLogger($logger)
-    {
-        $this->logger = $logger;
-    }
-
-    /**
-     * @throws ReflectionException
-     */
-    public function handleBinding(string $value, string $name, ?DOMElement $node = null)
-    {
-        $dynamicValues = [];
-
-        $regexArrayBinding = '/^\[([^\]]+)\]$/';
-        $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
-        $regexTemplateString = '/^`(?P<content>.+)`$/';
-        $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
-        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?:\s*(?<condition>[^,]+)/x';
-
-        if ($value === 'true') {
-            $this->logger->debug('- setAttribute ' . $name);
-            if ($node) {
-                $node->setAttribute($name, $name);
-            }
-        } elseif (preg_match($regexArrayBinding, $value, $matches)) {
-            $this->logger->debug('- array binding ', ['value' => $value]);
-
-            if (preg_match_all($regexArrayElements, $value, $arrayMatch)) {
-                $value = $arrayMatch['elements'];
-                $this->logger->debug('- ', ['match' => $arrayMatch]);
-            } else {
-                $value = [];
-            }
-
-            if ($name === 'style') {
-                foreach ($value as $prop => $setting) {
-                    if ($setting) {
-                        $prop = strtolower($this->transformCamelCaseToCSS($prop));
-                        $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
-                    }
-                }
-            } elseif ($name === 'class') {
-                foreach ($value as $className) {
-                    $dynamicValues[] = $className;
-                }
-            }
-        } elseif (preg_match($regexObjectBinding, $value, $matches)) {
-            $this->logger->debug('- object binding ', ['value' => $value]);
-
-            $items = explode(',', $matches['elements']);
-
-            foreach ($items as $item) {
-                if (preg_match($regexObjectElements, $item, $matchElement)) {
-                    $dynamicValues[] = sprintf(
-                        '{{ %s ? \'%s\' }}',
-                        $this->refactorCondition($matchElement['condition']),
-                        $matchElement['class'] . ' '
-                    );
-                }
-            }
-        } elseif (preg_match($regexTemplateString, $value, $matches)) {
-            // <div :class="`abc ${someDynamicClass}`">
-            $templateStringContent = $matches['content'];
-
-            preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
-            foreach ($matches as $match) {
-                $templateStringContent = str_replace(
-                    $match[0],
-                    '{{ ' . $this->refactorCondition($match[1]) . ' }}',
-                    $templateStringContent
-                );
-            }
-
-            $dynamicValues[] = $templateStringContent;
-        } else {
-            $value = $this->refactorCondition($value);
-            $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
-            $dynamicValues[] =
-                Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
-                $value .
-                Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
-        }
-
-        return $dynamicValues;
-    }
-
-    /**
-     * @throws RuntimeException
-     */
-    public function transformCamelCaseToCSS(string $property): string
-    {
-        $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
-
-        if (!$cssProperty) {
-            throw new RuntimeException(sprintf('Failed to convert style property %s into css property name.', $property));
-        }
-
-        return $cssProperty;
     }
 }

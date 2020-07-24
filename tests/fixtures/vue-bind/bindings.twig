@@ -1,11 +1,11 @@
 <div class="{{class|default('')}}">
   <div>
     <input type="radio" checked>
-    <img src="{{imageSrc}}">
-    <img src="{{imageSrc}}">
+    <img src="{{ imageSrc }}">
+    <img src="{{ imageSrc }}">
     <div class="a b c"></div>
     <div title="Title" class="category-filter-list categories {{ isSomething ? 'block ' }} {{ not isSomething ? 'block2 ' }}"></div>
-    <div class="{{getClasses(not hasSomething)}}"></div>
-    <div style="{{'display: none !important'}}">Hidden</div>
+    <div class="{{ getClasses(not hasSomething) }}"></div>
+    <div style="{{ 'display: none !important' }}">Hidden</div>
   </div>
 </div>

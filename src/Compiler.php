@@ -22,6 +22,8 @@ use RuntimeException;
 
 class Compiler
 {
+    protected const INCLUDE_BINDING = 'include';
+
     /**
      * @var Component[]
      */
@@ -91,7 +93,6 @@ class Compiler
         $this->properties = [];
         $this->rawBlocks = [];
 
-        $this->builder->setLogger($logger);
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
     }
 
@@ -239,7 +240,7 @@ class Compiler
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
-                    $usedComponent->getProperties()
+                    $this->preparePropertiesForInclude($usedComponent->getProperties())
                 )
             );
 
@@ -283,6 +284,35 @@ class Compiler
         }
 
         return $node;
+    }
+
+    private function preparePropertiesForInclude($variables)
+    {
+        $classValues = [];
+        foreach ($variables as $key => $variable) {
+            if ($variable->getName() === 'class') {
+                if ($variable->isBinding()) {
+                    $classValues[] = $this->handleBinding(
+                        $variable->getValue(),
+                        $variable->getName(),
+                        null,
+                        self::INCLUDE_BINDING
+                    )[0];
+
+                } else {
+                    $classValues[] = $variable->getValue();
+                }
+                unset($variables[$key]);
+            }
+        }
+
+        $variables[] = new Property(
+            'class',
+            count($classValues) ? implode(' ~ " " ~ ', $classValues) : '""',
+            false
+        );
+
+        return $variables;
     }
 
     public function registerProperties(DOMElement $scriptElement): void
@@ -359,7 +389,7 @@ class Compiler
                 continue;
             }
 
-            $dynamicValues = $this->builder->handleBinding($value, $name, $node);
+            $dynamicValues = $this->handleBinding($value, $name, $node);
 
             /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {
@@ -383,6 +413,118 @@ class Compiler
 
             $node->setAttribute($name, $this->implodeAttributeValue($name, $dynamicValues, $staticValues));
         }
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    public function handleBinding(
+        string $value,
+        string $name,
+        ?DOMElement $node = null,
+        ?string $type = null
+    ) {
+        $dynamicValues = [];
+
+        $regexArrayBinding = '/^\[([^\]]+)\]$/';
+        $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
+        $regexTemplateString = '/^`(?P<content>.+)`$/';
+        $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
+        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?:\s*(?<condition>[^,]+)/x';
+
+        if ($value === 'true') {
+            $this->logger->debug('- setAttribute ' . $name);
+            if ($node) {
+                $node->setAttribute($name, $name);
+            }
+        } elseif (preg_match($regexArrayBinding, $value, $matches)) {
+            $this->logger->debug('- array binding ', ['value' => $value]);
+
+            if (preg_match_all($regexArrayElements, $value, $arrayMatch)) {
+                $value = $arrayMatch['elements'];
+                $this->logger->debug('- ', ['match' => $arrayMatch]);
+            } else {
+                $value = [];
+            }
+
+            if ($name === 'style') {
+                foreach ($value as $prop => $setting) {
+                    if ($setting) {
+                        $prop = strtolower($this->transformCamelCaseToCSS($prop));
+                        $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
+                    }
+                }
+            } elseif ($name === 'class') {
+                foreach ($value as $className) {
+                    $dynamicValues[] = $className;
+                }
+            }
+        } elseif (preg_match($regexObjectBinding, $value, $matches)) {
+            $this->logger->debug('- object binding ', ['value' => $value]);
+
+            $items = explode(',', $matches['elements']);
+
+            foreach ($items as $item) {
+                if (preg_match($regexObjectElements, $item, $matchElement)) {
+                    $dynamicValues[] = $this->prepareBindingOutput(
+                        sprintf(
+                            '%s ? \'%s\'',
+                            $this->builder->refactorCondition($matchElement['condition']),
+                            $matchElement['class'] . ' '
+                        ),
+                        $type
+                    );
+                }
+            }
+        } elseif (preg_match($regexTemplateString, $value, $matches)) {
+            // <div :class="`abc ${someDynamicClass}`">
+            $templateStringContent = $matches['content'];
+
+            preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
+            foreach ($matches as $match) {
+                $templateStringContent = str_replace(
+                    $match[0],
+                    $this->prepareBindingOutput($this->builder->refactorCondition($match[1]), $type),
+                    $templateStringContent
+                );
+            }
+
+            $dynamicValues[] = $templateStringContent;
+        } else {
+            $value = $this->builder->refactorCondition($value);
+            $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
+            $dynamicValues[] = $this->prepareBindingOutput($value, $type);
+        }
+
+        return $dynamicValues;
+    }
+
+    private function prepareBindingOutput(string $value, ?string $type = null)
+    {
+        if ($type === self::INCLUDE_BINDING) {
+            $open = '(';
+            $close = ')';
+        } else {
+            $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
+            $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
+        }
+
+        return $open . ' ' . $value . ' ' . $close;
+
+    }
+
+    /**
+     * @throws RuntimeException
+     */
+    public function transformCamelCaseToCSS(string $property): string
+    {
+        $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
+
+        if (!$cssProperty) {
+            throw new RuntimeException(sprintf('Failed to convert style property %s into css property name.', $property));
+        }
+
+        return $cssProperty;
     }
 
     /**
