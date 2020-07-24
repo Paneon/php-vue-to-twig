@@ -13,7 +13,7 @@ class CleanupAttributesTest extends AbstractTestCase
     {
         $vueTemplate = '<template><div v-foo="bar" ref="reference">dummy</div></template>';
 
-        $expected = '<div class="{{ class|default(\'\') }}">dummy</div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}">dummy</div>';
 
         $compiler = $this->createCompiler($vueTemplate);
 

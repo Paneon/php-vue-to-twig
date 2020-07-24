@@ -1,6 +1,6 @@
-<div class="{{ class|default('') }}">
-  {% include "/templates/ChildComponent.twig" with { 'style': "fill:{{ color }};", 'test': "test", 'class': "" } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ ( "bar" ) } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ ( bar ) } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "product-column__tile" ~ " " ~ ( isSingleProductTile ? 'product-column__tile--large ' ) } %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+  {% include "/templates/ChildComponent.twig" with { 'test': "test", 'class': "", 'style': ( "fill:{{ color }};" ) } %}
+  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ ( "bar" ), 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ ( bar ), 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'class': "product-column__tile" ~ " " ~ ( isSingleProductTile ? 'product-column__tile--large ' ), 'style': "" } %}
 </div>

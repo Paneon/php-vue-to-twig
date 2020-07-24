@@ -12,7 +12,7 @@ class TextNodeTest extends AbstractTestCase
     public function testTextNode()
     {
         $html = '<template><div>foo {{ bar.trim }}</div></template>';
-        $expected = '<div class="{{ class|default(\'\') }}">foo {{ bar|trim }}</div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}">foo {{ bar|trim }}</div>';
 
         $compiler = $this->createCompiler($html);
 
@@ -27,7 +27,7 @@ class TextNodeTest extends AbstractTestCase
     public function testTextNodeNoReplace()
     {
         $html = '<template><div>foo.trim {{ \'foo === bar\' }}</div></template>';
-        $expected = '<div class="{{ class|default(\'\') }}">foo.trim {{ \'foo === bar\' }}</div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}">foo.trim {{ \'foo === bar\' }}</div>';
 
         $compiler = $this->createCompiler($html);
 
@@ -42,7 +42,7 @@ class TextNodeTest extends AbstractTestCase
     public function testTextNodeDontCloseInQuote()
     {
         $html = '<template><div>{{ \'}}\' || foo.length }}</div></template>';
-        $expected = '<div class="{{ class|default(\'\') }}">{{ \'}}\' or foo|length }}</div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}">{{ \'}}\' or foo|length }}</div>';
 
         $compiler = $this->createCompiler($html);
 
@@ -57,7 +57,7 @@ class TextNodeTest extends AbstractTestCase
     public function testTextNodeWithTemplateString()
     {
         $html = '<template><div>{{ `Var = ${var}` }}</div></template>';
-        $expected = '<div class="{{ class|default(\'\') }}">{{ \'Var = \' ~ var ~ \'\' }}</div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}">{{ \'Var = \' ~ var ~ \'\' }}</div>';
 
         $compiler = $this->createCompiler($html);
 
@@ -72,7 +72,7 @@ class TextNodeTest extends AbstractTestCase
     public function testTextNodeNumbers()
     {
         $html = '<template><div>{{ 1 + 1 }}</div></template>';
-        $expected = '<div class="{{ class|default(\'\') }}">{{ 1 + 1 }}</div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}">{{ 1 + 1 }}</div>';
 
         $compiler = $this->createCompiler($html);
 

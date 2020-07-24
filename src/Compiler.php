@@ -275,7 +275,8 @@ class Compiler
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             if ($level === 1) {
-                $this->handleRootNodeClassAttribute($node);
+                $this->handleRootNodeAttribute($node, 'class');
+                $this->handleRootNodeAttribute($node, 'style');
             }
         }
 
@@ -293,18 +294,18 @@ class Compiler
      */
     private function preparePropertiesForInclude(array $variables): array
     {
-        $classValues = [];
+        $values = [];
         foreach ($variables as $key => $variable) {
-            if ($variable->getName() === 'class') {
+            if ($variable->getName() === 'class' || $variable->getName() === 'style') {
                 if ($variable->isBinding()) {
-                    $classValues[] = $this->handleBinding(
+                    $values[$variable->getName()][] = $this->handleBinding(
                         $variable->getValue(),
                         $variable->getName(),
                         null,
-                        self::INCLUDE_BINDING
+                        false
                     )[0];
                 } else {
-                    $classValues[] = $variable->getValue();
+                    $values[$variable->getName()][] = $variable->getValue();
                 }
                 unset($variables[$key]);
             }
@@ -312,7 +313,13 @@ class Compiler
 
         $variables[] = new Property(
             'class',
-            count($classValues) ? implode(' ~ " " ~ ', $classValues) : '""',
+            $values['class'] ?? null ? implode(' ~ " " ~ ', $values['class']) : '""',
+            false
+        );
+
+        $variables[] = new Property(
+            'style',
+            $values['style'] ?? null ? implode(' ~ " " ~ ', $values['style']) : '""',
             false
         );
 
@@ -424,12 +431,8 @@ class Compiler
      *
      * @return string[]
      */
-    public function handleBinding(
-        string $value,
-        string $name,
-        ?DOMElement $node = null,
-        ?string $type = null
-    ): array {
+    public function handleBinding(string $value, string $name, ?DOMElement $node = null, bool $twigOutput = true): array
+    {
         $dynamicValues = [];
 
         $regexArrayBinding = '/^\[([^\]]+)\]$/';
@@ -473,12 +476,8 @@ class Compiler
             foreach ($items as $item) {
                 if (preg_match($regexObjectElements, $item, $matchElement)) {
                     $dynamicValues[] = $this->prepareBindingOutput(
-                        sprintf(
-                            '%s ? \'%s\'',
-                            $this->builder->refactorCondition($matchElement['condition']),
-                            $matchElement['class'] . ' '
-                        ),
-                        $type
+                        $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . ' \'',
+                        $twigOutput
                     );
                 }
             }
@@ -490,7 +489,7 @@ class Compiler
             foreach ($matches as $match) {
                 $templateStringContent = str_replace(
                     $match[0],
-                    $this->prepareBindingOutput($this->builder->refactorCondition($match[1]), $type),
+                    $this->prepareBindingOutput($this->builder->refactorCondition($match[1]), $twigOutput),
                     $templateStringContent
                 );
             }
@@ -499,18 +498,18 @@ class Compiler
         } else {
             $value = $this->builder->refactorCondition($value);
             $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
-            $dynamicValues[] = $this->prepareBindingOutput($value, $type);
+            $dynamicValues[] = $this->prepareBindingOutput($value, $twigOutput);
         }
 
         return $dynamicValues;
     }
 
-    private function prepareBindingOutput(string $value, ?string $type = null): string
+    private function prepareBindingOutput(string $value, bool $twigOutput = true): string
     {
         $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
         $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
 
-        if ($type === self::INCLUDE_BINDING) {
+        if (!$twigOutput) {
             $open = '(';
             $close = ')';
         }
@@ -929,16 +928,19 @@ class Compiler
         }
     }
 
-    protected function handleRootNodeClassAttribute(DOMElement $node): DOMElement
+    protected function handleRootNodeAttribute(DOMElement $node, ?string $name = null): DOMElement
     {
-        $classString = $this->prepareBindingOutput('class|default(\'\')');
-        if ($node->hasAttribute('class')) {
-            $attributeVClass = $node->getAttributeNode('class');
-            $attributeVClass->value .= ' ' . $classString;
-        } else {
-            $attributeVClass = new DOMAttr('class', $classString);
+        if (!$name) {
+            return $node;
         }
-        $node->setAttributeNode($attributeVClass);
+        $string = $this->prepareBindingOutput($name . '|default(\'\')');
+        if ($node->hasAttribute($name)) {
+            $attribute = $node->getAttributeNode($name);
+            $attribute->value .= ' ' . $string;
+        } else {
+            $attribute = new DOMAttr($name, $string);
+        }
+        $node->setAttributeNode($attribute);
 
         return $node;
     }
