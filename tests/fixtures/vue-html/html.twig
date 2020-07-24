@@ -1,5 +1,5 @@
 {% set rawHtml = '<strong>text</strong>' %}
-<div class="{{class|default('')}}">
+<div class="{{ class|default('') }}">
   <span>
     {{rawHtml|raw}}
   </span>

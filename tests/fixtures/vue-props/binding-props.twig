@@ -1,7 +1,7 @@
 {% set title = title|default('Default') %}
 {% set value = value|default(80) %}
 {% set optionallyIgnore = false %}
-<div class="{{class|default('')}}">
+<div class="{{ class|default('') }}">
   <div>
     {% if title == 'Something' %}
     <p>Default</p>

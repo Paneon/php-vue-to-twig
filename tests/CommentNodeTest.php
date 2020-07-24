@@ -12,7 +12,7 @@ class CommentNodeTest extends AbstractTestCase
     public function testCommentNode()
     {
         $component = '<template><div><!-- info comment --></div></template>';
-        $expected = '<div class="{{class|default(\'\')}}"><!-- info comment --></div>';
+        $expected = '<div class="{{ class|default(\'\') }}"><!-- info comment --></div>';
 
         $compiler = $this->createCompiler($component);
 
@@ -27,7 +27,7 @@ class CommentNodeTest extends AbstractTestCase
     public function testCommentNodeEslintDisable()
     {
         $component = '<template><div><!-- eslint-disable-next-line vue/no-v-html --></div></template>';
-        $expected = '<div class="{{class|default(\'\')}}"></div>';
+        $expected = '<div class="{{ class|default(\'\') }}"></div>';
 
         $compiler = $this->createCompiler($component);
 
@@ -42,7 +42,7 @@ class CommentNodeTest extends AbstractTestCase
     public function testCommentNodeTodo()
     {
         $component = '<template><div><!-- todo change something --></div></template>';
-        $expected = '<div class="{{class|default(\'\')}}"></div>';
+        $expected = '<div class="{{ class|default(\'\') }}"></div>';
 
         $compiler = $this->createCompiler($component);
 

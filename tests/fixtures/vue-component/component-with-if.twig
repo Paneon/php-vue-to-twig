@@ -1,3 +1,3 @@
-<div class="{{class|default('')}}">
+<div class="{{ class|default('') }}">
   {% if a > 5 %}{% include "/templates/ChildComponent.twig" with { 'string': "string", 'product': productA, 'class': "" } %}{% endif %}
 </div>

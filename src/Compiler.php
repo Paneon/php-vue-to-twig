@@ -931,7 +931,7 @@ class Compiler
 
     protected function handleRootNodeClassAttribute(DOMElement $node): DOMElement
     {
-        $classString = "__DOUBLE_CURLY_OPEN__class__PIPE__default('')__DOUBLE_CURLY_CLOSE__";
+        $classString = $this->prepareBindingOutput('class|default(\'\')');
         if ($node->hasAttribute('class')) {
             $attributeVClass = $node->getAttributeNode('class');
             $attributeVClass->value .= ' ' . $classString;
