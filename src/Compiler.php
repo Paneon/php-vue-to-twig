@@ -286,7 +286,12 @@ class Compiler
         return $node;
     }
 
-    private function preparePropertiesForInclude($variables)
+    /**
+     * @param Property[] $variables
+     *
+     * @return Property[]
+     */
+    private function preparePropertiesForInclude(array $variables): array
     {
         $classValues = [];
         foreach ($variables as $key => $variable) {
@@ -298,7 +303,6 @@ class Compiler
                         null,
                         self::INCLUDE_BINDING
                     )[0];
-
                 } else {
                     $classValues[] = $variable->getValue();
                 }
@@ -417,13 +421,15 @@ class Compiler
 
     /**
      * @throws ReflectionException
+     *
+     * @return string[]
      */
     public function handleBinding(
         string $value,
         string $name,
         ?DOMElement $node = null,
         ?string $type = null
-    ) {
+    ): array {
         $dynamicValues = [];
 
         $regexArrayBinding = '/^\[([^\]]+)\]$/';
@@ -499,7 +505,7 @@ class Compiler
         return $dynamicValues;
     }
 
-    private function prepareBindingOutput(string $value, ?string $type = null)
+    private function prepareBindingOutput(string $value, ?string $type = null): string
     {
         if ($type === self::INCLUDE_BINDING) {
             $open = '(';
@@ -510,7 +516,6 @@ class Compiler
         }
 
         return $open . ' ' . $value . ' ' . $close;
-
     }
 
     /**
