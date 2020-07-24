@@ -507,12 +507,12 @@ class Compiler
 
     private function prepareBindingOutput(string $value, ?string $type = null): string
     {
+        $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
+        $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
+
         if ($type === self::INCLUDE_BINDING) {
             $open = '(';
             $close = ')';
-        } else {
-            $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
-            $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
         }
 
         return $open . ' ' . $value . ' ' . $close;
