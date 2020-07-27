@@ -114,6 +114,11 @@ class Component
         return !empty($this->slots);
     }
 
+    public function hasSlot($name): bool
+    {
+        return !empty($this->slots[$name]);
+    }
+
     /**
      * @return Slot[]
      */

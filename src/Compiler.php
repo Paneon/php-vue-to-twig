@@ -227,7 +227,7 @@ class Compiler
                 if ($node instanceof DOMElement) {
                     $this->handleNamedSlotsInclude($node, $usedComponent);
                 }
-                if ($node->hasChildNodes()) {
+                if ($node->hasChildNodes() && !$usedComponent->hasSlot(Slot::SLOT_DEFAULT_NAME)) {
                     $innerHtml = $this->innerHtmlOfNode($node);
                     $innerHtml = $this->replacePlaceholders($innerHtml);
                     $this->logger->debug(
@@ -947,7 +947,7 @@ class Compiler
                         $innerHtml = $this->innerHtmlOfNode($childNode);
                         $innerHtml = $this->replacePlaceholders($innerHtml);
                         $this->logger->debug(
-                            'Add default slot:',
+                            'Add ' . $slotName . ' slot:',
                             [
                                 'nodeValue' => $node->nodeValue,
                                 'innerHtml' => $innerHtml,
