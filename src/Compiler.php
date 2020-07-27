@@ -189,7 +189,7 @@ class Compiler
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
-            $this->handleDefaultSlot($node);
+            $this->handleSlots($node);
             $this->cleanupAttributes($node);
         }
 
@@ -224,19 +224,22 @@ class Compiler
 
             // Slots (Default)
             if ($node->hasChildNodes()) {
-                $innerHtml = $this->innerHtmlOfNode($node);
-                $innerHtml = $this->replacePlaceholders($innerHtml);
-                $this->logger->debug(
-                    'Add default slot:',
-                    [
-                        'nodeValue' => $node->nodeValue,
-                        'innerHtml' => $innerHtml,
-                    ]
-                );
-
-                $slot = $usedComponent->addDefaultSlot($innerHtml);
-
-                $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
+                if ($node instanceof DOMElement) {
+                    $this->handleNamedSlotsInclude($node, $usedComponent);
+                }
+                if ($node->hasChildNodes()) {
+                    $innerHtml = $this->innerHtmlOfNode($node);
+                    $innerHtml = $this->replacePlaceholders($innerHtml);
+                    $this->logger->debug(
+                        'Add default slot:',
+                        [
+                            'nodeValue' => $node->nodeValue,
+                            'innerHtml' => $innerHtml,
+                        ]
+                    );
+                    $slot = $usedComponent->addDefaultSlot($innerHtml);
+                    $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
+                }
             }
 
             // Include Partial
@@ -537,7 +540,7 @@ class Compiler
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
             if (
-                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind')
+                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind' && $matches[1] !== 'slot')
                 || preg_match('/^[:]?ref$/', $attribute->name) === 1
             ) {
                 $removeAttributes[] = $attribute->name;
@@ -902,7 +905,7 @@ class Compiler
     /**
      * @throws Exception
      */
-    protected function handleDefaultSlot(DOMElement $node): void
+    protected function handleSlots(DOMElement $node): void
     {
         if ($node->nodeName !== 'slot') {
             return;
@@ -924,6 +927,42 @@ class Compiler
 
         $node->parentNode->insertBefore($variableNode, $node);
         $node->parentNode->removeChild($node);
+    }
+
+    /**
+     * @param Component $usedComponent
+     *
+     * @throws ReflectionException
+     */
+    protected function handleNamedSlotsInclude(DOMElement $node, $usedComponent): void
+    {
+        $removeNodes = [];
+        foreach ($node->childNodes as $childNode) {
+            if ($childNode instanceof DOMElement && $childNode->tagName === 'template') {
+                foreach ($childNode->attributes as $attribute) {
+                    if ($attribute instanceof DOMAttr) {
+                        preg_match('/(v-slot)(?::([a-z]+)?)/i', $attribute->nodeName, $matches);
+                        $slotName = $matches[2] ?? Slot::SLOT_DEFAULT_NAME;
+                        $innerHtml = $this->innerHtmlOfNode($childNode);
+                        $innerHtml = $this->replacePlaceholders($innerHtml);
+                        $this->logger->debug(
+                            'Add default slot:',
+                            [
+                                'nodeValue' => $node->nodeValue,
+                                'innerHtml' => $innerHtml,
+                            ]
+                        );
+
+                        $slot = $usedComponent->addSlot($slotName, $innerHtml);
+                        $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
+                        $removeNodes[] = $childNode;
+                    }
+                }
+            }
+        }
+        foreach ($removeNodes as $removeNode) {
+            $node->removeChild($removeNode);
+        }
     }
 
     protected function insertDefaultValues(): void
