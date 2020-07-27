@@ -288,6 +288,8 @@ class Compiler
     /**
      * @param Property[] $variables
      *
+     * @throws ReflectionException
+     *
      * @return Property[]
      */
     private function preparePropertiesForInclude(array $variables): array
@@ -516,20 +518,6 @@ class Compiler
     }
 
     /**
-     * @throws RuntimeException
-     */
-    public function transformCamelCaseToCSS(string $property): string
-    {
-        $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
-
-        if (!$cssProperty) {
-            throw new RuntimeException(sprintf('Failed to convert style property %s into css property name.', $property));
-        }
-
-        return $cssProperty;
-    }
-
-    /**
      * @throws ReflectionException
      */
     protected function handleTextNode(DOMText $node): DOMText
@@ -717,6 +705,20 @@ class Compiler
         }
 
         return $string;
+    }
+
+    /**
+     * @throws RuntimeException
+     */
+    public function transformCamelCaseToCSS(string $property): string
+    {
+        $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
+
+        if (!$cssProperty) {
+            throw new RuntimeException(sprintf('Failed to convert style property %s into css property name.', $property));
+        }
+
+        return $cssProperty;
     }
 
     private function stripEventHandlers(DOMElement $node): void
