@@ -1,0 +1,8 @@
+{% set slot_header_fallback %}header{% endset %}
+{% set slot_default_fallback %}content{% endset %}
+{% set slot_footer_fallback %}footer{% endset %}
+<div class="container {{ class|default('') }}" style="{{ style|default('') }}">
+  <header>{{ slot_header|default(slot_header_fallback) }}</header>
+  <main>{{ slot_default|default(slot_default_fallback) }}</main>
+  <footer>{{ slot_footer|default(slot_footer_fallback) }}</footer>
+</div>

@@ -910,14 +910,14 @@ class Compiler
 
         $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
 
+        $slotName = Slot::SLOT_PREFIX;
+        $slotName .= $node->getAttribute('name') ? $node->getAttribute('name') : Slot::SLOT_DEFAULT_NAME;
+
         if ($slotFallback) {
-            $this->addVariable('slot_default_fallback', $slotFallback);
-            $variable = $this->builder->createVariableOutput(
-                Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME,
-                'slot_default_fallback'
-            );
+            $this->addVariable($slotName . '_fallback', $slotFallback);
+            $variable = $this->builder->createVariableOutput($slotName, $slotName . '_fallback');
         } else {
-            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME);
+            $variable = $this->builder->createVariableOutput($slotName);
         }
 
         $variableNode = $this->document->createTextNode($variable);
