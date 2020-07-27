@@ -22,8 +22,6 @@ use RuntimeException;
 
 class Compiler
 {
-    protected const INCLUDE_ATTRIBUTES = ['class', 'style'];
-
     /**
      * @var Component[]
      */
@@ -78,6 +76,11 @@ class Compiler
      * @var string[]
      */
     protected $rawBlocks = [];
+
+    /**
+     * @var string[]
+     */
+    protected $includeAttributes = ['class', 'style'];
 
     /**
      * Compiler constructor.
@@ -275,7 +278,7 @@ class Compiler
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             if ($level === 1) {
-                foreach (self::INCLUDE_ATTRIBUTES as $attribute) {
+                foreach ($this->includeAttributes as $attribute) {
                     $this->handleRootNodeAttribute($node, $attribute);
                 }
             }
@@ -299,7 +302,7 @@ class Compiler
     {
         $values = [];
         foreach ($variables as $key => $variable) {
-            if (in_array($variable->getName(), self::INCLUDE_ATTRIBUTES)) {
+            if (in_array($variable->getName(), $this->includeAttributes)) {
                 if ($variable->isBinding()) {
                     $values[$variable->getName()][] = $this->handleBinding(
                         $variable->getValue(),
@@ -314,7 +317,7 @@ class Compiler
             }
         }
 
-        foreach (self::INCLUDE_ATTRIBUTES as $attribute) {
+        foreach ($this->includeAttributes as $attribute) {
             $variables[] = new Property(
                 $attribute,
                 $values[$attribute] ?? null ? implode(' ~ " " ~ ', $values[$attribute]) : '""',
@@ -850,6 +853,15 @@ class Compiler
     public function setStripWhitespace(bool $stripWhitespace): Compiler
     {
         $this->stripWhitespace = $stripWhitespace;
+
+        return $this;
+    }
+
+    public function disableStyleInclude(): Compiler
+    {
+        if (($key = array_search('style', $this->includeAttributes)) !== false) {
+            unset($this->includeAttributes[$key]);
+        }
 
         return $this;
     }
