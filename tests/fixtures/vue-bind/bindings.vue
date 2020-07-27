@@ -10,6 +10,8 @@
       <div :style="'display: none !important'">Hidden</div>
       <div style="color: red" :style="'display: none !important'">Hidden</div>
       <div style="border: 1px solid #000000" :style="{ 'color: red': isSomething, 'color: blue': !isSomething}">Hidden</div>
+      <div :class="{'foo': bar}"></div>
+      <div :class="{'foo' : bar}"></div>
       </div>
   </div>
 </template>

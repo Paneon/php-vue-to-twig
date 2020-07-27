@@ -441,7 +441,7 @@ class Compiler
         $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
         $regexTemplateString = '/^`(?P<content>.+)`$/';
         $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
-        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?:\s*(?<condition>[^,]+)/x';
+        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
 
         if ($value === 'true') {
             $this->logger->debug('- setAttribute ' . $name);
