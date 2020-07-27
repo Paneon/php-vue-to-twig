@@ -22,6 +22,8 @@ use RuntimeException;
 
 class Compiler
 {
+    protected const INCLUDE_ATTRIBUTES = ['class', 'style'];
+
     /**
      * @var Component[]
      */
@@ -273,8 +275,9 @@ class Compiler
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             if ($level === 1) {
-                $this->handleRootNodeAttribute($node, 'class');
-                $this->handleRootNodeAttribute($node, 'style');
+                foreach (self::INCLUDE_ATTRIBUTES as $attribute) {
+                    $this->handleRootNodeAttribute($node, $attribute);
+                }
             }
         }
 
@@ -296,7 +299,7 @@ class Compiler
     {
         $values = [];
         foreach ($variables as $key => $variable) {
-            if ($variable->getName() === 'class' || $variable->getName() === 'style') {
+            if (in_array($variable->getName(), self::INCLUDE_ATTRIBUTES)) {
                 if ($variable->isBinding()) {
                     $values[$variable->getName()][] = $this->handleBinding(
                         $variable->getValue(),
@@ -311,17 +314,13 @@ class Compiler
             }
         }
 
-        $variables[] = new Property(
-            'class',
-            $values['class'] ?? null ? implode(' ~ " " ~ ', $values['class']) : '""',
-            false
-        );
-
-        $variables[] = new Property(
-            'style',
-            $values['style'] ?? null ? implode(' ~ " " ~ ', $values['style']) : '""',
-            false
-        );
+        foreach (self::INCLUDE_ATTRIBUTES as $attribute) {
+            $variables[] = new Property(
+                $attribute,
+                $values[$attribute] ?? null ? implode(' ~ " " ~ ', $values[$attribute]) : '""',
+                false
+            );
+        }
 
         return $variables;
     }
