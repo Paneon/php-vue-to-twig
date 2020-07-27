@@ -932,6 +932,7 @@ class Compiler
     /**
      * @param Component $usedComponent
      *
+     * @throws Exception
      * @throws ReflectionException
      */
     protected function handleNamedSlotsInclude(DOMElement $node, $usedComponent): void
