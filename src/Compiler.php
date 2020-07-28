@@ -302,25 +302,26 @@ class Compiler
     {
         $values = [];
         foreach ($variables as $key => $variable) {
-            if (in_array($variable->getName(), $this->includeAttributes)) {
+            $name = $variable->getName();
+            $value = $variable->getValue();
+            if (in_array($name, $this->includeAttributes)) {
                 if ($variable->isBinding()) {
-                    $values[$variable->getName()][] = $this->handleBinding(
-                        $variable->getValue(),
-                        $variable->getName(),
-                        null,
-                        false
-                    )[0];
+                    $values[$name][] = $this->handleBinding($value, $name, null, false)[0];
                 } else {
-                    $values[$variable->getName()][] = $variable->getValue();
+                    $values[$name][] = $value;
                 }
                 unset($variables[$key]);
             }
         }
 
         foreach ($this->includeAttributes as $attribute) {
+            $glue = ' ~ " " ~ ';
+            if ($attribute === 'style') {
+                $glue = ' ~ "; " ~ ';
+            }
             $variables[] = new Property(
                 $attribute,
-                $values[$attribute] ?? null ? implode(' ~ " " ~ ', $values[$attribute]) : '""',
+                $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""',
                 false
             );
         }
@@ -742,17 +743,20 @@ class Compiler
      */
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
     {
-        $glue = ' ';
-
         if ($attribute === 'style') {
-            $glue = '; ';
+            if (!empty($oldValue)) {
+                $oldValue = trim($oldValue, ';') . ';';
+            }
+            foreach ($values as &$value) {
+                $value = trim($value, ';') . ';';
+            }
         }
 
         if (!empty($oldValue)) {
             $values = array_merge([$oldValue], $values);
         }
 
-        return implode($glue, $values);
+        return trim(implode(' ', $values));
     }
 
     /**
