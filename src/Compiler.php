@@ -676,25 +676,6 @@ class Compiler
         $node->appendChild(new DOMText('{{' . $text . '}}'));
     }
 
-    protected function addDefaultsToVariable(string $varName, string $string): string
-    {
-        if (!in_array($varName, array_keys($this->properties))) {
-            return $string;
-        }
-
-        $prop = $this->properties[$varName];
-
-        if ($prop->hasDefault()) {
-            $string = preg_replace(
-                '/\b(' . $varName . ')\b/',
-                $varName . '|default(' . $prop->getDefault() . ')',
-                $string
-            );
-        }
-
-        return $string;
-    }
-
     /**
      * @throws RuntimeException
      */
