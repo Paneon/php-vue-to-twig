@@ -773,7 +773,7 @@ class Compiler
             $templateStringContent = '"' . $matches['content'] . '"';
             $value = preg_replace(
                 '/\${(.+)}/',
-                '{{ $1 }}',
+                '" ~ ( $1 ) ~ "',
                 $templateStringContent
             );
         }

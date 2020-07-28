@@ -4,6 +4,7 @@
     <ChildComponent class="foo" :class="`bar`" />
     <ChildComponent class="foo" :class="bar" />
     <ChildComponent class="product-column__tile" :class="{'product-column__tile--large': isSingleProductTile }" />
+    <ChildComponent :aria-labelledby="`foo-${_uid}`" />
   </div>
 </template>
 <script>
