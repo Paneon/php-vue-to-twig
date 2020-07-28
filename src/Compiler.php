@@ -190,6 +190,7 @@ class Compiler
         } elseif ($node instanceof DOMDocument) {
             $this->logger->warning('Document node found.');
         } elseif ($node instanceof DOMElement) {
+            $this->twigRemove($node);
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
@@ -972,6 +973,13 @@ class Compiler
         $nodeValue = trim($node->nodeValue);
         if (preg_match('/^(eslint-disable|@?todo)/i', $nodeValue) === 1) {
             $this->nodeHelper->removeNode($node);
+        }
+    }
+
+    private function twigRemove(DOMElement $node): void
+    {
+        if ($node->hasAttribute('data-twig-remove')) {
+            $node->parentNode->removeChild($node);
         }
     }
 }
