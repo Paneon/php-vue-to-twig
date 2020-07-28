@@ -190,7 +190,9 @@ class Compiler
         } elseif ($node instanceof DOMDocument) {
             $this->logger->warning('Document node found.');
         } elseif ($node instanceof DOMElement) {
-            $this->twigRemove($node);
+            if ($this->twigRemove($node)) {
+                return $node;
+            }
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
@@ -976,10 +978,14 @@ class Compiler
         }
     }
 
-    private function twigRemove(DOMElement $node): void
+    private function twigRemove(DOMElement $node): bool
     {
         if ($node->hasAttribute('data-twig-remove')) {
             $node->parentNode->removeChild($node);
+
+            return true;
         }
+
+        return false;
     }
 }
