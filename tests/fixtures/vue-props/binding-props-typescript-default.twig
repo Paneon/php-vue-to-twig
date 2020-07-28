@@ -4,6 +4,6 @@
 {% set propPresentWithTypeAndDefault = propPresentWithTypeAndDefault|default('foo') %}
 {% set propPresentWithApostrophe = propPresentWithApostrophe|default('I\'m a text') %}
 {% set propPresentWithAt = propPresentWithAt|default('vuetotwig@example.org') %}
-<div class="{{class|default('')}}">
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
   {{ test }}
 </div>

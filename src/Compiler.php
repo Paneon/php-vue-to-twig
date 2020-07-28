@@ -78,6 +78,11 @@ class Compiler
     protected $rawBlocks = [];
 
     /**
+     * @var string[]
+     */
+    protected $includeAttributes = ['class', 'style'];
+
+    /**
      * Compiler constructor.
      */
     public function __construct(DOMDocument $document, LoggerInterface $logger)
@@ -178,6 +183,7 @@ class Compiler
         } elseif ($node instanceof DOMDocument) {
             $this->logger->warning('Document node found.');
         } elseif ($node instanceof DOMElement) {
+            $this->twigRemove($node);
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
@@ -238,7 +244,7 @@ class Compiler
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
-                    $usedComponent->getProperties()
+                    $this->preparePropertiesForInclude($usedComponent->getProperties())
                 )
             );
 
@@ -273,7 +279,9 @@ class Compiler
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             if ($level === 1) {
-                $this->handleRootNodeClassAttribute($node);
+                foreach ($this->includeAttributes as $attribute) {
+                    $this->handleRootNodeAttribute($node, $attribute);
+                }
             }
         }
 
@@ -282,6 +290,44 @@ class Compiler
         }
 
         return $node;
+    }
+
+    /**
+     * @param Property[] $variables
+     *
+     * @throws ReflectionException
+     *
+     * @return Property[]
+     */
+    private function preparePropertiesForInclude(array $variables): array
+    {
+        $values = [];
+        foreach ($variables as $key => $variable) {
+            $name = $variable->getName();
+            $value = $variable->getValue();
+            if (in_array($name, $this->includeAttributes)) {
+                if ($variable->isBinding()) {
+                    $values[$name][] = $this->handleBinding($value, $name, null, false)[0];
+                } else {
+                    $values[$name][] = $value;
+                }
+                unset($variables[$key]);
+            }
+        }
+
+        foreach ($this->includeAttributes as $attribute) {
+            $glue = ' ~ " " ~ ';
+            if ($attribute === 'style') {
+                $glue = ' ~ "; " ~ ';
+            }
+            $variables[] = new Property(
+                $attribute,
+                $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""',
+                false
+            );
+        }
+
+        return $variables;
     }
 
     public function registerProperties(DOMElement $scriptElement): void
@@ -349,7 +395,6 @@ class Compiler
             $this->logger->debug('- handle: ' . $name . ' = ' . $value);
 
             $staticValues = $node->hasAttribute($name) ? $node->getAttribute($name) : '';
-            $dynamicValues = [];
 
             // Remove originally bound attribute
             $this->logger->debug('- remove original ' . $attribute->name);
@@ -359,73 +404,7 @@ class Compiler
                 continue;
             }
 
-            $regexArrayBinding = '/^\[([^\]]+)\]$/';
-            $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
-            $regexTemplateString = '/^`(?P<content>.+)`$/';
-            $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
-            $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?:\s*(?<condition>[^,]+)/x';
-
-            if ($value === 'true') {
-                $this->logger->debug('- setAttribute ' . $name);
-                $node->setAttribute($name, $name);
-            } elseif (preg_match($regexArrayBinding, $value, $matches)) {
-                $this->logger->debug('- array binding ', ['value' => $value]);
-
-                if (preg_match_all($regexArrayElements, $value, $arrayMatch)) {
-                    $value = $arrayMatch['elements'];
-                    $this->logger->debug('- ', ['match' => $arrayMatch]);
-                } else {
-                    $value = [];
-                }
-
-                if ($name === 'style') {
-                    foreach ($value as $prop => $setting) {
-                        if ($setting) {
-                            $prop = strtolower($this->transformCamelCaseToCSS($prop));
-                            $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
-                        }
-                    }
-                } elseif ($name === 'class') {
-                    foreach ($value as $className) {
-                        $dynamicValues[] = $className;
-                    }
-                }
-            } elseif (preg_match($regexObjectBinding, $value, $matches)) {
-                $this->logger->debug('- object binding ', ['value' => $value]);
-
-                $items = explode(',', $matches['elements']);
-
-                foreach ($items as $item) {
-                    if (preg_match($regexObjectElements, $item, $matchElement)) {
-                        $dynamicValues[] = sprintf(
-                            '{{ %s ? \'%s\' }}',
-                            $this->builder->refactorCondition($matchElement['condition']),
-                            $matchElement['class'] . ' '
-                        );
-                    }
-                }
-            } elseif (preg_match($regexTemplateString, $value, $matches)) {
-                // <div :class="`abc ${someDynamicClass}`">
-                $templateStringContent = $matches['content'];
-
-                preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
-                foreach ($matches as $match) {
-                    $templateStringContent = str_replace(
-                        $match[0],
-                        '{{ ' . $this->builder->refactorCondition($match[1]) . ' }}',
-                        $templateStringContent
-                    );
-                }
-
-                $dynamicValues[] = $templateStringContent;
-            } else {
-                $value = $this->builder->refactorCondition($value);
-                $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
-                $dynamicValues[] =
-                    Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN') .
-                    $value .
-                    Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
-            }
+            $dynamicValues = $this->handleBinding($value, $name, $node);
 
             /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {
@@ -449,6 +428,97 @@ class Compiler
 
             $node->setAttribute($name, $this->implodeAttributeValue($name, $dynamicValues, $staticValues));
         }
+    }
+
+    /**
+     * @throws ReflectionException
+     *
+     * @return string[]
+     */
+    public function handleBinding(string $value, string $name, ?DOMElement $node = null, bool $twigOutput = true): array
+    {
+        $dynamicValues = [];
+
+        $regexArrayBinding = '/^\[([^\]]+)\]$/';
+        $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
+        $regexTemplateString = '/^`(?P<content>.+)`$/';
+        $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
+        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
+
+        if ($value === 'true') {
+            $this->logger->debug('- setAttribute ' . $name);
+            if ($node) {
+                $node->setAttribute($name, $name);
+            }
+        } elseif (preg_match($regexArrayBinding, $value, $matches)) {
+            $this->logger->debug('- array binding ', ['value' => $value]);
+
+            if (preg_match_all($regexArrayElements, $value, $arrayMatch)) {
+                $value = $arrayMatch['elements'];
+                $this->logger->debug('- ', ['match' => $arrayMatch]);
+            } else {
+                $value = [];
+            }
+
+            if ($name === 'style') {
+                foreach ($value as $prop => $setting) {
+                    if ($setting) {
+                        $prop = strtolower($this->transformCamelCaseToCSS($prop));
+                        $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
+                    }
+                }
+            } elseif ($name === 'class') {
+                foreach ($value as $className) {
+                    $dynamicValues[] = $className;
+                }
+            }
+        } elseif (preg_match($regexObjectBinding, $value, $matches)) {
+            $this->logger->debug('- object binding ', ['value' => $value]);
+
+            $items = explode(',', $matches['elements']);
+
+            foreach ($items as $item) {
+                if (preg_match($regexObjectElements, $item, $matchElement)) {
+                    $dynamicValues[] = $this->prepareBindingOutput(
+                        $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . ' \'',
+                        $twigOutput
+                    );
+                }
+            }
+        } elseif (preg_match($regexTemplateString, $value, $matches)) {
+            // <div :class="`abc ${someDynamicClass}`">
+            $templateStringContent = $matches['content'];
+
+            preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
+            foreach ($matches as $match) {
+                $templateStringContent = str_replace(
+                    $match[0],
+                    $this->prepareBindingOutput($this->builder->refactorCondition($match[1]), $twigOutput),
+                    $templateStringContent
+                );
+            }
+
+            $dynamicValues[] = $templateStringContent;
+        } else {
+            $value = $this->builder->refactorCondition($value);
+            $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
+            $dynamicValues[] = $this->prepareBindingOutput($value, $twigOutput);
+        }
+
+        return $dynamicValues;
+    }
+
+    private function prepareBindingOutput(string $value, bool $twigOutput = true): string
+    {
+        $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
+        $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
+
+        if (!$twigOutput) {
+            $open = '(';
+            $close = ')';
+        }
+
+        return $open . ' ' . $value . ' ' . $close;
     }
 
     /**
@@ -641,7 +711,10 @@ class Compiler
         return $string;
     }
 
-    private function transformCamelCaseToCSS(string $property): string
+    /**
+     * @throws RuntimeException
+     */
+    public function transformCamelCaseToCSS(string $property): string
     {
         $cssProperty = preg_replace('/([A-Z])/', '-$1', $property);
 
@@ -671,17 +744,20 @@ class Compiler
      */
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
     {
-        $glue = ' ';
-
         if ($attribute === 'style') {
-            $glue = '; ';
+            if (!empty($oldValue)) {
+                $oldValue = trim($oldValue, ';') . ';';
+            }
+            foreach ($values as &$value) {
+                $value = trim($value, ';') . ';';
+            }
         }
 
         if (!empty($oldValue)) {
             $values = array_merge([$oldValue], $values);
         }
 
-        return implode($glue, $values);
+        return trim(implode(' ', $values));
     }
 
     /**
@@ -735,7 +811,7 @@ class Compiler
             $templateStringContent = '"' . $matches['content'] . '"';
             $value = preg_replace(
                 '/\${(.+)}/',
-                '{{ $1 }}',
+                '" ~ ( $1 ) ~ "',
                 $templateStringContent
             );
         }
@@ -782,6 +858,15 @@ class Compiler
     public function setStripWhitespace(bool $stripWhitespace): Compiler
     {
         $this->stripWhitespace = $stripWhitespace;
+
+        return $this;
+    }
+
+    public function disableStyleInclude(): Compiler
+    {
+        if (($key = array_search('style', $this->includeAttributes)) !== false) {
+            unset($this->includeAttributes[$key]);
+        }
 
         return $this;
     }
@@ -859,16 +944,19 @@ class Compiler
         }
     }
 
-    protected function handleRootNodeClassAttribute(DOMElement $node): DOMElement
+    protected function handleRootNodeAttribute(DOMElement $node, ?string $name = null): DOMElement
     {
-        $classString = "__DOUBLE_CURLY_OPEN__class__PIPE__default('')__DOUBLE_CURLY_CLOSE__";
-        if ($node->hasAttribute('class')) {
-            $attributeVClass = $node->getAttributeNode('class');
-            $attributeVClass->value .= ' ' . $classString;
-        } else {
-            $attributeVClass = new DOMAttr('class', $classString);
+        if (!$name) {
+            return $node;
         }
-        $node->setAttributeNode($attributeVClass);
+        $string = $this->prepareBindingOutput($name . '|default(\'\')');
+        if ($node->hasAttribute($name)) {
+            $attribute = $node->getAttributeNode($name);
+            $attribute->value .= ' ' . $string;
+        } else {
+            $attribute = new DOMAttr($name, $string);
+        }
+        $node->setAttributeNode($attribute);
 
         return $node;
     }
@@ -877,6 +965,13 @@ class Compiler
     {
         $nodeValue = trim($node->nodeValue);
         if (preg_match('/^(eslint-disable|@?todo)/i', $nodeValue) === 1) {
+            $node->parentNode->removeChild($node);
+        }
+    }
+
+    private function twigRemove(DOMElement $node): void
+    {
+        if ($node->hasAttribute('data-twig-remove')) {
             $node->parentNode->removeChild($node);
         }
     }
