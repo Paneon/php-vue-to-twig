@@ -1,7 +1,7 @@
 <div class="block {{ class|default('') }}" style="{{ style|default('') }}">
-  <div class="block block--{{ modifier }}" style="fill: {{ color }}">
+  <div class="block block--{{ modifier }}" style="fill: {{ color }};">
     Hello World
   </div>
   <div class="{{ isTrue ? 'a' : 'b' }}"></div>
-  <div style="{{ isTrue ? 'display: block;' : 'display: none !important;' }}"></div>
+  <div style="{{ isTrue ? 'display: block' : 'display: none !important' }};"></div>
 </div>
