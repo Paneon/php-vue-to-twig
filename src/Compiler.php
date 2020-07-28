@@ -913,12 +913,10 @@ class Compiler
     }
 
     /**
-     * @param Component $usedComponent
-     *
      * @throws Exception
      * @throws ReflectionException
      */
-    protected function handleNamedSlotsInclude(DOMNode $node, $usedComponent): void
+    protected function handleNamedSlotsInclude(DOMNode $node, Component $usedComponent): void
     {
         $removeNodes = [];
         foreach ($node->childNodes as $childNode) {
