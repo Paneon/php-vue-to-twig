@@ -41,7 +41,7 @@ It's difficult to interpret JavaScript language features and translate them into
 For example string concatenation inside attribute binding does not work currently: :no_entry_sign:
 
 ```vue
-<div :style="{ fontSize: size + 'px' }"></div> 
+<div :style="'fontSize: ' + size + 'px'"></div> 
 ```
 
 But if you move this into a single property like (A) or (B), it will work.
@@ -52,4 +52,7 @@ But if you move this into a single property like (A) or (B), it will work.
 
 <!-- (B) -->
 <div :style="{ fontSize: fontSizeVariable }"></div> 
+
+<!-- (C) -->
+<div :style="`fontSize: ${size}px`"></div>
 ```
