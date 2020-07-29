@@ -13,7 +13,7 @@ class DataTwigRemoveTest extends AbstractTestCase
     {
         $vueTemplate = '<template><div><span data-twig-remove>dummy</span></div></template>';
 
-        $expected = '<div class="{{class|default(\'\')}}"></div>';
+        $expected = '<div class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}"></div>';
 
         $compiler = $this->createCompiler($vueTemplate);
 
