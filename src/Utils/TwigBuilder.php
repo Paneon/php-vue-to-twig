@@ -231,8 +231,6 @@ class TwigBuilder
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
 
-//        $condition = $this->convertConcat($condition);
-
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
         }
@@ -279,33 +277,6 @@ class TwigBuilder
         return $refactoredContent;
     }
 
-    public function convertConcat(string $content): string
-    {
-        if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $parts = explode('+', $match[0]);
-                $lastPart = null;
-                $convertedContent = '';
-                foreach ($parts as $part) {
-                    $part = trim($part);
-                    if ($lastPart !== null) {
-                        if (is_numeric($lastPart) && is_numeric($part)) {
-                            $convertedContent .= ' + ' . $part;
-                        } else {
-                            $convertedContent .= ' ~ ' . $part;
-                        }
-                    } else {
-                        $convertedContent = $part;
-                    }
-                    $lastPart = $part;
-                }
-                $content = str_replace($match[0], $convertedContent, $content);
-            }
-        }
-
-        return $content;
-    }
-
     private function convertTemplateString(string $content): string
     {
         if (preg_match_all('/`([^`]+)`/', $content, $matches, PREG_SET_ORDER)) {
@@ -326,5 +297,47 @@ class TwigBuilder
         }
 
         return '{{ ' . $varName . ' }}';
+    }
+
+    /**
+     * @param Property[] $properties
+     */
+    public function concatConvert(string $content, array $properties): string
+    {
+        preg_match_all('/{{(.*?)}}/sm', $content, $matches);
+        foreach ($matches[1] as $match) {
+            $parts = explode('+', $match);
+            $newOutput = '';
+            $lastOperand = null;
+            foreach ($parts as $key => $part) {
+                if ($key > 0) {
+                    if ($lastOperand && $this->isNumeric($part, $properties)) {
+                        $newOutput .= '+';
+                    } else {
+                        $newOutput .= '~';
+                    }
+                }
+                $newOutput .= $part;
+                $lastOperand = $this->isNumeric($part, $properties);
+            }
+            $content = str_replace('{{' . $match . '}}', '{{' . $newOutput . '}}', $content);
+        }
+
+        return $content;
+    }
+
+    /**
+     * @param Property[] $properties
+     */
+    private function isNumeric(string $value, array $properties): bool
+    {
+        $value = trim($value);
+        foreach ($properties as $property) {
+            if (strtolower($property->getName()) === strtolower($value)) {
+                return $property->getType() && strtolower($property->getType()) === 'number';
+            }
+        }
+
+        return is_numeric($value);
     }
 }
