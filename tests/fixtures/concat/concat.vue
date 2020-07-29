@@ -7,6 +7,9 @@
     <div v-text="size + ' foo'"></div>
     <div v-text="size + 1"></div>
     <div v-text="1 + 1"></div>
+    <div v-text="'foo ' + size + size + ' bar'"></div>
+    <div v-text="'foo ' + ( size + size ) + ' bar'"></div>
+
   </div>
 </template>
 

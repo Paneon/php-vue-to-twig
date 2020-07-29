@@ -307,20 +307,15 @@ class TwigBuilder
         preg_match_all('/{{(.*?)}}/sm', $content, $matches);
         foreach ($matches[1] as $match) {
             $parts = explode('+', $match);
-            $newOutput = '';
-            $lastOperand = null;
+            $numericConcat = true;
             foreach ($parts as $key => $part) {
-                if ($key > 0) {
-                    if ($lastOperand && $this->isNumeric($part, $properties)) {
-                        $newOutput .= '+';
-                    } else {
-                        $newOutput .= '~';
-                    }
-                }
-                $newOutput .= $part;
-                $lastOperand = $this->isNumeric($part, $properties);
+                $numericConcat = $numericConcat && $this->isNumeric($part, $properties);
             }
-            $content = str_replace('{{' . $match . '}}', '{{' . $newOutput . '}}', $content);
+            $content = str_replace(
+                '{{' . $match . '}}',
+                '{{' . implode($numericConcat ? '+' : '~', $parts) . '}}',
+                $content
+            );
         }
 
         return $content;
