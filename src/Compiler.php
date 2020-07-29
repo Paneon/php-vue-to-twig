@@ -158,7 +158,7 @@ class Compiler
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
 
-        $html = $this->builder->concatConvert($html, $this->properties);
+        $html = $this->builder->concatConvertHandler($html, $this->properties);
 
         if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);

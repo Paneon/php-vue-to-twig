@@ -302,21 +302,32 @@ class TwigBuilder
     /**
      * @param Property[] $properties
      */
-    public function concatConvert(string $content, array $properties): string
+    public function concatConvertHandler(string $content, array $properties): string
     {
         preg_match_all('/{{(.*?)}}/sm', $content, $matches);
         foreach ($matches[1] as $match) {
-            $parts = explode('+', $match);
-            $numericConcat = true;
-            foreach ($parts as $key => $part) {
-                $numericConcat = $numericConcat && $this->isNumeric($part, $properties);
-            }
             $content = str_replace(
                 '{{' . $match . '}}',
-                '{{' . implode($numericConcat ? '+' : '~', $parts) . '}}',
+                '{{' . $this->concatConvert($match, $properties) . '}}',
                 $content
             );
         }
+
+        return $content;
+    }
+
+    /**
+     * @param Property[] $properties
+     */
+    public function concatConvert(string $content, array $properties): string
+    {
+        $parts = explode('+', $content);
+        $numericConcat = true;
+        foreach ($parts as $key => $part) {
+            $numericConcat = $numericConcat && $this->isNumeric($part, $properties);
+        }
+
+        $content = implode($numericConcat ? '+' : '~', $parts);
 
         return $content;
     }
