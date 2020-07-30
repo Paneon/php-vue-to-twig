@@ -77,14 +77,6 @@ class Component
     /**
      * @throws Exception
      */
-    public function addDefaultSlot(string $value): Slot
-    {
-        return $this->addSlot(Slot::SLOT_DEFAULT_NAME, $value);
-    }
-
-    /**
-     * @throws Exception
-     */
     public function addSlot(string $name, string $value): Slot
     {
         $this->slots[$name] = new Slot($name, $value);
@@ -112,6 +104,11 @@ class Component
     public function hasSlots(): bool
     {
         return !empty($this->slots);
+    }
+
+    public function hasSlot(string $name): bool
+    {
+        return !empty($this->slots[$name]);
     }
 
     /**

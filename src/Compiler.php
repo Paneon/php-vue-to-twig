@@ -15,6 +15,7 @@ use Paneon\VueToTwig\Models\Component;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
+use Paneon\VueToTwig\Utils\NodeHelper;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
 use ReflectionException;
@@ -53,6 +54,11 @@ class Compiler
     protected $builder;
 
     /**
+     * @var NodeHelper
+     */
+    protected $nodeHelper;
+
+    /**
      * @var Property[]
      */
     protected $properties;
@@ -88,6 +94,7 @@ class Compiler
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
         $this->builder = new TwigBuilder();
+        $this->nodeHelper = new NodeHelper();
         $this->document = $document;
         $this->logger = $logger;
         $this->lastCloseIf = [];
@@ -183,14 +190,16 @@ class Compiler
         } elseif ($node instanceof DOMDocument) {
             $this->logger->warning('Document node found.');
         } elseif ($node instanceof DOMElement) {
-            $this->twigRemove($node);
+            if ($this->twigRemove($node)) {
+                return $node;
+            }
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
-            $this->handleDefaultSlot($node);
+            $this->handleSlots($node);
             $this->cleanupAttributes($node);
         }
 
@@ -223,21 +232,13 @@ class Compiler
                 $this->convertNode($childNode, $level + 1);
             }
 
-            // Slots (Default)
+            // Slots
             if ($node->hasChildNodes()) {
-                $innerHtml = $this->innerHtmlOfNode($node);
-                $innerHtml = $this->replacePlaceholders($innerHtml);
-                $this->logger->debug(
-                    'Add default slot:',
-                    [
-                        'nodeValue' => $node->nodeValue,
-                        'innerHtml' => $innerHtml,
-                    ]
-                );
-
-                $slot = $usedComponent->addDefaultSlot($innerHtml);
-
-                $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
+                $this->handleNamedSlotsInclude($node, $usedComponent);
+                // Slots (Default)
+                if ($node->hasChildNodes() && !$usedComponent->hasSlot(Slot::SLOT_DEFAULT_NAME)) {
+                    $this->addSlot(Slot::SLOT_DEFAULT_NAME, $node, $usedComponent);
+                }
             }
 
             // Include Partial
@@ -271,7 +272,7 @@ class Compiler
             }
 
             // Remove original node
-            $node->parentNode->removeChild($node);
+            $this->nodeHelper->removeNode($node);
 
             return $node;
         }
@@ -479,7 +480,7 @@ class Compiler
 
             foreach ($items as $item) {
                 if (preg_match($regexObjectElements, $item, $matchElement)) {
-                    $dynamicValues[] = $this->prepareBindingOutput(
+                    $dynamicValues[] = $this->builder->prepareBindingOutput(
                         $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . ' \'',
                         $twigOutput
                     );
@@ -493,7 +494,7 @@ class Compiler
             foreach ($matches as $match) {
                 $templateStringContent = str_replace(
                     $match[0],
-                    $this->prepareBindingOutput($this->builder->refactorCondition($match[1]), $twigOutput),
+                    $this->builder->prepareBindingOutput($this->builder->refactorCondition($match[1]), $twigOutput),
                     $templateStringContent
                 );
             }
@@ -502,23 +503,10 @@ class Compiler
         } else {
             $value = $this->builder->refactorCondition($value);
             $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
-            $dynamicValues[] = $this->prepareBindingOutput($value, $twigOutput);
+            $dynamicValues[] = $this->builder->prepareBindingOutput($value, $twigOutput);
         }
 
         return $dynamicValues;
-    }
-
-    private function prepareBindingOutput(string $value, bool $twigOutput = true): string
-    {
-        $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
-        $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
-
-        if (!$twigOutput) {
-            $open = '(';
-            $close = ')';
-        }
-
-        return $open . ' ' . $value . ' ' . $close;
     }
 
     /**
@@ -539,7 +527,7 @@ class Compiler
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
             if (
-                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind')
+                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind' && $matches[1] !== 'slot')
                 || preg_match('/^[:]?ref$/', $attribute->name) === 1
             ) {
                 $removeAttributes[] = $attribute->name;
@@ -690,25 +678,6 @@ class Compiler
             $node->removeChild($node->firstChild);
         }
         $node->appendChild(new DOMText('{{' . $text . '}}'));
-    }
-
-    protected function addDefaultsToVariable(string $varName, string $string): string
-    {
-        if (!in_array($varName, array_keys($this->properties))) {
-            return $string;
-        }
-
-        $prop = $this->properties[$varName];
-
-        if ($prop->hasDefault()) {
-            $string = preg_replace(
-                '/\b(' . $varName . ')\b/',
-                $varName . '|default(' . $prop->getDefault() . ')',
-                $string
-            );
-        }
-
-        return $string;
     }
 
     /**
@@ -907,7 +876,7 @@ class Compiler
     /**
      * @throws Exception
      */
-    protected function handleDefaultSlot(DOMElement $node): void
+    protected function handleSlots(DOMElement $node): void
     {
         if ($node->nodeName !== 'slot') {
             return;
@@ -915,20 +884,60 @@ class Compiler
 
         $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
 
+        $slotName = Slot::SLOT_PREFIX;
+        $slotName .= $node->getAttribute('name') ? $node->getAttribute('name') : Slot::SLOT_DEFAULT_NAME;
+
         if ($slotFallback) {
-            $this->addVariable('slot_default_fallback', $slotFallback);
-            $variable = $this->builder->createVariableOutput(
-                Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME,
-                'slot_default_fallback'
-            );
+            $this->addVariable($slotName . '_fallback', $slotFallback);
+            $variable = $this->builder->createVariableOutput($slotName, $slotName . '_fallback');
         } else {
-            $variable = $this->builder->createVariableOutput(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME);
+            $variable = $this->builder->createVariableOutput($slotName);
         }
 
         $variableNode = $this->document->createTextNode($variable);
 
         $node->parentNode->insertBefore($variableNode, $node);
-        $node->parentNode->removeChild($node);
+        $this->nodeHelper->removeNode($node);
+    }
+
+    /**
+     * @throws Exception
+     * @throws ReflectionException
+     */
+    protected function handleNamedSlotsInclude(DOMNode $node, Component $usedComponent): void
+    {
+        $removeNodes = [];
+        foreach ($node->childNodes as $childNode) {
+            if ($childNode instanceof DOMElement && $childNode->tagName === 'template') {
+                foreach ($childNode->attributes as $attribute) {
+                    if ($attribute instanceof DOMAttr && preg_match('/v-slot(?::([a-z]+)?)/i', $attribute->nodeName, $matches)) {
+                        $slotName = $matches[1] ?? Slot::SLOT_DEFAULT_NAME;
+                        $this->addSlot($slotName, $childNode, $usedComponent);
+                        $removeNodes[] = $childNode;
+                    }
+                }
+            }
+        }
+        $this->nodeHelper->removeNodes($removeNodes);
+    }
+
+    /**
+     * @throws Exception
+     * @throws ReflectionException
+     */
+    protected function addSlot(string $slotName, DOMNode $node, Component $usedComponent): void
+    {
+        $innerHtml = $this->replacePlaceholders($this->innerHtmlOfNode($node));
+        $this->logger->debug(
+            'Add ' . $slotName . ' slot:',
+            [
+                'nodeValue' => $node->nodeValue,
+                'innerHtml' => $innerHtml,
+            ]
+        );
+
+        $slot = $usedComponent->addSlot($slotName, $innerHtml);
+        $this->addReplaceVariable($slot->getSlotContentVariableString(), $slot->getValue());
     }
 
     protected function insertDefaultValues(): void
@@ -949,7 +958,7 @@ class Compiler
         if (!$name) {
             return $node;
         }
-        $string = $this->prepareBindingOutput($name . '|default(\'\')');
+        $string = $this->builder->prepareBindingOutput($name . '|default(\'\')');
         if ($node->hasAttribute($name)) {
             $attribute = $node->getAttributeNode($name);
             $attribute->value .= ' ' . $string;
@@ -965,14 +974,18 @@ class Compiler
     {
         $nodeValue = trim($node->nodeValue);
         if (preg_match('/^(eslint-disable|@?todo)/i', $nodeValue) === 1) {
-            $node->parentNode->removeChild($node);
+            $this->nodeHelper->removeNode($node);
         }
     }
 
-    private function twigRemove(DOMElement $node): void
+    private function twigRemove(DOMElement $node): bool
     {
         if ($node->hasAttribute('data-twig-remove')) {
             $node->parentNode->removeChild($node);
+
+            return true;
         }
+
+        return false;
     }
 }
