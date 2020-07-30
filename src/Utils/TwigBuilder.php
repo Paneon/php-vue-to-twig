@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Utils;
 
+use Paneon\VueToTwig\Models\Concat;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
+use Exception;
 use ReflectionException;
 
 class TwigBuilder
@@ -17,6 +19,11 @@ class TwigBuilder
      * @var mixed[]
      */
     protected $options;
+
+    /**
+     * @var Concat[]
+     */
+    protected $concat = [];
 
     /**
      * TwigBuilder constructor.
@@ -301,16 +308,39 @@ class TwigBuilder
 
     /**
      * @param Property[] $properties
+     *
+     * @throws Exception
      */
     public function concatConvertHandler(string $content, array $properties): string
     {
-        preg_match_all('/{{(.*?)}}/sm', $content, $matches);
-        foreach ($matches[1] as $match) {
-            $content = str_replace(
-                '{{' . $match . '}}',
-                '{{' . $this->concatConvert($match, $properties) . '}}',
-                $content
-            );
+        preg_match_all('/{{(.*?)}}/sm', $content, $outputTerms);
+        foreach ($outputTerms[1] as $outputTerm) {
+            $oldOutputTerm = $outputTerm;
+
+            while (preg_match('/\(([^()]*)\)/', $outputTerm, $chambersTerm)) {
+                $outputTerm = str_replace(
+                    '(' . $chambersTerm[1] . ')',
+                    $this->convertConcat($chambersTerm[1], $properties),
+                    $outputTerm
+                );
+            }
+
+            $data = $this->replaceConcatCharacter($outputTerm, $properties);
+            $newOutputTerm = $data['value'] ?? '';
+
+            while (preg_match_all(Concat::CONCAT_REGEX, $newOutputTerm, $chambersTerms)) {
+                foreach ($chambersTerms[0] as $chambersTerm) {
+                    $newOutputTerm = str_replace(
+                        $chambersTerm,
+                        $this->concat[$chambersTerm]->getValue(),
+                        $newOutputTerm
+                    );
+                }
+            }
+
+            $content = str_replace('{{' . $oldOutputTerm . '}}', '{{' . $newOutputTerm . '}}', $content);
+
+            $this->concat = [];
         }
 
         return $content;
@@ -318,18 +348,40 @@ class TwigBuilder
 
     /**
      * @param Property[] $properties
+     *
+     * @throws Exception
      */
-    public function concatConvert(string $content, array $properties): string
+    private function convertConcat(string $content, array $properties): string
+    {
+        $data = $this->replaceConcatCharacter($content, $properties);
+
+        $concat = new Concat(
+            '(' . $data['value'] . ')',
+            $data['isNumeric']
+        );
+
+        $concatId = $concat->getConcatContentVariableString();
+        $this->concat[$concatId] = $concat;
+
+        return $concatId;
+    }
+
+    /**
+     * @param Property[] $properties
+     */
+    private function replaceConcatCharacter(string $content, array $properties): array
     {
         $parts = explode('+', $content);
-        $numericConcat = true;
-        foreach ($parts as $key => $part) {
-            $numericConcat = $numericConcat && $this->isNumeric($part, $properties);
+        $isNumericConcat = true;
+
+        foreach ($parts as $part) {
+            $isNumericConcat = $isNumericConcat && $this->isNumeric($part, $properties);
         }
 
-        $content = implode($numericConcat ? '+' : '~', $parts);
-
-        return $content;
+        return [
+            'value' => implode($isNumericConcat ? '+' : '~', $parts),
+            'isNumeric' => $isNumericConcat,
+        ];
     }
 
     /**
@@ -338,10 +390,15 @@ class TwigBuilder
     private function isNumeric(string $value, array $properties): bool
     {
         $value = trim($value);
+
         foreach ($properties as $property) {
             if (strtolower($property->getName()) === strtolower($value)) {
                 return $property->getType() && strtolower($property->getType()) === 'number';
             }
+        }
+
+        if (isset($this->concat[$value])) {
+            return $this->concat[$value]->isNumeric();
         }
 
         return is_numeric($value);
