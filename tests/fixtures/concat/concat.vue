@@ -17,6 +17,7 @@
     <div v-text="( size * size ) / 2 + 10"></div>
     <div v-text="( size * size ) % 2 + 10"></div>
     <div v-text="( size - 10 ) * 2 + 10"></div>
+    <div v-text="'20 - 10 - 5' + 10"></div>
   </div>
 </template>
 
