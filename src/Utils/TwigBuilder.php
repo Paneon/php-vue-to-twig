@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Utils;
 
+use Exception;
+use Paneon\VueToTwig\Models\Concat;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use ReflectionException;
@@ -17,6 +19,11 @@ class TwigBuilder
      * @var mixed[]
      */
     protected $options;
+
+    /**
+     * @var Concat[]
+     */
+    protected $concat = [];
 
     /**
      * TwigBuilder constructor.
@@ -231,8 +238,6 @@ class TwigBuilder
         $condition = str_replace('.length', '|length', $condition);
         $condition = str_replace('.trim', '|trim', $condition);
 
-//        $condition = $this->convertConcat($condition);
-
         foreach (Replacements::getConstants() as $constant => $value) {
             $condition = str_replace($value, Replacements::getSanitizedConstant($constant), $condition);
         }
@@ -279,33 +284,6 @@ class TwigBuilder
         return $refactoredContent;
     }
 
-    public function convertConcat(string $content): string
-    {
-        if (preg_match_all('/(\S*)(\s*\+\s*(\S+))+/', $content, $matches, PREG_SET_ORDER)) {
-            foreach ($matches as $match) {
-                $parts = explode('+', $match[0]);
-                $lastPart = null;
-                $convertedContent = '';
-                foreach ($parts as $part) {
-                    $part = trim($part);
-                    if ($lastPart !== null) {
-                        if (is_numeric($lastPart) && is_numeric($part)) {
-                            $convertedContent .= ' + ' . $part;
-                        } else {
-                            $convertedContent .= ' ~ ' . $part;
-                        }
-                    } else {
-                        $convertedContent = $part;
-                    }
-                    $lastPart = $part;
-                }
-                $content = str_replace($match[0], $convertedContent, $content);
-            }
-        }
-
-        return $content;
-    }
-
     private function convertTemplateString(string $content): string
     {
         if (preg_match_all('/`([^`]+)`/', $content, $matches, PREG_SET_ORDER)) {
@@ -325,7 +303,7 @@ class TwigBuilder
             return '{{ ' . $varName . '|default(' . $fallbackVariableName . ') }}';
         }
 
-        return '{{ ' . $varName . ' }}';
+        return '{{ ' . $varName . '|default(\'\') }}';
     }
 
     public function prepareBindingOutput(string $value, bool $twigOutput = true): string
@@ -339,5 +317,112 @@ class TwigBuilder
         }
 
         return $open . ' ' . $value . ' ' . $close;
+    }
+
+    /**
+     * @param Property[] $properties
+     *
+     * @throws Exception
+     */
+    public function concatConvertHandler(string $content, array $properties): string
+    {
+        preg_match_all('/{{(.*?)}}/sm', $content, $outputTerms);
+        foreach ($outputTerms[1] as $outputTerm) {
+            $oldOutputTerm = $outputTerm;
+
+            while (preg_match('/\(([^()]*)\)/', $outputTerm, $chambersTerm)) {
+                $outputTerm = str_replace(
+                    '(' . $chambersTerm[1] . ')',
+                    $this->convertConcat($chambersTerm[1], $properties),
+                    $outputTerm
+                );
+            }
+
+            $concat = $this->replaceConcatCharacter($outputTerm, $properties);
+            $newOutputTerm = $concat->getValue() ?? '';
+
+            while (preg_match_all(Concat::CONCAT_REGEX, $newOutputTerm, $chambersTerms)) {
+                foreach ($chambersTerms[0] as $chambersTerm) {
+                    $newOutputTerm = str_replace(
+                        $chambersTerm,
+                        $this->concat[$chambersTerm]->getValue(),
+                        $newOutputTerm
+                    );
+                }
+            }
+
+            $content = str_replace('{{' . $oldOutputTerm . '}}', '{{' . $newOutputTerm . '}}', $content);
+
+            $this->concat = [];
+        }
+
+        return $content;
+    }
+
+    /**
+     * @param Property[] $properties
+     *
+     * @throws Exception
+     */
+    private function convertConcat(string $content, array $properties): string
+    {
+        $concat = $this->replaceConcatCharacter($content, $properties);
+
+        $concat->setValue('(' . $concat->getValue() . ')');
+
+        $concatId = $concat->getConcatContentVariableString();
+        $this->concat[$concatId] = $concat;
+
+        return $concatId;
+    }
+
+    /**
+     * @param Property[] $properties
+     *
+     * @throws Exception
+     */
+    private function replaceConcatCharacter(string $content, array $properties): Concat
+    {
+        $parts = explode('+', $content);
+        $isNumericConcat = true;
+
+        foreach ($parts as $part) {
+            $isNumericConcat = $isNumericConcat && $this->isNumeric($part, $properties);
+        }
+
+        return new Concat(
+            implode($isNumericConcat ? '+' : '~', $parts),
+            $isNumericConcat
+        );
+    }
+
+    /**
+     * @param Property[] $properties
+     */
+    private function isNumeric(string $value, array $properties): bool
+    {
+        $value = trim($value);
+
+        foreach ($properties as $property) {
+            if (strtolower($property->getName()) === strtolower($value)) {
+                return $property->getType() && strtolower($property->getType()) === 'number';
+            }
+        }
+
+        if (isset($this->concat[$value])) {
+            return $this->concat[$value]->isNumeric();
+        }
+
+        $mathematicsParts = preg_split('/[-*\/%]+/', $value);
+        if (count($mathematicsParts) > 1) {
+            $isNumeric = true;
+            foreach ($mathematicsParts as $mathematicsPart) {
+                $isNumeric = $isNumeric && $this->isNumeric($mathematicsPart, $properties);
+            }
+
+            return $isNumeric;
+        }
+
+        return is_numeric($value);
     }
 }

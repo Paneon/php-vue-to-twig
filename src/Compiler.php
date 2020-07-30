@@ -165,6 +165,8 @@ class Compiler
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
 
+        $html = $this->builder->concatConvertHandler($html, $this->properties);
+
         if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
         }
@@ -350,6 +352,10 @@ class Compiler
                     $property->setIsRequired(true);
                 }
 
+                if (preg_match('/type:\s*([a-z]+)/m', $definition, $matchType)) {
+                    $property->setType($matchType[1]);
+                }
+
                 if (preg_match('/default:\s*(?<default>[^,$]+)\s*,?/mx', $definition, $matchDefault)) {
                     $property->setDefault(trim($matchDefault['default']));
                 }
@@ -358,13 +364,16 @@ class Compiler
             }
         }
 
-        $typeScriptRegexProps = '/\@Prop\(.*?default\s*\:\s*(?<defaultValue>\'(?:[^\n](?!(?<![\\\\])\'))*.?\'|"(?:[^\n](?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+).*?\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:[^;\@]*;/msx';
-
+        $typeScriptRegexProps = '/\@Prop\s*\({(?<propOptions>.*?)}\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:\s*(?<propType>[a-zA-Z]+)[^;\@]*;/msx';
+        $typeScriptRegexDefault = '/default\s*\:\s*(?<defaultValue>\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+)/msx';
         if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER)) {
             $this->properties = [];
             foreach ($typeScriptMatches as $typeScriptMatch) {
                 $property = new Property($typeScriptMatch['propName'], '', true);
-                $property->setDefault(trim($typeScriptMatch['defaultValue']));
+                if (preg_match($typeScriptRegexDefault, $typeScriptMatch['propOptions'], $defaultMatch)) {
+                    $property->setDefault(trim($defaultMatch['defaultValue']));
+                }
+                $property->setType(trim($typeScriptMatch['propType']));
                 $this->properties[$typeScriptMatch['propName']] = $property;
             }
         }
