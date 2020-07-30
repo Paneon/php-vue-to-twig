@@ -32,6 +32,11 @@ class Property
     protected $default;
 
     /**
+     * @var string|null
+     */
+    protected $type;
+
+    /**
      * Property constructor.
      */
     public function __construct(string $name, string $value, bool $isBinding)
@@ -84,5 +89,15 @@ class Property
     public function setDefault(string $default): void
     {
         $this->default = $default;
+    }
+
+    public function getType(): ?string
+    {
+        return $this->type;
+    }
+
+    public function setType(?string $type): void
+    {
+        $this->type = $type;
     }
 }

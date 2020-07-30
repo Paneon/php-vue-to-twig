@@ -1,0 +1,20 @@
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+  <div style="{{ 'fontSize: ' ~ size ~ 'px' }};"></div>
+  <div>{{'foo' ~ ' bar'}}</div>
+  <div>{{text ~ ' foo'}}</div>
+  <div>{{text ~ 1}}</div>
+  <div>{{size ~ ' foo'}}</div>
+  <div>{{size + 1}}</div>
+  <div>{{1 + 1}}</div>
+  <div>{{'foo ' ~ size ~ size ~ ' bar'}}</div>
+  <div>{{'foo ' ~ ( size + size ) ~ ' bar'}}</div>
+  <div>{{'foo ' ~ ( 1 + size ) ~ ' bar'}}</div>
+  <div>{{1 ~ ( 'foo' ~ size ) ~ 2}}</div>
+  <div>{{'foo ' ~ ( ( 1 + 2 ) ~ ( ' bar ' ~ ' baz ' ) ~ ( ' waz ' ~ 3 ) )}}</div>
+  <div>{{'foo ' ~ ( size * size ) ~ ' bar'}}</div>
+  <div>{{( size * size ) + 2}}</div>
+  <div>{{( size * size ) / 2 + 10}}</div>
+  <div>{{( size * size ) % 2 + 10}}</div>
+  <div>{{( size - 10 ) * 2 + 10}}</div>
+  <div>{{'20 - 10 - 5' ~ 10}}</div>
+</div>
