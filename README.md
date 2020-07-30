@@ -29,7 +29,7 @@ Compile vue files to twig templates with PHP
 
 |Functionality|Implemented|
 |:------------|:---------:|
-|Slots||
+|Slots|partially working|
 |Components|:white_check_mark:|
 |Filters||
 

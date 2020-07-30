@@ -1,0 +1,13 @@
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    {% set slot_header_value %}
+        <h1>Here might be a page title</h1>
+    {% endset %}
+    {% set slot_default_value %}
+        <p>A paragraph for the main content.</p>
+        <p>And another one.</p>
+    {% endset %}
+    {% set slot_footer_value %}
+        <p>Here's some contact info</p>
+    {% endset %}
+    {% include "/templates/ChildComponent.twig" with { 'slot_header': slot_header_value, 'slot_default': slot_default_value, 'slot_footer': slot_footer_value, 'class': "", 'style': "" } %}
+</div>

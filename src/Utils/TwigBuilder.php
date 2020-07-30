@@ -306,6 +306,19 @@ class TwigBuilder
         return '{{ ' . $varName . ' }}';
     }
 
+    public function prepareBindingOutput(string $value, bool $twigOutput = true): string
+    {
+        $open = Replacements::getSanitizedConstant('DOUBLE_CURLY_OPEN');
+        $close = Replacements::getSanitizedConstant('DOUBLE_CURLY_CLOSE');
+
+        if (!$twigOutput) {
+            $open = '(';
+            $close = ')';
+        }
+
+        return $open . ' ' . $value . ' ' . $close;
+    }
+
     /**
      * @param Property[] $properties
      *
