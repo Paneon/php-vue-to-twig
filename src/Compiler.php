@@ -536,7 +536,7 @@ class Compiler
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
             if (
-                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind' && $matches[1] !== 'slot')
+                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind' && $matches[1] !== 'slot' && $matches[1] !== 'cloak')
                 || preg_match('/^[:]?ref$/', $attribute->name) === 1
             ) {
                 $removeAttributes[] = $attribute->name;
