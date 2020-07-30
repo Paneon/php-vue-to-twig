@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Paneon\VueToTwig\Utils;
 
+use Exception;
 use Paneon\VueToTwig\Models\Concat;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
-use Exception;
 use ReflectionException;
 
 class TwigBuilder
@@ -368,6 +368,8 @@ class TwigBuilder
 
     /**
      * @param Property[] $properties
+     *
+     * @return mixed[]
      */
     private function replaceConcatCharacter(string $content, array $properties): array
     {
