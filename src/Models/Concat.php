@@ -9,7 +9,7 @@ use Ramsey\Uuid\Uuid;
 
 class Concat
 {
-    public const CONCAT_REGEX = '/__CONCAT_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}__/';
+    public const CONCAT_REGEX = '/__CONCAT_[a-f0-9]{8}_[a-f0-9]{4}_[a-f0-9]{4}_[a-f0-9]{4}_[a-f0-9]{12}__/';
 
     /**
      * @var string
@@ -60,7 +60,7 @@ class Concat
 
     public function getConcatContentVariableString(): string
     {
-        return '__CONCAT_' . $this->uuid . '__';
+        return '__CONCAT_' . str_replace('-', '_', $this->uuid) . '__';
     }
 
     public function getUuid(): string

@@ -413,6 +413,16 @@ class TwigBuilder
             return $this->concat[$value]->isNumeric();
         }
 
+        $subParts = preg_split('/[-\*\/%]+/', $value);
+        if (count($subParts) > 1) {
+            $isNumeric = true;
+            foreach ($subParts as $subPart) {
+                $isNumeric = $isNumeric && $this->isNumeric($subPart, $properties);
+            }
+
+            return $isNumeric;
+        }
+
         return is_numeric($value);
     }
 }

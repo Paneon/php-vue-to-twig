@@ -12,6 +12,11 @@
     <div v-text="'foo ' + ( 1 + size ) + ' bar'"></div>
     <div v-text="1 + ( 'foo' + size ) + 2"></div>
     <div v-text="'foo ' + ( ( 1 + 2 ) + ( ' bar ' + ' baz ' ) + ( ' waz ' + 3 ) )"></div>
+    <div v-text="'foo ' + ( size * size ) + ' bar'"></div>
+    <div v-text="( size * size ) + 2"></div>
+    <div v-text="( size * size ) / 2 + 10"></div>
+    <div v-text="( size * size ) % 2 + 10"></div>
+    <div v-text="( size - 10 ) * 2 + 10"></div>
   </div>
 </template>
 
