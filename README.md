@@ -63,7 +63,7 @@ export default {
 <div style="{{ 'fontSize: ' ~ (size + 10) ~ 'px' }};"></div>
 ```
 
-But this example doesn't work:
+But this example doesn't work correct:
 
 ```vue
 <template>
