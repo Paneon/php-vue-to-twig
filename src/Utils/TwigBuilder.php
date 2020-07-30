@@ -338,8 +338,8 @@ class TwigBuilder
                 );
             }
 
-            $data = $this->replaceConcatCharacter($outputTerm, $properties);
-            $newOutputTerm = $data['value'] ?? '';
+            $concat = $this->replaceConcatCharacter($outputTerm, $properties);
+            $newOutputTerm = $concat->getValue() ?? '';
 
             while (preg_match_all(Concat::CONCAT_REGEX, $newOutputTerm, $chambersTerms)) {
                 foreach ($chambersTerms[0] as $chambersTerm) {
@@ -366,12 +366,9 @@ class TwigBuilder
      */
     private function convertConcat(string $content, array $properties): string
     {
-        $data = $this->replaceConcatCharacter($content, $properties);
+        $concat = $this->replaceConcatCharacter($content, $properties);
 
-        $concat = new Concat(
-            '(' . $data['value'] . ')',
-            $data['isNumeric']
-        );
+        $concat->setValue('(' . $concat->getValue() . ')');
 
         $concatId = $concat->getConcatContentVariableString();
         $this->concat[$concatId] = $concat;
@@ -382,9 +379,9 @@ class TwigBuilder
     /**
      * @param Property[] $properties
      *
-     * @return mixed[]
+     * @throws Exception
      */
-    private function replaceConcatCharacter(string $content, array $properties): array
+    private function replaceConcatCharacter(string $content, array $properties): Concat
     {
         $parts = explode('+', $content);
         $isNumericConcat = true;
@@ -393,10 +390,10 @@ class TwigBuilder
             $isNumericConcat = $isNumericConcat && $this->isNumeric($part, $properties);
         }
 
-        return [
-            'value' => implode($isNumericConcat ? '+' : '~', $parts),
-            'isNumeric' => $isNumericConcat,
-        ];
+        return new Concat(
+            implode($isNumericConcat ? '+' : '~', $parts),
+            $isNumericConcat
+        );
     }
 
     /**
