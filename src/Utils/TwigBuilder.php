@@ -325,7 +325,7 @@ class TwigBuilder
             return '{{ ' . $varName . '|default(' . $fallbackVariableName . ') }}';
         }
 
-        return '{{ ' . $varName . ' }}';
+        return '{{ ' . $varName . '|default(\'\') }}';
     }
 
     public function prepareBindingOutput(string $value, bool $twigOutput = true): string
