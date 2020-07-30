@@ -37,3 +37,51 @@ Compile vue files to twig templates with PHP
 ## Limitations
 
 It's difficult to interpret JavaScript language features and translate them into twig.
+
+For example, string concatenation within attribute binding is not currently working properly: :no_entry_sign:
+
+This example works:
+
+```vue
+<template>
+    <div :style="'fontSize: ' + (size + 10) + 'px'"></div> 
+</template>
+
+<script>
+export default {
+  props: {
+    size: {
+      type: number,
+      required: true,
+    },
+  },
+};
+</script>
+```
+
+```twig
+<div style="{{ 'fontSize: ' ~ (size + 10) ~ 'px' }};"></div>
+```
+
+But this example doesn't work:
+
+```vue
+<template>
+    <div :style="'fontSize: ' + (foo.size + 10) + 'px'"></div> 
+</template>
+
+<script>
+export default {
+  props: {
+    foo: {
+      type: object,
+      required: true,
+    },
+  },
+};
+</script>
+```
+
+```twig
+<div style="{{ 'fontSize: ' ~ (foo.size ~ 10) ~ 'px' }};"></div>
+```
