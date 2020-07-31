@@ -1,0 +1,8 @@
+<style> .foo { color: red; }</style>
+<style> .bar[data-v-12345678] { color: blue; }</style>
+<style>.baz { color: #00FF00; }</style>
+<div data-v-12345678="" class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <div class="foo bar baz" data-v-12345678="">
+      42
+    </div>
+</div>

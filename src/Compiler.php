@@ -137,8 +137,7 @@ class Compiler
         /** @var DOMElement|null $scriptElement */
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
 
-        /** @var DOMElement|null $scriptElement */
-        $styleElement = $this->document->getElementsByTagName('style')->item(0);
+        $styleBlocks = $this->document->getElementsByTagName('style');
 
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
@@ -154,8 +153,11 @@ class Compiler
             }
         }
 
-        if ($styleElement && !empty($styleElement->textContent)) {
-            $this->rawBlocks[] = $this->styleBuilder->compile($styleElement);
+        if ($styleBlocks->length) {
+            foreach ($styleBlocks as $styleBlock) {
+                /* @var DOMElement $styleBlock */
+                $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
+            }
         }
 
         if (!$templateElement) {
@@ -1015,7 +1017,7 @@ class Compiler
 
     private function addScopedAttribute(DOMElement $node): void
     {
-        if (!$this->styleBuilder->isScoped()) {
+        if (!$this->styleBuilder->hasScoped()) {
             return;
         }
         $scopedAttribute = $this->styleBuilder->getScopedAttribute();

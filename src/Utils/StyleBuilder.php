@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Paneon\VueToTwig\Utils;
 
 use DOMElement;
-use DOMNode;
 use Exception;
 use Ramsey\Uuid\Uuid;
 use ScssPhp\ScssPhp\Compiler as ScssCompiler;
@@ -23,9 +22,9 @@ class StyleBuilder
     private $lang;
 
     /**
-     * @var bool|null
+     * @var bool
      */
-    private $isScoped;
+    private $hasScoped;
 
     /**
      * @var string|null
@@ -40,10 +39,11 @@ class StyleBuilder
     public function __construct()
     {
         $this->scopedAttribute = 'data-v-' . substr(md5(Uuid::uuid4()->toString()), 0, 8);
+        $this->hasScoped = false;
     }
 
     /**
-     * @param DOMNode|DOMElement|null $styleElement
+     * @param DOMElement|null $styleElement
      */
     public function compile($styleElement): ?string
     {
@@ -51,32 +51,6 @@ class StyleBuilder
             return null;
         }
 
-        $this->handle($styleElement);
-
-        $style = $styleElement->textContent;
-        if ($this->lang === 'scss') {
-            $style = $this->scssCompiler->compile($style);
-        }
-        if ($this->isScoped) {
-            $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
-        }
-
-        return '<style>' . $style . '</style>';
-    }
-
-    public function isScoped(): ?bool
-    {
-        return $this->isScoped;
-    }
-
-    public function getScopedAttribute(): string
-    {
-        return $this->scopedAttribute;
-    }
-
-    private function handle(DOMElement $styleElement): void
-    {
-        $this->isScoped = $styleElement->hasAttribute('scoped');
         if (
             !$this->scssCompiler instanceof ScssCompiler
             && $styleElement->hasAttribute('lang')
@@ -85,5 +59,26 @@ class StyleBuilder
             $this->lang = 'scss';
             $this->scssCompiler = new ScssCompiler();
         }
+
+        $style = $styleElement->textContent;
+        if ($this->lang === 'scss') {
+            $style = $this->scssCompiler->compile($style);
+        }
+        if ($styleElement->hasAttribute('scoped')) {
+            $this->hasScoped = true;
+            $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
+        }
+
+        return '<style>' . $style . '</style>';
+    }
+
+    public function hasScoped(): ?bool
+    {
+        return $this->hasScoped;
+    }
+
+    public function getScopedAttribute(): string
+    {
+        return $this->scopedAttribute;
     }
 }
