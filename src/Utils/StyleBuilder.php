@@ -17,14 +17,14 @@ class StyleBuilder
     public const STYLE_ALL = 3;
 
     /**
+     * @var int
+     */
+    private $outputType;
+
+    /**
      * @var ScssCompiler|null
      */
     private $scssCompiler;
-
-    /**
-     * @var string|null
-     */
-    private $lang;
 
     /**
      * @var bool
@@ -37,11 +37,6 @@ class StyleBuilder
     private $scopedAttribute;
 
     /**
-     * @var int
-     */
-    private $outputType;
-
-    /**
      * StyleBuilder constructor.
      *
      * @throws Exception
@@ -49,8 +44,9 @@ class StyleBuilder
     public function __construct()
     {
         $this->outputType = self::STYLE_ALL;
-        $this->scopedAttribute = 'data-v-' . substr(md5(Uuid::uuid4()->toString()), 0, 8);
+        $this->scssCompiler = null;
         $this->hasScoped = false;
+        $this->scopedAttribute = 'data-v-' . substr(md5(Uuid::uuid4()->toString()), 0, 8);
     }
 
     public function setOutputType(int $outputType): void
@@ -63,28 +59,21 @@ class StyleBuilder
      */
     public function compile($styleElement): ?string
     {
-        if (!$styleElement instanceof DOMElement) {
-            return null;
-        }
-
-        if (($styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE_SCOPED))
+        if (!$styleElement instanceof DOMElement
+            || ($styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE_SCOPED))
             || (!$styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE))) {
             return null;
         }
 
-        if (
-            !$this->scssCompiler instanceof ScssCompiler
-            && $styleElement->hasAttribute('lang')
-            && $styleElement->getAttribute('lang') === 'scss'
-        ) {
-            $this->lang = 'scss';
-            $this->scssCompiler = new ScssCompiler();
-        }
-
         $style = $styleElement->textContent;
-        if ($this->lang === 'scss') {
+
+        if ($styleElement->hasAttribute('lang') && $styleElement->getAttribute('lang') === 'scss') {
+            if ($this->scssCompiler === null) {
+                $this->scssCompiler = new ScssCompiler();
+            }
             $style = $this->scssCompiler->compile($style);
         }
+
         if ($styleElement->hasAttribute('scoped')) {
             $this->hasScoped = true;
             $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
