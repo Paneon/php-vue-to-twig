@@ -16,6 +16,7 @@ use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\NodeHelper;
+use Paneon\VueToTwig\Utils\StyleBuilder;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
 use ReflectionException;
@@ -52,6 +53,11 @@ class Compiler
      * @var TwigBuilder
      */
     protected $builder;
+
+    /**
+     * @var StyleBuilder
+     */
+    protected $styleBuilder;
 
     /**
      * @var NodeHelper
@@ -94,6 +100,7 @@ class Compiler
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
         $this->builder = new TwigBuilder();
+        $this->styleBuilder = new StyleBuilder();
         $this->nodeHelper = new NodeHelper();
         $this->document = $document;
         $this->logger = $logger;
@@ -130,6 +137,9 @@ class Compiler
         /** @var DOMElement|null $scriptElement */
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
 
+        /** @var DOMElement|null $scriptElement */
+        $styleElement = $this->document->getElementsByTagName('style')->item(0);
+
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
         if ($scriptElement) {
@@ -142,6 +152,11 @@ class Compiler
                 /* @var DOMText $twigBlock */
                 $this->rawBlocks[] = trim($twigBlock->textContent);
             }
+        }
+
+        if ($styleElement && !empty($styleElement->textContent)) {
+            $this->styleBuilder->setStyleNode($styleElement);
+            $this->rawBlocks[] = $this->styleBuilder->getStyleOutput();
         }
 
         if (!$templateElement) {
