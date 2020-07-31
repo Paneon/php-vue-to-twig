@@ -11,6 +11,11 @@ use ScssPhp\ScssPhp\Compiler as ScssCompiler;
 
 class StyleBuilder
 {
+    private const STYLE_NO = 0;
+    private const STYLE_SCOPED = 1;
+    private const STYLE = 2;
+    private const STYLE_ALL = 3;
+
     /**
      * @var ScssCompiler|null
      */
@@ -32,12 +37,18 @@ class StyleBuilder
     private $scopedAttribute;
 
     /**
+     * @var int
+     */
+    private $outputType;
+
+    /**
      * StyleBuilder constructor.
      *
      * @throws Exception
      */
     public function __construct()
     {
+        $this->outputType = self::STYLE_ALL;
         $this->scopedAttribute = 'data-v-' . substr(md5(Uuid::uuid4()->toString()), 0, 8);
         $this->hasScoped = false;
     }
@@ -48,6 +59,11 @@ class StyleBuilder
     public function compile($styleElement): ?string
     {
         if (!$styleElement instanceof DOMElement) {
+            return null;
+        }
+
+        if (($styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE_SCOPED))
+            || (!$styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE))) {
             return null;
         }
 
