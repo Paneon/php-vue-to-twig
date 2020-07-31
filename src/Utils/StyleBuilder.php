@@ -54,10 +54,7 @@ class StyleBuilder
         $this->outputType = $outputType;
     }
 
-    /**
-     * @param DOMElement|null $styleElement
-     */
-    public function compile($styleElement): ?string
+    public function compile(?DOMElement $styleElement): ?string
     {
         if (!$styleElement instanceof DOMElement
             || ($styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE_SCOPED))
