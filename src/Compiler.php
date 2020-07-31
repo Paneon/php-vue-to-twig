@@ -12,6 +12,7 @@ use DOMNode;
 use DOMText;
 use Exception;
 use Paneon\VueToTwig\Models\Component;
+use Paneon\VueToTwig\Models\Pre;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
@@ -64,6 +65,11 @@ class Compiler
     protected $properties;
 
     /**
+     * @var Pre[]
+     */
+    protected $pre;
+
+    /**
      * @var mixed[]
      */
     protected $replaceVariables = [];
@@ -101,6 +107,7 @@ class Compiler
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
+        $this->pre = [];
         $this->rawBlocks = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
@@ -167,6 +174,8 @@ class Compiler
 
         $html = $this->builder->concatConvertHandler($html, $this->properties);
 
+        $html = $this->replacePre($html);
+
         if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
         }
@@ -193,6 +202,9 @@ class Compiler
             $this->logger->warning('Document node found.');
         } elseif ($node instanceof DOMElement) {
             if ($this->twigRemove($node)) {
+                return $node;
+            }
+            if ($this->handlePre($node)) {
                 return $node;
             }
             $this->replaceShowWithIf($node);
@@ -377,6 +389,42 @@ class Compiler
                 $this->properties[$typeScriptMatch['propName']] = $property;
             }
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function handlePre(DOMElement $node): bool
+    {
+        if (!$node->hasAttribute('v-pre')) {
+            return false;
+        }
+        $node->removeAttribute('v-pre');
+        $html = $this->document->saveHTML($node);
+        $parentNode = $node->parentNode;
+        $parentNode->removeChild($node);
+        $pre = new Pre($html);
+        $key = $pre->getPreContentVariableString();
+        $replacer = $this->document->createTextNode($key);
+        $parentNode->appendChild($replacer);
+        $this->pre[$key] = $pre;
+
+        return true;
+    }
+
+    protected function replacePre(string $html): string
+    {
+        if (preg_match_all(Pre::PRE_REGEX, $html, $matches)) {
+            foreach ($matches[0] as $key) {
+                $html = str_replace(
+                    $key,
+                    $this->pre[$key]->getValue(),
+                    $html
+                );
+            }
+        }
+
+        return $html;
     }
 
     public function replaceShowWithIf(DOMElement $node): void
