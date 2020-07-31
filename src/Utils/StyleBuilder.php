@@ -83,12 +83,7 @@ class StyleBuilder
             && $styleElement->getAttribute('lang') === 'scss'
         ) {
             $this->lang = 'scss';
-            $this->loadPhpScss();
+            $this->scssCompiler = new ScssCompiler();
         }
-    }
-
-    private function loadPhpScss(): void
-    {
-        $this->scssCompiler = new ScssCompiler();
     }
 }
