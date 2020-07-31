@@ -866,6 +866,11 @@ class Compiler
         return $this;
     }
 
+    public function setStyleBlockOutputType(int $outputType): void
+    {
+        $this->styleBuilder->setOutputType($outputType);
+    }
+
     /**
      * @param mixed $value
      */
