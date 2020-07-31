@@ -57,7 +57,7 @@ class StyleBuilder
     {
         $style = $this->styleElement->textContent;
         if ($this->isScoped) {
-            $style = preg_replace('/(\.[-_a-zA-Z0-9]+)(\s*(?:{|,))/i', '$1[' . $this->scopedAttribute . ']$2', $style);
+            $style = preg_replace('/((?:^|[^},]*?)[\S]+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
         }
 
         return '<style>' . $style . '</style>';
