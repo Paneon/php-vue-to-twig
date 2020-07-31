@@ -403,7 +403,7 @@ class Compiler
         $html = $this->document->saveHTML($node);
         $parentNode = $node->parentNode;
         $parentNode->removeChild($node);
-        $pre = new Pre($html);
+        $pre = new Pre('{% verbatim %}' . $html . '{% endverbatim %}');
         $key = $pre->getPreContentVariableString();
         $replacer = $this->document->createTextNode($key);
         $parentNode->appendChild($replacer);

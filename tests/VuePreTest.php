@@ -13,7 +13,7 @@ class VuePreTest extends AbstractTestCase
     {
         $vueTemplate = '<template><div v-pre><div v-if="true">{{ 42 }}</div></div></template>';
 
-        $expected = '<div><div v-if="true">{{ 42 }}</div></div>';
+        $expected = '{% verbatim %}<div><div v-if="true">{{ 42 }}</div></div>{% endverbatim %}';
 
         $compiler = $this->createCompiler($vueTemplate);
 
