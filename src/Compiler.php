@@ -1019,7 +1019,6 @@ class Compiler
             return;
         }
         $scopedAttribute = $this->styleBuilder->getScopedAttribute();
-        $foo = new DOMAttr($scopedAttribute, '');
-        $node->setAttributeNode($foo);
+        $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
     }
 }
