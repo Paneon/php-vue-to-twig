@@ -218,6 +218,7 @@ class Compiler
             $this->stripEventHandlers($node);
             $this->handleSlots($node);
             $this->cleanupAttributes($node);
+            $this->addScopedAttribute($node);
         }
 
         // Registered Component
@@ -1011,5 +1012,15 @@ class Compiler
         }
 
         return false;
+    }
+
+    private function addScopedAttribute(DOMElement $node): void
+    {
+        if (!$this->styleBuilder->isScoped()) {
+            return;
+        }
+        $scopedAttribute = $this->styleBuilder->getScopedAttribute();
+        $foo = new DOMAttr($scopedAttribute, '');
+        $node->setAttributeNode($foo);
     }
 }

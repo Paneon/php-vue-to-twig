@@ -7,25 +7,27 @@ use Exception;
 class CompilerStyleBlockTest extends AbstractTestCase
 {
     /**
-     * @test
+     * @dataProvider dataProvider
+     *
+     * @param mixed $html
+     * @param mixed $expected
      *
      * @throws Exception
      */
-    public function registersProperties()
+    public function testStyleBlock($html, $expected)
     {
-        $component = file_get_contents(__DIR__ . '/fixtures/style-block/style-block.vue');
-        $expected = file_get_contents(__DIR__ . '/fixtures/style-block/style-block.twig');
-
-        if (!$component) {
-            self::fail('Component not found.');
-
-            return;
-        }
-
-        $compiler = $this->createCompiler($component);
+        $compiler = $this->createCompiler($html);
 
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
+    }
+
+    /**
+     * @return array
+     */
+    public function dataProvider()
+    {
+        return $this->loadFixturesFromDir('style-block');
     }
 }
