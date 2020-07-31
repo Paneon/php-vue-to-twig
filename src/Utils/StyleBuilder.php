@@ -87,7 +87,7 @@ class StyleBuilder
             $style = $this->scssCompiler->compile($style);
         }
         if ($this->isScoped) {
-            $style = preg_replace('/((?:^|[^},]*?)[\S]+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
+            $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
         }
 
         return '<style>' . $style . '</style>';
