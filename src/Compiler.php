@@ -155,8 +155,7 @@ class Compiler
         }
 
         if ($styleElement && !empty($styleElement->textContent)) {
-            $this->styleBuilder->setStyleNode($styleElement);
-            $this->rawBlocks[] = $this->styleBuilder->getStyleOutput();
+            $this->rawBlocks[] = $this->styleBuilder->compile($styleElement);
         }
 
         if (!$templateElement) {

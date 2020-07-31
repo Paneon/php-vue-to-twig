@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Paneon\VueToTwig\Utils;
 
 use DOMElement;
+use DOMNode;
 use Exception;
 use Ramsey\Uuid\Uuid;
 use ScssPhp\ScssPhp\Compiler as ScssCompiler;
@@ -12,9 +13,14 @@ use ScssPhp\ScssPhp\Compiler as ScssCompiler;
 class StyleBuilder
 {
     /**
-     * @var DOMElement|null
+     * @var ScssCompiler|null
      */
-    private $styleElement;
+    private $scssCompiler;
+
+    /**
+     * @var string|null
+     */
+    private $lang;
 
     /**
      * @var bool|null
@@ -27,16 +33,6 @@ class StyleBuilder
     private $scopedAttribute;
 
     /**
-     * @var string|null
-     */
-    private $lang;
-
-    /**
-     * @var ScssCompiler|null
-     */
-    private $scssCompiler;
-
-    /**
      * StyleBuilder constructor.
      *
      * @throws Exception
@@ -46,43 +42,18 @@ class StyleBuilder
         $this->scopedAttribute = 'data-v-' . substr(md5(Uuid::uuid4()->toString()), 0, 8);
     }
 
-    private function loadPhpScss(): void
+    /**
+     * @param DOMNode|DOMElement|null $styleElement
+     */
+    public function compile($styleElement): ?string
     {
-        $this->scssCompiler = new ScssCompiler();
-    }
-
-    public function setStyleNode(?DOMElement $styleElement): void
-    {
-        $this->styleElement = $styleElement;
-        $this->handle();
-    }
-
-    private function handle(): void
-    {
-        $this->isScoped = $this->styleElement->hasAttribute('scoped');
-        if (
-            !$this->scssCompiler instanceof ScssCompiler
-            && $this->styleElement->hasAttribute('lang')
-            && $this->styleElement->getAttribute('lang') === 'scss'
-        ) {
-            $this->lang = 'scss';
-            $this->loadPhpScss();
+        if (!$styleElement instanceof DOMElement) {
+            return null;
         }
-    }
 
-    public function getScopedAttribute(): string
-    {
-        return $this->scopedAttribute;
-    }
+        $this->handle($styleElement);
 
-    public function isScoped(): ?bool
-    {
-        return $this->isScoped;
-    }
-
-    public function getStyleOutput(): string
-    {
-        $style = $this->styleElement->textContent;
+        $style = $styleElement->textContent;
         if ($this->lang === 'scss') {
             $style = $this->scssCompiler->compile($style);
         }
@@ -91,5 +62,33 @@ class StyleBuilder
         }
 
         return '<style>' . $style . '</style>';
+    }
+
+    public function isScoped(): ?bool
+    {
+        return $this->isScoped;
+    }
+
+    public function getScopedAttribute(): string
+    {
+        return $this->scopedAttribute;
+    }
+
+    private function handle(DOMElement $styleElement): void
+    {
+        $this->isScoped = $styleElement->hasAttribute('scoped');
+        if (
+            !$this->scssCompiler instanceof ScssCompiler
+            && $styleElement->hasAttribute('lang')
+            && $styleElement->getAttribute('lang') === 'scss'
+        ) {
+            $this->lang = 'scss';
+            $this->loadPhpScss();
+        }
+    }
+
+    private function loadPhpScss(): void
+    {
+        $this->scssCompiler = new ScssCompiler();
     }
 }
