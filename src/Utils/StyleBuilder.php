@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Paneon\VueToTwig\Utils;
 
 use DOMElement;
+use Exception;
 use Ramsey\Uuid\Uuid;
 use ScssPhp\ScssPhp\Compiler as ScssCompiler;
 
@@ -37,6 +38,8 @@ class StyleBuilder
 
     /**
      * StyleBuilder constructor.
+     *
+     * @throws Exception
      */
     public function __construct()
     {
