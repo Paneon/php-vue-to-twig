@@ -775,8 +775,13 @@ class Compiler
             $value = trim($node->textContent);
         }
 
+        /** @var DOMElement $clonedNode */
         $clonedNode = $node->cloneNode(true);
         $node->setAttribute('selected', 'selected');
+
+        if ($clonedNode->hasAttribute('selected')) {
+            $clonedNode->removeAttribute('selected');
+        }
 
         $node->parentNode->insertBefore(
             $this->document->createTextNode($this->builder->createIf($select . ' == "' . $value . '"')),
