@@ -1,0 +1,20 @@
+{% set foo = foo|default('bar') %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <select>
+        {% if foo == "1" %}
+            <option value="1" selected>foo</option>
+        {% else %}
+            <option value="1">foo</option>
+        {% endif %}
+        {% if foo == "2" %}
+            <option value="2" selected>bar</option>
+        {% else %}
+            <option value="2">bar</option>
+        {% endif %}
+        {% if foo == "3" %}
+            <option value="3" selected>baz</option>
+        {% else %}
+            <option value="3">baz</option>
+        {% endif %}
+    </select>
+</div>

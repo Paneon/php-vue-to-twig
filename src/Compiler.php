@@ -40,6 +40,11 @@ class Compiler
     protected $lastCloseIf;
 
     /**
+     * @var mixed[]
+     */
+    protected $selectedOption;
+
+    /**
      * @var LoggerInterface
      */
     protected $logger;
@@ -104,6 +109,7 @@ class Compiler
         $this->document = $document;
         $this->logger = $logger;
         $this->lastCloseIf = [];
+        $this->selectedOption = [];
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
@@ -210,7 +216,11 @@ class Compiler
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
-            $this->handleModel($node);
+            $selected = $this->handleModel($node);
+            if ($selected) {
+                $this->selectedOption[$level] = $selected;
+            }
+            $this->handleOption($node);
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
@@ -289,6 +299,8 @@ class Compiler
             // Remove original node
             $this->nodeHelper->removeNode($node);
 
+            unset($this->selectedOption[$level]);
+
             return $node;
         }
 
@@ -304,6 +316,8 @@ class Compiler
         foreach (iterator_to_array($node->childNodes) as $childNode) {
             $this->convertNode($childNode, $level + 1);
         }
+
+        unset($this->selectedOption[$level]);
 
         return $node;
     }
@@ -710,7 +724,10 @@ class Compiler
         $node->removeAttribute('v-for');
     }
 
-    private function handleModel(DOMElement $node): void
+    /**
+     * @return mixed
+     */
+    private function handleModel(DOMElement $node)
     {
         if (!$node->hasAttribute('v-model')) {
             return;
@@ -719,19 +736,60 @@ class Compiler
         $modelValue = $node->getAttribute('v-model');
         $node->removeAttribute('v-mode');
 
-        switch ($node->tagName) {
+        switch ($node->nodeName) {
             case 'textarea':
                 $node->setAttribute('v-text', $modelValue);
-                break;
+
+                return null;
             case 'input':
                 $typeAttribute = $node->getAttribute('type');
                 if ($typeAttribute === 'text') {
                     $node->setAttribute(':value', $modelValue);
                 }
-                break;
+
+                return null;
+            case 'select':
+                return $modelValue;
             default:
-                break;
+                return null;
         }
+    }
+
+    private function handleOption(DOMElement $node): void
+    {
+        if ($node->tagName !== 'option' || count($this->selectedOption) === 0) {
+            return;
+        }
+
+        krsort($this->selectedOption);
+        reset($this->selectedOption);
+        $select = current($this->selectedOption);
+
+        if ($node->hasAttribute('value')) {
+            $value = $node->getAttribute('value');
+        } else {
+            $value = trim($node->textContent);
+        }
+
+        $clonedNode = $node->cloneNode(true);
+        $node->setAttribute('selected', 'selected');
+
+        $node->parentNode->insertBefore(
+            $this->document->createTextNode($this->builder->createIf($select . ' == "' . $value . '"')),
+            $node
+        );
+        $node->parentNode->insertBefore(
+            $this->document->createTextNode($this->builder->createEndIf()),
+            $node->nextSibling
+        );
+        $node->parentNode->insertBefore(
+            $clonedNode,
+            $node->nextSibling
+        );
+        $node->parentNode->insertBefore(
+            $this->document->createTextNode($this->builder->createElse()),
+            $node->nextSibling
+        );
     }
 
     private function handleHtml(DOMElement $node): void
