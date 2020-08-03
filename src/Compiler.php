@@ -216,11 +216,9 @@ class Compiler
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
-            $selected = $this->handleModel($node);
-            if ($selected) {
-                $this->selectedOption[$level] = $selected;
+            if ($modelValue = $this->handleModel($node)) {
+                $this->selectedOption[$level] = $modelValue;
             }
-            $this->handleOption($node);
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
@@ -299,13 +297,12 @@ class Compiler
             // Remove original node
             $this->nodeHelper->removeNode($node);
 
-            unset($this->selectedOption[$level]);
-
             return $node;
         }
 
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
+            $this->handleOption($node);
             if ($level === 1) {
                 foreach ($this->includeAttributes as $attribute) {
                     $this->handleRootNodeAttribute($node, $attribute);
@@ -759,6 +756,9 @@ class Compiler
         }
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function handleOption(DOMElement $node): void
     {
         if ($node->tagName !== 'option' || count($this->selectedOption) === 0) {
@@ -775,6 +775,8 @@ class Compiler
             $value = trim($node->textContent);
         }
 
+        $value = '"' . str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], ['" ~', '~ "'], $value) . '"';
+
         /** @var DOMElement $clonedNode */
         $clonedNode = $node->cloneNode(true);
         $node->setAttribute('selected', 'selected');
@@ -784,7 +786,7 @@ class Compiler
         }
 
         $node->parentNode->insertBefore(
-            $this->document->createTextNode($this->builder->createIf($select . ' == "' . $value . '"')),
+            $this->document->createTextNode($this->builder->createIf($select . ' == ' . $value)),
             $node
         );
         $node->parentNode->insertBefore(
