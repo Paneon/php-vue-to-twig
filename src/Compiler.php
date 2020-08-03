@@ -210,6 +210,7 @@ class Compiler
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
+            $this->handleModel($node);
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
@@ -709,6 +710,30 @@ class Compiler
         $node->removeAttribute('v-for');
     }
 
+    private function handleModel(DOMElement $node): void
+    {
+        if (!$node->hasAttribute('v-model')) {
+            return;
+        }
+
+        $modelValue = $node->getAttribute('v-model');
+        $node->removeAttribute('v-mode');
+
+        switch ($node->tagName) {
+            case 'textarea':
+                $node->setAttribute('v-text', $modelValue);
+                break;
+            case 'input':
+                $typeAttribute = $node->getAttribute('type');
+                if ($typeAttribute === 'text') {
+                    $node->setAttribute(':value', $modelValue);
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
     private function handleHtml(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-html')) {
@@ -720,7 +745,7 @@ class Compiler
         while ($node->hasChildNodes()) {
             $node->removeChild($node->firstChild);
         }
-        $node->appendChild(new DOMText('{{' . $html . '|raw}}'));
+        $node->appendChild(new DOMText($this->builder->prepareBindingOutput($html . '|raw')));
     }
 
     private function handleText(DOMElement $node): void
@@ -734,7 +759,7 @@ class Compiler
         while ($node->hasChildNodes()) {
             $node->removeChild($node->firstChild);
         }
-        $node->appendChild(new DOMText('{{' . $text . '}}'));
+        $node->appendChild(new DOMText($this->builder->prepareBindingOutput($text)));
     }
 
     /**

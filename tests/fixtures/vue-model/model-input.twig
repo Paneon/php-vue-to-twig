@@ -1,0 +1,4 @@
+{% set foo = foo|default('bar') %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <input type="text" value="{{ foo }}">
+</div>
