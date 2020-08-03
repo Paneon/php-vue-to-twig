@@ -725,7 +725,7 @@ class Compiler
     }
 
     /**
-     * @return mixed
+     * @return mixed|void
      */
     private function handleModel(DOMElement $node)
     {
@@ -743,9 +743,13 @@ class Compiler
                 return null;
             case 'input':
                 $typeAttribute = $node->getAttribute('type');
-                if ($typeAttribute === 'text') {
-                    $node->setAttribute(':value', $modelValue);
+                if ($typeAttribute === 'checkbox') {
+                    // todo
                 }
+                if ($typeAttribute === 'radio') {
+                    // todo
+                }
+                $node->setAttribute(':value', $modelValue);
 
                 return null;
             case 'select':
