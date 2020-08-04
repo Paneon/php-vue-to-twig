@@ -380,7 +380,7 @@ class Compiler
                     $property->setType($matchType[1]);
                 }
 
-                if (preg_match('/default:\s*(?<default>[^,$]+)\s*,?/mx', $definition, $matchDefault)) {
+                if (preg_match('/default:\s*(?<default>\[[^\[\]]+\]|[^,$]+)\s*,?/mx', $definition, $matchDefault)) {
                     $property->setDefault(trim($matchDefault['default']));
                 }
 
@@ -388,8 +388,8 @@ class Compiler
             }
         }
 
-        $typeScriptRegexProps = '/\@Prop\s*\({(?<propOptions>.*?)}\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:\s*(?<propType>[a-zA-Z]+)[^;\@]*;/msx';
-        $typeScriptRegexDefault = '/default\s*\:\s*(?<defaultValue>\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+)/msx';
+        $typeScriptRegexProps = '/\@Prop\s*\({(?<propOptions>.*?)}\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:\s*(?<propType>[a-zA-Z\[\]]+)[^;\@]*;/msx';
+        $typeScriptRegexDefault = '/default\s*\:\s*(?<defaultValue>\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+|\[[^\[\]]+\])/msx';
         if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER)) {
             $this->properties = [];
             foreach ($typeScriptMatches as $typeScriptMatch) {
@@ -750,7 +750,12 @@ class Compiler
 
                 return null;
             case 'select':
-                return $modelValue;
+                $multiple = $node->hasAttribute('multiple');
+
+                return [
+                    'value' => $modelValue,
+                    'multiple' => $multiple,
+                ];
             default:
                 return null;
         }
@@ -767,7 +772,7 @@ class Compiler
 
         krsort($this->selectedOption);
         reset($this->selectedOption);
-        $select = current($this->selectedOption);
+        $selectData = current($this->selectedOption);
 
         if ($node->hasAttribute('value')) {
             $value = $node->getAttribute('value');
@@ -785,8 +790,14 @@ class Compiler
             $clonedNode->removeAttribute('selected');
         }
 
+        if ($selectData['multiple']) {
+            $condition = $selectData['value'] . ' is iterable and ' . $value . ' in ' . $selectData['value'];
+        } else {
+            $condition = $selectData['value'] . ' == ' . $value;
+        }
+
         $node->parentNode->insertBefore(
-            $this->document->createTextNode($this->builder->createIf($select . ' == ' . $value)),
+            $this->document->createTextNode($this->builder->createIf($condition)),
             $node
         );
         $node->parentNode->insertBefore(

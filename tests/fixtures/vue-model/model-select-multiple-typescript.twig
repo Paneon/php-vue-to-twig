@@ -1,0 +1,20 @@
+{% set foo = foo|default(['2', '3']) %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <select multiple>
+        {% if foo is iterable and "1" in foo %}
+            <option value="1" selected>foo</option>
+        {% else %}
+            <option value="1">foo</option>
+        {% endif %}
+        {% if foo is iterable and "2" in foo %}
+            <option value="2" selected>bar</option>
+        {% else %}
+            <option value="2">bar</option>
+        {% endif %}
+        {% if foo is iterable and "3" in foo %}
+            <option value="3" selected>baz</option>
+        {% else %}
+            <option value="3">baz</option>
+        {% endif %}
+    </select>
+</div>
