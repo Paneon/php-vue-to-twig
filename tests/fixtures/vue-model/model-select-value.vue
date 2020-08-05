@@ -13,7 +13,7 @@
         props: {
             foo: {
                 type: String,
-                default: 'bar',
+                default: '2',
             },
         },
     };
