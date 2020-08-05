@@ -233,7 +233,7 @@ class Compiler
             $this->handleIf($node, $level);
             $this->handleFor($node);
             $modelData = $this->handleModel($node);
-            if ($modelData['type'] === 'option') {
+            if ($modelData && $modelData['type'] === 'option') {
                 $this->selectData = $modelData;
             }
             $this->handleHtml($node);
@@ -321,7 +321,7 @@ class Compiler
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             $this->handleOption($node);
-            if (isset($modelData) && ($modelData['type'] === 'checkbox' || $modelData['type'] === 'radio')) {
+            if (isset($modelData)) {
                 $this->handleRadioOrCheckbox($node, $modelData);
             }
             if ($level === 1) {
