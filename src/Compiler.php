@@ -40,9 +40,9 @@ class Compiler
     protected $lastCloseIf;
 
     /**
-     * @var mixed[]
+     * @var mixed[]|null
      */
-    protected $selectedOption;
+    protected $selectData;
 
     /**
      * @var LoggerInterface
@@ -109,7 +109,7 @@ class Compiler
         $this->document = $document;
         $this->logger = $logger;
         $this->lastCloseIf = [];
-        $this->selectedOption = [];
+        $this->selectData = null;
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
@@ -216,8 +216,8 @@ class Compiler
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
-            if ($modelValue = $this->handleModel($node)) {
-                $this->selectedOption[$level] = $modelValue;
+            if ($select = $this->handleModel($node)) {
+                $this->selectData = $select;
             }
             $this->handleHtml($node);
             $this->handleText($node);
@@ -314,7 +314,9 @@ class Compiler
             $this->convertNode($childNode, $level + 1);
         }
 
-        unset($this->selectedOption[$level]);
+        if ($node->nodeName === 'selected') {
+            $this->selectData = null;
+        }
 
         return $node;
     }
@@ -742,11 +744,11 @@ class Compiler
                 $typeAttribute = $node->getAttribute('type');
                 if ($typeAttribute === 'checkbox') {
                     // todo
-                }
-                if ($typeAttribute === 'radio') {
+                } elseif ($typeAttribute === 'radio') {
                     // todo
+                } else {
+                    $node->setAttribute(':value', $modelValue);
                 }
-                $node->setAttribute(':value', $modelValue);
 
                 return null;
             case 'select':
@@ -766,13 +768,9 @@ class Compiler
      */
     private function handleOption(DOMElement $node): void
     {
-        if ($node->tagName !== 'option' || count($this->selectedOption) === 0) {
+        if ($node->tagName !== 'option' || $this->selectData === null) {
             return;
         }
-
-        krsort($this->selectedOption);
-        reset($this->selectedOption);
-        $selectData = current($this->selectedOption);
 
         if ($node->hasAttribute('value')) {
             $value = $node->getAttribute('value');
@@ -782,18 +780,23 @@ class Compiler
 
         $value = '"' . str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], ['" ~', '~ "'], $value) . '"';
 
-        /** @var DOMElement $clonedNode */
-        $clonedNode = $node->cloneNode(true);
-        $node->setAttribute('selected', 'selected');
-
-        if ($clonedNode->hasAttribute('selected')) {
-            $clonedNode->removeAttribute('selected');
+        if ($this->selectData['multiple']) {
+            $condition = $this->selectData['value'] . ' is iterable and ' . $value . ' in ' . $this->selectData['value'];
+        } else {
+            $condition = $this->selectData['value'] . ' == ' . $value;
         }
 
-        if ($selectData['multiple']) {
-            $condition = $selectData['value'] . ' is iterable and ' . $value . ' in ' . $selectData['value'];
-        } else {
-            $condition = $selectData['value'] . ' == ' . $value;
+        $this->addAttributeIf($node, $condition, 'selected', 'selected');
+    }
+
+    private function addAttributeIf(DOMElement $node, string $condition, string $attributeName, string $attributeValue): void
+    {
+        /** @var DOMElement $clonedNode */
+        $clonedNode = $node->cloneNode(true);
+        $node->setAttribute($attributeName, $attributeValue);
+
+        if ($clonedNode->hasAttribute($attributeName)) {
+            $clonedNode->removeAttribute($attributeName);
         }
 
         $node->parentNode->insertBefore(
