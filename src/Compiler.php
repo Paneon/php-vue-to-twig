@@ -842,6 +842,9 @@ class Compiler
         $this->addAttributeIf($node, $condition, 'checked', 'checked');
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function addAttributeIf(DOMElement $node, string $condition, string $attributeName, string $attributeValue): void
     {
         /** @var DOMElement $clonedNode */
