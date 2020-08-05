@@ -17,6 +17,7 @@ use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
 use Paneon\VueToTwig\Utils\NodeHelper;
+use Paneon\VueToTwig\Utils\StyleBuilder;
 use Paneon\VueToTwig\Utils\TwigBuilder;
 use Psr\Log\LoggerInterface;
 use ReflectionException;
@@ -58,6 +59,11 @@ class Compiler
      * @var TwigBuilder
      */
     protected $builder;
+
+    /**
+     * @var StyleBuilder
+     */
+    protected $styleBuilder;
 
     /**
      * @var NodeHelper
@@ -105,6 +111,7 @@ class Compiler
     public function __construct(DOMDocument $document, LoggerInterface $logger)
     {
         $this->builder = new TwigBuilder();
+        $this->styleBuilder = new StyleBuilder();
         $this->nodeHelper = new NodeHelper();
         $this->document = $document;
         $this->logger = $logger;
@@ -143,6 +150,8 @@ class Compiler
         /** @var DOMElement|null $scriptElement */
         $scriptElement = $this->document->getElementsByTagName('script')->item(0);
 
+        $styleBlocks = $this->document->getElementsByTagName('style');
+
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
         if ($scriptElement) {
@@ -154,6 +163,13 @@ class Compiler
             foreach ($twigBlocks as $twigBlock) {
                 /* @var DOMText $twigBlock */
                 $this->rawBlocks[] = trim($twigBlock->textContent);
+            }
+        }
+
+        if ($styleBlocks->length) {
+            foreach ($styleBlocks as $styleBlock) {
+                /* @var DOMElement $styleBlock */
+                $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
             }
         }
 
@@ -225,6 +241,7 @@ class Compiler
             $this->stripEventHandlers($node);
             $this->handleSlots($node);
             $this->cleanupAttributes($node);
+            $this->addScopedAttribute($node);
         }
 
         // Registered Component
@@ -1041,6 +1058,13 @@ class Compiler
         return $this;
     }
 
+    public function setStyleBlockOutputType(int $outputType): Compiler
+    {
+        $this->styleBuilder->setOutputType($outputType);
+
+        return $this;
+    }
+
     /**
      * @param mixed $value
      */
@@ -1188,5 +1212,14 @@ class Compiler
         }
 
         return false;
+    }
+
+    private function addScopedAttribute(DOMElement $node): void
+    {
+        if (!$this->styleBuilder->hasScoped()) {
+            return;
+        }
+        $scopedAttribute = $this->styleBuilder->getScopedAttribute();
+        $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
     }
 }
