@@ -1,0 +1,28 @@
+{% set foo = foo|default(['2', '4', '5']) %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    {% if (foo is iterable and "1" in foo) or (foo is not iterable and foo) %}
+        <input type="checkbox" value="1" checked>
+    {% else %}
+        <input type="checkbox" value="1">
+    {% endif %}
+    {% if (foo is iterable and "2" in foo) or (foo is not iterable and foo) %}
+        <input type="checkbox" value="2" checked>
+    {% else %}
+        <input type="checkbox" value="2">
+    {% endif %}
+    {% if (foo is iterable and "3" in foo) or (foo is not iterable and foo) %}
+        <input type="checkbox" value="3" checked>
+    {% else %}
+        <input type="checkbox" value="3">
+    {% endif %}
+    {% if (foo is iterable and "4" in foo) or (foo is not iterable and foo) %}
+        <input type="checkbox" value="4" checked>
+    {% else %}
+        <input type="checkbox" value="4">
+    {% endif %}
+    {% if (foo is iterable and "5" in foo) or (foo is not iterable and foo) %}
+        <input type="checkbox" value="5" checked>
+    {% else %}
+        <input type="checkbox" value="5">
+    {% endif %}
+</div>

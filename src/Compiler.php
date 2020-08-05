@@ -216,8 +216,9 @@ class Compiler
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
-            if ($select = $this->handleModel($node)) {
-                $this->selectData = $select;
+            $modelData = $this->handleModel($node);
+            if ($modelData['type'] === 'option') {
+                $this->selectData = $modelData;
             }
             $this->handleHtml($node);
             $this->handleText($node);
@@ -303,6 +304,9 @@ class Compiler
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
             $this->handleOption($node);
+            if (isset($modelData) && ($modelData['type'] === 'checkbox' || $modelData['type'] === 'radio')) {
+                $this->handleRadioOrCheckbox($node, $modelData);
+            }
             if ($level === 1) {
                 foreach ($this->includeAttributes as $attribute) {
                     $this->handleRootNodeAttribute($node, $attribute);
@@ -743,20 +747,25 @@ class Compiler
             case 'input':
                 $typeAttribute = $node->getAttribute('type');
                 if ($typeAttribute === 'checkbox') {
-                    // todo
+                    return [
+                        'value' => $modelValue,
+                        'type' => 'checkbox',
+                    ];
                 } elseif ($typeAttribute === 'radio') {
-                    // todo
+                    return [
+                        'value' => $modelValue,
+                        'type' => 'radio',
+                    ];
                 } else {
                     $node->setAttribute(':value', $modelValue);
                 }
 
                 return null;
             case 'select':
-                $multiple = $node->hasAttribute('multiple');
-
                 return [
                     'value' => $modelValue,
-                    'multiple' => $multiple,
+                    'multiple' => $node->hasAttribute('multiple'),
+                    'type' => 'option',
                 ];
             default:
                 return null;
@@ -787,6 +796,33 @@ class Compiler
         }
 
         $this->addAttributeIf($node, $condition, 'selected', 'selected');
+    }
+
+    /**
+     * @param mixed[] $modelData
+     *
+     * @throws ReflectionException
+     */
+    private function handleRadioOrCheckbox(DOMElement $node, array $modelData): void
+    {
+        if (!$node->hasAttribute('value')
+            || !$node->hasAttribute('type')
+            || ($node->getAttribute('type') !== 'radio' && $node->getAttribute('type') !== 'checkbox')) {
+            return;
+        }
+
+        $value = $node->getAttribute('value');
+
+        $value = '"' . str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], ['" ~', '~ "'], $value) . '"';
+
+        if ($modelData['type'] === 'checkbox') {
+            $condition = '(' . $modelData['value'] . ' is iterable and ' . $value . ' in ' . $modelData['value'] . ') '
+                . ' or (' . $modelData['value'] . ' is not iterable and ' . $modelData['value'] . ')';
+        } else {
+            $condition = $modelData['value'] . ' == ' . $value;
+        }
+
+        $this->addAttributeIf($node, $condition, 'checked', 'checked');
     }
 
     private function addAttributeIf(DOMElement $node, string $condition, string $attributeName, string $attributeValue): void
