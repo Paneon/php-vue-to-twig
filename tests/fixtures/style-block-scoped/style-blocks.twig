@@ -1,7 +1,7 @@
 <style> .foo { color: red; }</style>
 <style> .bar[data-v-9d8ac5d70d06b0f0d2a21f893932dffe] { color: blue; }</style>
 <style>.baz { color: #00FF00; }</style>
-<div data-v-9d8ac5d70d06b0f0d2a21f893932dffe class="{{ class|default('') }}" style="{{ style|default('') }}">
+<div data-v-9d8ac5d70d06b0f0d2a21f893932dffe {{ scoped|default('') }} class="{{ class|default('') }}" style="{{ style|default('') }}">
     <div class="foo bar baz" data-v-9d8ac5d70d06b0f0d2a21f893932dffe>
       42
     </div>
