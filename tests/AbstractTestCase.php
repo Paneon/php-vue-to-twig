@@ -10,6 +10,7 @@ use Exception;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 use Paneon\VueToTwig\Compiler;
+use Paneon\VueToTwig\Utils\StyleBuilder;
 use PHPUnit\Framework\TestCase;
 
 abstract class AbstractTestCase extends TestCase
@@ -21,6 +22,7 @@ abstract class AbstractTestCase extends TestCase
     {
         $document = $this->createDocumentWithHtml($template);
         $compiler = new Compiler($document, $this->createLogger());
+        $compiler->setStyleBlockOutputType(StyleBuilder::STYLE_NO);
 
         return $compiler;
     }

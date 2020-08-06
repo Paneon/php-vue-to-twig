@@ -5,7 +5,7 @@ namespace Paneon\VueToTwig\Tests;
 use Exception;
 use Paneon\VueToTwig\Utils\StyleBuilder;
 
-class CompilerStyleBlockTest extends AbstractTestCase
+class CompilerStyleBlockScopedTest extends AbstractTestCase
 {
     /**
      * @dataProvider dataProvider
@@ -18,7 +18,8 @@ class CompilerStyleBlockTest extends AbstractTestCase
     public function testStyleBlock($html, $expected)
     {
         $compiler = $this->createCompiler($html);
-        $compiler->setStyleBlockOutputType(StyleBuilder::STYLE);
+        $compiler->setStyleBlockOutputType(StyleBuilder::STYLE_ALL);
+        $compiler->registerComponent('ChildComponent', '/templates/ChildComponent.twig');
 
         $actual = $compiler->convert();
 
@@ -30,6 +31,6 @@ class CompilerStyleBlockTest extends AbstractTestCase
      */
     public function dataProvider()
     {
-        return $this->loadFixturesFromDir('style-block');
+        return $this->loadFixturesFromDir('style-block-scoped');
     }
 }

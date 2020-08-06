@@ -1,0 +1,6 @@
+<style> .foo { color: red; }</style>
+<div {{ scoped|default('') }} class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <div class="foo" {{ scoped|default('') }}>
+      foo
+    </div>
+</div>
