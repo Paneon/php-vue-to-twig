@@ -364,6 +364,14 @@ class Compiler
                 }
                 unset($variables[$key]);
             }
+            if (strpos($name, 'dataV') === 0 && strlen($name) === 37) {
+                unset($variables[$key]);
+                $variables[] = new Property(
+                    'scoped',
+                    '"' . strtolower(substr($name, 5)) . '"',
+                    false
+                );
+            }
         }
 
         foreach ($this->includeAttributes as $attribute) {
