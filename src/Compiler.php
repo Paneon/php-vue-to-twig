@@ -195,7 +195,7 @@ class Compiler
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
 
-        $html = str_replace('__SCOPED__=""', '{{ scoped|default(\'\') }}', $html);
+        $html = str_replace('__SCOPED_DEFAULT__=""', '{{ scoped|default(\'\') }}', $html);
         $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
 
         $html = $this->builder->concatConvertHandler($html, $this->properties);
@@ -1240,7 +1240,7 @@ class Compiler
     {
         if (!$this->styleBuilder->hasScoped()) {
             if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
-                $node->setAttributeNode(new DOMAttr('__SCOPED__', ''));
+                $node->setAttributeNode(new DOMAttr('__SCOPED_DEFAULT__', ''));
             }
 
             return;
