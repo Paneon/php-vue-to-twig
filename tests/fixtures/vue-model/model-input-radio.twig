@@ -1,0 +1,28 @@
+{% set foo = foo|default('2') %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    {% if foo == "1" %}
+        <input type="radio" value="1" checked>
+    {% else %}
+        <input type="radio" value="1">
+    {% endif %}
+    {% if foo == "2" %}
+        <input type="radio" value="2" checked>
+    {% else %}
+        <input type="radio" value="2">
+    {% endif %}
+    {% if foo == "3" %}
+        <input type="radio" value="3" checked>
+    {% else %}
+        <input type="radio" value="3">
+    {% endif %}
+    {% if foo == "4" %}
+        <input type="radio" value="4" checked>
+    {% else %}
+        <input type="radio" value="4">
+    {% endif %}
+    {% if foo == "5" %}
+        <input type="radio" value="5" checked>
+    {% else %}
+        <input type="radio" value="5">
+    {% endif %}
+</div>
