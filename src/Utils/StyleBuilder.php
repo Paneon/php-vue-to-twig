@@ -6,7 +6,6 @@ namespace Paneon\VueToTwig\Utils;
 
 use DOMElement;
 use Exception;
-use Ramsey\Uuid\Uuid;
 use ScssPhp\ScssPhp\Compiler as ScssCompiler;
 
 class StyleBuilder
@@ -20,6 +19,11 @@ class StyleBuilder
      * @var int
      */
     private $outputType;
+
+    /**
+     * @var string
+     */
+    private $scssData;
 
     /**
      * @var ScssCompiler|null
@@ -44,14 +48,20 @@ class StyleBuilder
     public function __construct()
     {
         $this->outputType = self::STYLE_ALL;
+        $this->scssData = '';
         $this->scssCompiler = null;
         $this->hasScoped = false;
-        $this->scopedAttribute = 'data-v-' . substr(md5(Uuid::uuid4()->toString()), 0, 8);
+        $this->scopedAttribute = '';
     }
 
     public function setOutputType(int $outputType): void
     {
         $this->outputType = $outputType;
+    }
+
+    public function setScssData(string $data): void
+    {
+        $this->scssData = $data;
     }
 
     public function compile(?DOMElement $styleElement): ?string
@@ -68,10 +78,11 @@ class StyleBuilder
             if ($this->scssCompiler === null) {
                 $this->scssCompiler = new ScssCompiler();
             }
-            $style = $this->scssCompiler->compile($style);
+            $style = $this->scssCompiler->compile($this->scssData . ' ' . $style);
         }
 
         if ($styleElement->hasAttribute('scoped')) {
+            $this->scopedAttribute = 'data-v-' . substr(md5($styleElement->textContent), 0, 8);
             $this->hasScoped = true;
             $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
         }

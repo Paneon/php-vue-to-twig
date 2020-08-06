@@ -20,8 +20,6 @@ class CompilerStyleBlockTest extends AbstractTestCase
 
         $actual = $compiler->convert();
 
-        $actual = preg_replace('/data-v-[0-9a-z]{8}/', 'data-v-12345678', $actual);
-
         $this->assertEqualHtml($expected, $actual);
     }
 

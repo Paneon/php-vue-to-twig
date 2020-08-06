@@ -1068,6 +1068,13 @@ class Compiler
         return $this;
     }
 
+    public function setStyleBlockScssData(string $scssData): Compiler
+    {
+        $this->styleBuilder->setScssData($scssData);
+
+        return $this;
+    }
+
     /**
      * @param mixed $value
      */
