@@ -190,13 +190,11 @@ class Compiler
         }
 
         $html = $this->addVariableBlocks($html);
+        $html = $this->replaceScopedPlaceholders($html);
         $html = $this->replacePlaceholders($html);
 
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
-
-        $html = str_replace('__SCOPED_DEFAULT__=""', '{{ scoped|default(\'\') }}', $html);
-        $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
 
         $html = $this->builder->concatConvertHandler($html, $this->properties);
 
@@ -366,12 +364,18 @@ class Compiler
                     $values[$name][] = $value;
                 }
                 unset($variables[$key]);
-            }
-            if (strpos($name, 'dataV') === 0 && strlen($name) === 37) {
+            } elseif (strpos($name, 'dataV') === 0 && strlen($name) === 37) {
                 unset($variables[$key]);
                 $variables[] = new Property(
                     'scoped',
                     '"data-v-' . strtolower(substr($name, 5)) . '"',
+                    false
+                );
+            } elseif ($name === '__SCOPED_DEFAULT__') {
+                unset($variables[$key]);
+                $variables[] = new Property(
+                    'scoped',
+                    'scoped|default(\'\')',
                     false
                 );
             }
@@ -1238,14 +1242,23 @@ class Compiler
 
     private function addScopedAttribute(DOMElement $node): void
     {
-        if (!$this->styleBuilder->hasScoped()) {
-            if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
-                $node->setAttributeNode(new DOMAttr('__SCOPED_DEFAULT__', ''));
-            }
+        if ($this->styleBuilder->hasScoped()) {
+            $scopedAttribute = $this->styleBuilder->getScopedAttribute();
+            $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
 
             return;
         }
-        $scopedAttribute = $this->styleBuilder->getScopedAttribute();
-        $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
+
+        if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
+            $node->setAttributeNode(new DOMAttr('__SCOPED_DEFAULT__', ''));
+        }
+    }
+
+    private function replaceScopedPlaceholders(string $html): string
+    {
+        $html = str_replace('__SCOPED_DEFAULT__=""', '{{ scoped|default(\'\') }}', $html);
+        $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
+
+        return $html;
     }
 }
