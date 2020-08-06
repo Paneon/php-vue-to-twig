@@ -59,6 +59,11 @@ class StyleBuilder
         $this->outputType = $outputType;
     }
 
+    public function getOutputType(): int
+    {
+        return $this->outputType;
+    }
+
     public function setScssData(string $data): void
     {
         $this->scssData = $data;

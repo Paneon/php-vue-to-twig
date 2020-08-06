@@ -368,7 +368,7 @@ class Compiler
                 unset($variables[$key]);
                 $variables[] = new Property(
                     'scoped',
-                    '"' . strtolower(substr($name, 5)) . '"',
+                    '"data-v-' . strtolower(substr($name, 5)) . '"',
                     false
                 );
             }
@@ -1236,6 +1236,10 @@ class Compiler
     private function addScopedAttribute(DOMElement $node): void
     {
         if (!$this->styleBuilder->hasScoped()) {
+            if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
+                // todo
+            }
+
             return;
         }
         $scopedAttribute = $this->styleBuilder->getScopedAttribute();
