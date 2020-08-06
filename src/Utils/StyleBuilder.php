@@ -82,7 +82,6 @@ class StyleBuilder
         }
 
         if ($styleElement->hasAttribute('scoped')) {
-            $this->scopedAttribute = 'data-v-' . substr(md5($styleElement->textContent), 0, 8);
             $this->hasScoped = true;
             $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
         }
@@ -93,6 +92,11 @@ class StyleBuilder
     public function hasScoped(): ?bool
     {
         return $this->hasScoped;
+    }
+
+    public function setScopedAttribute(string $scopedAttribute): void
+    {
+        $this->scopedAttribute = $scopedAttribute;
     }
 
     public function getScopedAttribute(): string

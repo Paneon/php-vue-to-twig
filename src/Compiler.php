@@ -167,6 +167,7 @@ class Compiler
         }
 
         if ($styleBlocks->length) {
+            $this->styleBuilder->setScopedAttribute('data-v-' . md5($this->document->textContent));
             foreach ($styleBlocks as $styleBlock) {
                 /* @var DOMElement $styleBlock */
                 $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
