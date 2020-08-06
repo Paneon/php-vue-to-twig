@@ -1,0 +1,6 @@
+{% set foo = foo|default('bar') %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <textarea>
+        {{ foo }}
+    </textarea>
+</div>

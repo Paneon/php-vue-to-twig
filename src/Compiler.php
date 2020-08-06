@@ -12,6 +12,7 @@ use DOMNode;
 use DOMText;
 use Exception;
 use Paneon\VueToTwig\Models\Component;
+use Paneon\VueToTwig\Models\Pre;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
 use Paneon\VueToTwig\Models\Slot;
@@ -38,6 +39,11 @@ class Compiler
      * @var DOMText[]|null
      */
     protected $lastCloseIf;
+
+    /**
+     * @var mixed[]|null
+     */
+    protected $selectData;
 
     /**
      * @var LoggerInterface
@@ -68,6 +74,11 @@ class Compiler
      * @var Property[]
      */
     protected $properties;
+
+    /**
+     * @var Pre[]
+     */
+    protected $pre;
 
     /**
      * @var mixed[]
@@ -105,9 +116,11 @@ class Compiler
         $this->document = $document;
         $this->logger = $logger;
         $this->lastCloseIf = [];
+        $this->selectData = null;
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
+        $this->pre = [];
         $this->rawBlocks = [];
 
         $this->logger->debug("\n--------- New Compiler Instance ----------\n");
@@ -183,6 +196,8 @@ class Compiler
 
         $html = $this->builder->concatConvertHandler($html, $this->properties);
 
+        $html = $this->replacePre($html);
+
         if ($this->stripWhitespace) {
             $html = $this->stripWhitespace($html);
         }
@@ -211,9 +226,16 @@ class Compiler
             if ($this->twigRemove($node)) {
                 return $node;
             }
+            if ($this->handlePre($node)) {
+                return $node;
+            }
             $this->replaceShowWithIf($node);
             $this->handleIf($node, $level);
             $this->handleFor($node);
+            $modelData = $this->handleModel($node);
+            if ($modelData && $modelData['type'] === 'option') {
+                $this->selectData = $modelData;
+            }
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
@@ -298,6 +320,10 @@ class Compiler
 
         if ($node instanceof DOMElement) {
             $this->handleAttributeBinding($node);
+            $this->handleOption($node);
+            if (isset($modelData)) {
+                $this->handleRadioOrCheckbox($node, $modelData);
+            }
             if ($level === 1) {
                 foreach ($this->includeAttributes as $attribute) {
                     $this->handleRootNodeAttribute($node, $attribute);
@@ -307,6 +333,10 @@ class Compiler
 
         foreach (iterator_to_array($node->childNodes) as $childNode) {
             $this->convertNode($childNode, $level + 1);
+        }
+
+        if ($node->nodeName === 'selected') {
+            $this->selectData = null;
         }
 
         return $node;
@@ -373,7 +403,7 @@ class Compiler
                     $property->setType($matchType[1]);
                 }
 
-                if (preg_match('/default:\s*(?<default>[^,$]+)\s*,?/mx', $definition, $matchDefault)) {
+                if (preg_match('/default:\s*(?<default>\[[^\[\]]+\]|[^,$]+)\s*,?/mx', $definition, $matchDefault)) {
                     $property->setDefault(trim($matchDefault['default']));
                 }
 
@@ -381,8 +411,8 @@ class Compiler
             }
         }
 
-        $typeScriptRegexProps = '/\@Prop\s*\({(?<propOptions>.*?)}\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:\s*(?<propType>[a-zA-Z]+)[^;\@]*;/msx';
-        $typeScriptRegexDefault = '/default\s*\:\s*(?<defaultValue>\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+)/msx';
+        $typeScriptRegexProps = '/\@Prop\s*\({(?<propOptions>.*?)}\)[^;]*?(?<propName>[a-zA-Z0-9_$]+)\!?\:\s*(?<propType>[a-zA-Z\[\]]+)[^;\@]*;/msx';
+        $typeScriptRegexDefault = '/default\s*\:\s*(?<defaultValue>\'(?:.(?!(?<![\\\\])\'))*.?\'|"(?:.(?!(?<![\\\\])"))*.?"|[a-zA-Z0-9_]+|\[[^\[\]]+\])/msx';
         if (preg_match_all($typeScriptRegexProps, $content, $typeScriptMatches, PREG_SET_ORDER)) {
             $this->properties = [];
             foreach ($typeScriptMatches as $typeScriptMatch) {
@@ -394,6 +424,42 @@ class Compiler
                 $this->properties[$typeScriptMatch['propName']] = $property;
             }
         }
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function handlePre(DOMElement $node): bool
+    {
+        if (!$node->hasAttribute('v-pre')) {
+            return false;
+        }
+        $node->removeAttribute('v-pre');
+        $html = $this->document->saveHTML($node);
+        $parentNode = $node->parentNode;
+        $parentNode->removeChild($node);
+        $pre = new Pre('{% verbatim %}' . $html . '{% endverbatim %}');
+        $key = $pre->getPreContentVariableString();
+        $replacer = $this->document->createTextNode($key);
+        $parentNode->appendChild($replacer);
+        $this->pre[$key] = $pre;
+
+        return true;
+    }
+
+    protected function replacePre(string $html): string
+    {
+        if (preg_match_all(Pre::PRE_REGEX, $html, $matches)) {
+            foreach ($matches[0] as $key) {
+                $html = str_replace(
+                    $key,
+                    $this->pre[$key]->getValue(),
+                    $html
+                );
+            }
+        }
+
+        return $html;
     }
 
     public function replaceShowWithIf(DOMElement $node): void
@@ -553,7 +619,7 @@ class Compiler
         /** @var DOMAttr $attribute */
         foreach ($node->attributes as $attribute) {
             if (
-                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind' && $matches[1] !== 'slot')
+                (preg_match('/^v-([a-z]*)/', $attribute->name, $matches) === 1 && $matches[1] !== 'bind' && $matches[1] !== 'slot' && $matches[1] !== 'cloak')
                 || preg_match('/^[:]?ref$/', $attribute->name) === 1
             ) {
                 $removeAttributes[] = $attribute->name;
@@ -678,6 +744,135 @@ class Compiler
         $node->removeAttribute('v-for');
     }
 
+    /**
+     * @return mixed|void
+     */
+    private function handleModel(DOMElement $node)
+    {
+        if (!$node->hasAttribute('v-model')) {
+            return;
+        }
+
+        $modelValue = $node->getAttribute('v-model');
+        $node->removeAttribute('v-mode');
+
+        switch ($node->nodeName) {
+            case 'textarea':
+                $node->setAttribute('v-text', $modelValue);
+
+                return null;
+            case 'input':
+                $typeAttribute = $node->getAttribute('type');
+                if ($typeAttribute === 'checkbox') {
+                    return [
+                        'value' => $modelValue,
+                        'type' => 'checkbox',
+                    ];
+                } elseif ($typeAttribute === 'radio') {
+                    return [
+                        'value' => $modelValue,
+                        'type' => 'radio',
+                    ];
+                } else {
+                    $node->setAttribute(':value', $modelValue);
+                }
+
+                return null;
+            case 'select':
+                return [
+                    'value' => $modelValue,
+                    'multiple' => $node->hasAttribute('multiple'),
+                    'type' => 'option',
+                ];
+            default:
+                return null;
+        }
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private function handleOption(DOMElement $node): void
+    {
+        if ($node->tagName !== 'option' || $this->selectData === null) {
+            return;
+        }
+
+        if ($node->hasAttribute('value')) {
+            $value = $node->getAttribute('value');
+        } else {
+            $value = trim($node->textContent);
+        }
+
+        $value = '"' . str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], ['" ~', '~ "'], $value) . '"';
+
+        if ($this->selectData['multiple']) {
+            $condition = $this->selectData['value'] . ' is iterable and ' . $value . ' in ' . $this->selectData['value'];
+        } else {
+            $condition = $this->selectData['value'] . ' == ' . $value;
+        }
+
+        $this->addAttributeIf($node, $condition, 'selected', 'selected');
+    }
+
+    /**
+     * @param mixed[] $modelData
+     *
+     * @throws ReflectionException
+     */
+    private function handleRadioOrCheckbox(DOMElement $node, array $modelData): void
+    {
+        if (!$node->hasAttribute('value')
+            || !$node->hasAttribute('type')
+            || ($node->getAttribute('type') !== 'radio' && $node->getAttribute('type') !== 'checkbox')) {
+            return;
+        }
+
+        $value = $node->getAttribute('value');
+
+        $value = '"' . str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], ['" ~', '~ "'], $value) . '"';
+
+        if ($modelData['type'] === 'checkbox') {
+            $condition = '(' . $modelData['value'] . ' is iterable and ' . $value . ' in ' . $modelData['value'] . ') '
+                . ' or (' . $modelData['value'] . ' is not iterable and ' . $modelData['value'] . ')';
+        } else {
+            $condition = $modelData['value'] . ' == ' . $value;
+        }
+
+        $this->addAttributeIf($node, $condition, 'checked', 'checked');
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private function addAttributeIf(DOMElement $node, string $condition, string $attributeName, string $attributeValue): void
+    {
+        /** @var DOMElement $clonedNode */
+        $clonedNode = $node->cloneNode(true);
+        $node->setAttribute($attributeName, $attributeValue);
+
+        if ($clonedNode->hasAttribute($attributeName)) {
+            $clonedNode->removeAttribute($attributeName);
+        }
+
+        $node->parentNode->insertBefore(
+            $this->document->createTextNode($this->builder->createIf($condition)),
+            $node
+        );
+        $node->parentNode->insertBefore(
+            $this->document->createTextNode($this->builder->createEndIf()),
+            $node->nextSibling
+        );
+        $node->parentNode->insertBefore(
+            $clonedNode,
+            $node->nextSibling
+        );
+        $node->parentNode->insertBefore(
+            $this->document->createTextNode($this->builder->createElse()),
+            $node->nextSibling
+        );
+    }
+
     private function handleHtml(DOMElement $node): void
     {
         if (!$node->hasAttribute('v-html')) {
@@ -689,7 +884,7 @@ class Compiler
         while ($node->hasChildNodes()) {
             $node->removeChild($node->firstChild);
         }
-        $node->appendChild(new DOMText('{{' . $html . '|raw}}'));
+        $node->appendChild(new DOMText($this->builder->prepareBindingOutput($html . '|raw')));
     }
 
     private function handleText(DOMElement $node): void
@@ -703,7 +898,7 @@ class Compiler
         while ($node->hasChildNodes()) {
             $node->removeChild($node->firstChild);
         }
-        $node->appendChild(new DOMText('{{' . $text . '}}'));
+        $node->appendChild(new DOMText($this->builder->prepareBindingOutput($text)));
     }
 
     /**
