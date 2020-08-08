@@ -167,6 +167,7 @@ class Compiler
         }
 
         if ($styleBlocks->length) {
+            $this->styleBuilder->setScopedAttribute('data-v-' . md5($this->document->textContent));
             foreach ($styleBlocks as $styleBlock) {
                 /* @var DOMElement $styleBlock */
                 $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
@@ -190,6 +191,7 @@ class Compiler
 
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
+        $html = $this->replaceScopedPlaceholders($html);
 
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
@@ -241,7 +243,7 @@ class Compiler
             $this->stripEventHandlers($node);
             $this->handleSlots($node);
             $this->cleanupAttributes($node);
-            $this->addScopedAttribute($node);
+            $this->addScopedAttribute($node, $level);
         }
 
         // Registered Component
@@ -362,6 +364,20 @@ class Compiler
                     $values[$name][] = $value;
                 }
                 unset($variables[$key]);
+            } elseif (strpos($name, 'dataV') === 0 && strlen($name) === 37) {
+                unset($variables[$key]);
+                $variables[] = new Property(
+                    'dataScopedStyleAttribute',
+                    '"data-v-' . strtolower(substr($name, 5)) . '"',
+                    false
+                );
+            } elseif ($name === '__DATA_SCOPED_STYLE_ATTRIBUTE__') {
+                unset($variables[$key]);
+                $variables[] = new Property(
+                    'dataScopedStyleAttribute',
+                    'dataScopedStyleAttribute|default(\'\')',
+                    false
+                );
             }
         }
 
@@ -1068,6 +1084,13 @@ class Compiler
         return $this;
     }
 
+    public function setStyleBlockScssData(string $scssData): Compiler
+    {
+        $this->styleBuilder->setScssData($scssData);
+
+        return $this;
+    }
+
     /**
      * @param mixed $value
      */
@@ -1217,12 +1240,27 @@ class Compiler
         return false;
     }
 
-    private function addScopedAttribute(DOMElement $node): void
+    private function addScopedAttribute(DOMElement $node, int $level): void
     {
-        if (!$this->styleBuilder->hasScoped()) {
-            return;
+        if ($this->styleBuilder->hasScoped()) {
+            $scopedAttribute = $this->styleBuilder->getScopedAttribute();
+            $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
+
+            if ($level !== 1) {
+                return;
+            }
         }
-        $scopedAttribute = $this->styleBuilder->getScopedAttribute();
-        $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
+
+        if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
+            $node->setAttributeNode(new DOMAttr('__DATA_SCOPED_STYLE_ATTRIBUTE__', ''));
+        }
+    }
+
+    private function replaceScopedPlaceholders(string $html): string
+    {
+        $html = str_replace('__DATA_SCOPED_STYLE_ATTRIBUTE__=""', '{{ dataScopedStyleAttribute|default(\'\') }}', $html);
+        $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
+
+        return $html;
     }
 }
