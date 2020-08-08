@@ -190,8 +190,8 @@ class Compiler
         }
 
         $html = $this->addVariableBlocks($html);
-        $html = $this->replaceScopedPlaceholders($html);
         $html = $this->replacePlaceholders($html);
+        $html = $this->replaceScopedPlaceholders($html);
 
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
@@ -367,15 +367,15 @@ class Compiler
             } elseif (strpos($name, 'dataV') === 0 && strlen($name) === 37) {
                 unset($variables[$key]);
                 $variables[] = new Property(
-                    'scoped',
+                    'dataScopedStyleAttribute',
                     '"data-v-' . strtolower(substr($name, 5)) . '"',
                     false
                 );
-            } elseif ($name === '__SCOPED_DEFAULT__') {
+            } elseif ($name === '__DATA_SCOPED_STYLE_ATTRIBUTE__') {
                 unset($variables[$key]);
                 $variables[] = new Property(
-                    'scoped',
-                    'scoped|default(\'\')',
+                    'dataScopedStyleAttribute',
+                    'dataScopedStyleAttribute|default(\'\')',
                     false
                 );
             }
@@ -1252,13 +1252,13 @@ class Compiler
         }
 
         if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
-            $node->setAttributeNode(new DOMAttr('__SCOPED_DEFAULT__', ''));
+            $node->setAttributeNode(new DOMAttr('__DATA_SCOPED_STYLE_ATTRIBUTE__', ''));
         }
     }
 
     private function replaceScopedPlaceholders(string $html): string
     {
-        $html = str_replace('__SCOPED_DEFAULT__=""', '{{ scoped|default(\'\') }}', $html);
+        $html = str_replace('__DATA_SCOPED_STYLE_ATTRIBUTE__=""', '{{ dataScopedStyleAttribute|default(\'\') }}', $html);
         $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
 
         return $html;
