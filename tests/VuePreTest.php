@@ -8,7 +8,6 @@ class VuePreTest extends AbstractTestCase
 {
     /**
      * @dataProvider dataProvider
-
      *
      * @throws Exception
      */
