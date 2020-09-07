@@ -108,7 +108,7 @@ class Compiler
     /**
      * @var string[]
      */
-    protected $ifAttributes = ['checked', 'selected'];
+    protected $ifAttributes = ['checked', 'selected', 'disabled'];
 
 
 
@@ -1294,7 +1294,7 @@ class Compiler
                 $name = $match[1];
                 $value = base64_decode($match[2]);
                 $condition = trim(str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], '', $value));
-                if (in_array($name, ['checked', 'selected'])) {
+                if (in_array($name, ['checked', 'selected', 'disabled'])) {
                     $value = $name;
                 }
                 $html = str_replace(
