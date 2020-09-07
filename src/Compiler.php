@@ -106,6 +106,13 @@ class Compiler
     protected $includeAttributes = ['class', 'style'];
 
     /**
+     * @var string[]
+     */
+    protected $ifAttributes = ['checked', 'selected'];
+
+
+
+    /**
      * Compiler constructor.
      */
     public function __construct(DOMDocument $document, LoggerInterface $logger)
@@ -189,6 +196,7 @@ class Compiler
             throw new Exception('Generating html during conversion process failed.');
         }
 
+        $html = $this->replaceAttributeWithIfConditionPlaceholders($html);
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
@@ -513,7 +521,14 @@ class Compiler
                 continue;
             }
 
+            // makes no sense to use this in code, but it must handled.
+            if ($value === 'false') {
+                continue;
+            }
+
             $dynamicValues = $this->handleBinding($value, $name, $node);
+
+            $addIfAroundAttribute = in_array($name, $this->ifAttributes);
 
             /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {
@@ -535,7 +550,14 @@ class Compiler
                     break;
             }
 
-            $node->setAttribute($name, $this->implodeAttributeValue($name, $dynamicValues, $staticValues));
+            $value = $this->implodeAttributeValue($name, $dynamicValues, $staticValues);
+
+            if ($addIfAroundAttribute && $value) {
+                $value = $name . '|' . base64_encode($value);
+                $name = '__SHOW_ATTRIBUTE_IF_CONDITION_IS_TRUE__';
+            }
+
+            $node->setAttribute($name, $value);
         }
     }
 
@@ -1260,6 +1282,28 @@ class Compiler
     {
         $html = str_replace('__DATA_SCOPED_STYLE_ATTRIBUTE__=""', '{{ dataScopedStyleAttribute|default(\'\') }}', $html);
         $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
+
+        return $html;
+    }
+
+    private function replaceAttributeWithIfConditionPlaceholders(string $html): string
+    {
+        $pattern = '/__SHOW_ATTRIBUTE_IF_CONDITION_IS_TRUE__="([-a-zA-Z0-9]+)\|([a-zA-Z0-9+=]+)"/';
+        if (preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $name = $match[1];
+                $value = base64_decode($match[2]);
+                $condition = trim(str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], '', $value));
+                if (in_array($name, ['checked', 'selected'])) {
+                    $value = $name;
+                }
+                $html = str_replace(
+                    $match[0],
+                    '{% if ' . $condition . ' %}' . $name . '="' . $value . '"{% endif %}',
+                    $html
+                );
+            }
+        }
 
         return $html;
     }
