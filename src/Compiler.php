@@ -1286,6 +1286,9 @@ class Compiler
         return $html;
     }
 
+    /**
+     * @throws ReflectionException
+     */
     private function replaceAttributeWithIfConditionPlaceholders(string $html): string
     {
         $pattern = '/__ATTRIBUTE_WITH_IF_CONDITION__="([-a-zA-Z0-9]+)\|([a-zA-Z0-9+=]+)"/';
@@ -1294,6 +1297,8 @@ class Compiler
                 $name = $match[1];
                 $value = base64_decode($match[2]);
                 $condition = trim(str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], '', $value));
+                $value = $this->replacePlaceholders($value);
+                $condition = $this->replacePlaceholders($condition);
                 if (in_array($name, ['checked', 'selected', 'disabled'])) {
                     $value = $name;
                 }
