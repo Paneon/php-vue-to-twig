@@ -34,6 +34,14 @@ class IfAttributesTest extends AbstractTestCase
                 '<template><form><input type="checkbox" :checked="foo"></form></template>',
                 '<form class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}"><input type="checkbox" {% if foo %}checked="checked"{% endif %}></form>',
             ],
+            [
+                '<template><form><input type="checkbox" :checked="foo || bar"></form></template>',
+                '<form class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}"><input type="checkbox" {% if foo or bar %}checked="checked"{% endif %}></form>',
+            ],
+            [
+                '<template><form><input type="checkbox" :checked="foo === 1"></form></template>',
+                '<form class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}"><input type="checkbox" {% if foo == 1 %}checked="checked"{% endif %}></form>',
+            ],
         ];
     }
 }
