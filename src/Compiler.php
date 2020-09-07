@@ -553,7 +553,11 @@ class Compiler
             $value = $this->implodeAttributeValue($name, $dynamicValues, $staticValues);
 
             if ($addIfAroundAttribute && $value) {
-                $value = $name . '|' . base64_encode($value);
+                $value = $name . '|' . base64_encode(
+                    $this->builder->refactorCondition(
+                        $this->replacePlaceholders($value)
+                    )
+                );
                 $name = '__ATTRIBUTE_WITH_IF_CONDITION__';
             }
 
@@ -1297,8 +1301,6 @@ class Compiler
                 $name = $match[1];
                 $value = base64_decode($match[2]);
                 $condition = trim(str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], '', $value));
-                $value = $this->replacePlaceholders($value);
-                $condition = $this->replacePlaceholders($condition);
                 if (in_array($name, ['checked', 'selected', 'disabled'])) {
                     $value = $name;
                 }
