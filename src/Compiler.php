@@ -554,7 +554,7 @@ class Compiler
 
             if ($addIfAroundAttribute && $value) {
                 $value = $name . '|' . base64_encode($value);
-                $name = '__SHOW_ATTRIBUTE_IF_CONDITION_IS_TRUE__';
+                $name = '__ATTRIBUTE_WITH_IF_CONDITION__';
             }
 
             $node->setAttribute($name, $value);
@@ -1288,7 +1288,7 @@ class Compiler
 
     private function replaceAttributeWithIfConditionPlaceholders(string $html): string
     {
-        $pattern = '/__SHOW_ATTRIBUTE_IF_CONDITION_IS_TRUE__="([-a-zA-Z0-9]+)\|([a-zA-Z0-9+=]+)"/';
+        $pattern = '/__ATTRIBUTE_WITH_IF_CONDITION__="([-a-zA-Z0-9]+)\|([a-zA-Z0-9+=]+)"/';
         if (preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $name = $match[1];
