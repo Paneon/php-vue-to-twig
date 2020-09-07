@@ -196,10 +196,10 @@ class Compiler
             throw new Exception('Generating html during conversion process failed.');
         }
 
-        $html = $this->replaceAttributeWithIfConditionPlaceholders($html);
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
+        $html = $this->replaceAttributeWithIfConditionPlaceholders($html);
 
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
