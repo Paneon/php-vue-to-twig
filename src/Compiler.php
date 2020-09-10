@@ -108,7 +108,7 @@ class Compiler
     /**
      * @var string[]
      */
-    protected $ifAttributes = ['checked', 'selected', 'disabled'];
+    protected $attributesWithIf = ['checked', 'selected', 'disabled'];
 
 
 
@@ -231,8 +231,12 @@ class Compiler
     private function handleTwigConfig(string $twigConfig): void
     {
         $config = parse_ini_string($twigConfig);
-        if ($config['if-attributes'] ?? false) {
-            $this->ifAttributes = array_merge($this->ifAttributes, explode(',', $config['if-attributes']));
+        if ($config['attributes-with-if'] ?? false) {
+            $attributes = explode(',', $config['attributes-with-if']);
+            foreach ($attributes as &$attribute) {
+                $attribute = trim($attribute);
+            }
+            $this->attributesWithIf = array_merge($this->attributesWithIf, $attributes);
         }
     }
 
@@ -545,7 +549,7 @@ class Compiler
 
             $dynamicValues = $this->handleBinding($value, $name, $node);
 
-            $addIfAroundAttribute = in_array($name, $this->ifAttributes);
+            $addIfAroundAttribute = in_array($name, $this->attributesWithIf);
 
             /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {

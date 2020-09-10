@@ -10,7 +10,7 @@
 </template>
 
 <twig-config>
-    if-attributes = foo,bar
+    attributes-with-if = foo,bar
 </twig-config>
 
 <script>
