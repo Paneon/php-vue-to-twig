@@ -110,8 +110,6 @@ class Compiler
      */
     protected $attributesWithIf = ['checked', 'selected', 'disabled'];
 
-
-
     /**
      * Compiler constructor.
      */
@@ -233,9 +231,7 @@ class Compiler
         $config = parse_ini_string($twigConfig);
         if ($config['attributes-with-if'] ?? false) {
             $attributes = explode(',', $config['attributes-with-if']);
-            foreach ($attributes as &$attribute) {
-                $attribute = trim($attribute);
-            }
+            $attributes = array_map(function ($item) { return trim($item); }, $attributes);
             $this->attributesWithIf = array_merge($this->attributesWithIf, $attributes);
         }
     }
