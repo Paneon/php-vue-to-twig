@@ -161,6 +161,15 @@ class Compiler
 
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
+        $twigConfigBlocks = $this->document->getElementsByTagName('twig-config');
+
+        if ($twigConfigBlocks->length) {
+            foreach ($twigConfigBlocks as $twigConfigBlock) {
+                /* @var DOMText $twigConfigBlock */
+                $this->handleTwigConfig(trim($twigConfigBlock->textContent));
+            }
+        }
+
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
             $this->insertDefaultValues();
@@ -217,6 +226,14 @@ class Compiler
         }
 
         return $html;
+    }
+
+    private function handleTwigConfig(string $twigConfig): void
+    {
+        $config = parse_ini_string($twigConfig);
+        if ($config['if-attributes'] ?? null) {
+            $this->ifAttributes = array_merge($this->ifAttributes, explode(',', $config['if-attributes']));
+        }
     }
 
     /**
@@ -1299,8 +1316,8 @@ class Compiler
         if (preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $name = $match[1];
-                $value = base64_decode($match[2]);
-                $condition = trim(str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], '', $value));
+                $value = $this->replacePlaceholders(base64_decode($match[2]));
+                $condition = trim(str_replace(['{{', '}}'], '', $value));
                 if (in_array($name, ['checked', 'selected', 'disabled'])) {
                     $value = $name;
                 }

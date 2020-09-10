@@ -1,0 +1,9 @@
+{% set count = count|default(0) %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+    <div {% if count > 5 %}foo="{{ count > 5 }}"{% endif %}>
+        Foo
+    </div>
+    <div bar="{{ count > 5 }}">
+        Bar
+    </div>
+</div>
