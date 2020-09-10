@@ -231,7 +231,7 @@ class Compiler
     private function handleTwigConfig(string $twigConfig): void
     {
         $config = parse_ini_string($twigConfig);
-        if ($config['if-attributes'] ?? null) {
+        if ($config['if-attributes'] ?? false) {
             $this->ifAttributes = array_merge($this->ifAttributes, explode(',', $config['if-attributes']));
         }
     }
