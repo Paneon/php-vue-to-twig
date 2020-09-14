@@ -108,9 +108,7 @@ class Compiler
     /**
      * @var string[]
      */
-    protected $ifAttributes = ['checked', 'selected', 'disabled'];
-
-
+    protected $attributesWithIf = ['checked', 'selected', 'disabled'];
 
     /**
      * Compiler constructor.
@@ -160,6 +158,15 @@ class Compiler
         $styleBlocks = $this->document->getElementsByTagName('style');
 
         $twigBlocks = $this->document->getElementsByTagName('twig');
+
+        $twigConfigBlocks = $this->document->getElementsByTagName('twig-config');
+
+        if ($twigConfigBlocks->length) {
+            foreach ($twigConfigBlocks as $twigConfigBlock) {
+                /* @var DOMText $twigConfigBlock */
+                $this->handleTwigConfig(trim($twigConfigBlock->textContent));
+            }
+        }
 
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
@@ -217,6 +224,16 @@ class Compiler
         }
 
         return $html;
+    }
+
+    private function handleTwigConfig(string $twigConfig): void
+    {
+        $config = parse_ini_string($twigConfig);
+        if ($config['attributes-with-if'] ?? false) {
+            $attributes = explode(',', $config['attributes-with-if']);
+            $attributes = array_map(function ($item) { return trim($item); }, $attributes);
+            $this->attributesWithIf = array_merge($this->attributesWithIf, $attributes);
+        }
     }
 
     /**
@@ -528,7 +545,7 @@ class Compiler
 
             $dynamicValues = $this->handleBinding($value, $name, $node);
 
-            $addIfAroundAttribute = in_array($name, $this->ifAttributes);
+            $addIfAroundAttribute = in_array($name, $this->attributesWithIf);
 
             /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {
@@ -1299,8 +1316,8 @@ class Compiler
         if (preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
                 $name = $match[1];
-                $value = base64_decode($match[2]);
-                $condition = trim(str_replace(['__DOUBLE_CURLY_OPEN__', '__DOUBLE_CURLY_CLOSE__'], '', $value));
+                $value = $this->replacePlaceholders(base64_decode($match[2]));
+                $condition = trim(str_replace(['{{', '}}'], '', $value));
                 if (in_array($name, ['checked', 'selected', 'disabled'])) {
                     $value = $name;
                 }
