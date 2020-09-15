@@ -576,6 +576,10 @@ class Compiler
                     )
                 );
                 $name = '__ATTRIBUTE_WITH_IF_CONDITION__';
+                $oldValue = $node->getAttribute($name);
+                if ($oldValue) {
+                    $value = $oldValue . ',' . $value;
+                }
             }
 
             $node->setAttribute($name, $value);
@@ -1312,20 +1316,21 @@ class Compiler
      */
     private function replaceAttributeWithIfConditionPlaceholders(string $html): string
     {
-        $pattern = '/__ATTRIBUTE_WITH_IF_CONDITION__="([-a-zA-Z0-9]+)\|([a-zA-Z0-9+=]+)"/';
+        $pattern = '/__ATTRIBUTE_WITH_IF_CONDITION__="([^"]+)"/';
         if (preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
             foreach ($matches as $match) {
-                $name = $match[1];
-                $value = $this->replacePlaceholders(base64_decode($match[2]));
-                $condition = trim(str_replace(['{{', '}}'], '', $value));
-                if (in_array($name, ['checked', 'selected', 'disabled'])) {
-                    $value = $name;
+                $attributes = explode(',', $match[1]);
+                $replaceHtml = '';
+                foreach ($attributes as $attribute) {
+                    [$name, $encodedValue] = explode('|', $attribute);
+                    $value = $this->replacePlaceholders(base64_decode($encodedValue));
+                    $condition = trim(str_replace(['{{', '}}'], '', $value));
+                    if (in_array($name, ['checked', 'selected', 'disabled'])) {
+                        $value = $name;
+                    }
+                    $replaceHtml .= ' {% if ' . $condition . ' %}' . $name . '="' . $value . '"{% endif %}';
                 }
-                $html = str_replace(
-                    $match[0],
-                    '{% if ' . $condition . ' %}' . $name . '="' . $value . '"{% endif %}',
-                    $html
-                );
+                $html = str_replace($match[0], trim($replaceHtml), $html);
             }
         }
 

@@ -4,7 +4,7 @@ namespace Paneon\VueToTwig\Tests;
 
 use Exception;
 
-class IfAttributesTest extends AbstractTestCase
+class AttributeWithIfTest extends AbstractTestCase
 {
     /**
      * @dataProvider dataProvider
@@ -41,6 +41,10 @@ class IfAttributesTest extends AbstractTestCase
             [
                 '<template><form><input type="checkbox" :checked="foo === 1"></form></template>',
                 '<form class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}"><input type="checkbox" {% if foo == 1 %}checked="checked"{% endif %}></form>',
+            ],
+            [
+                '<template><form><input type="checkbox" :disabled="foo === 0" :checked="foo === 1"></form></template>',
+                '<form class="{{ class|default(\'\') }}" style="{{ style|default(\'\') }}"><input type="checkbox" {% if foo == 0 %}disabled="disabled"{% endif %} {% if foo == 1 %}checked="checked"{% endif %}></form>',
             ],
         ];
     }
