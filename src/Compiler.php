@@ -106,6 +106,11 @@ class Compiler
     protected $includeAttributes = ['class', 'style'];
 
     /**
+     * @var string[]
+     */
+    protected $attributesWithIf = ['checked', 'selected', 'disabled'];
+
+    /**
      * Compiler constructor.
      */
     public function __construct(DOMDocument $document, LoggerInterface $logger)
@@ -154,6 +159,15 @@ class Compiler
 
         $twigBlocks = $this->document->getElementsByTagName('twig');
 
+        $twigConfigBlocks = $this->document->getElementsByTagName('twig-config');
+
+        if ($twigConfigBlocks->length) {
+            foreach ($twigConfigBlocks as $twigConfigBlock) {
+                /* @var DOMText $twigConfigBlock */
+                $this->handleTwigConfig(trim($twigConfigBlock->textContent));
+            }
+        }
+
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
             $this->insertDefaultValues();
@@ -192,6 +206,7 @@ class Compiler
         $html = $this->addVariableBlocks($html);
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
+        $html = $this->replaceAttributeWithIfConditionPlaceholders($html);
 
         $html = preg_replace('/<template>\s*(.*)\s*<\/template>/ism', '$1', $html);
         $html = preg_replace('/<\/?template[^>]*?>/i', '', $html);
@@ -209,6 +224,16 @@ class Compiler
         }
 
         return $html;
+    }
+
+    private function handleTwigConfig(string $twigConfig): void
+    {
+        $config = parse_ini_string($twigConfig);
+        if ($config['attributes-with-if'] ?? false) {
+            $attributes = explode(',', $config['attributes-with-if']);
+            $attributes = array_map(function ($item) { return trim($item); }, $attributes);
+            $this->attributesWithIf = array_merge($this->attributesWithIf, $attributes);
+        }
     }
 
     /**
@@ -513,7 +538,14 @@ class Compiler
                 continue;
             }
 
+            // makes no sense to use this in code, but it must handled.
+            if ($value === 'false') {
+                continue;
+            }
+
             $dynamicValues = $this->handleBinding($value, $name, $node);
+
+            $addIfAroundAttribute = in_array($name, $this->attributesWithIf);
 
             /* @see https://gitlab.gnome.org/GNOME/libxml2/-/blob/LIBXML2.6.32/HTMLtree.c#L657 */
             switch ($name) {
@@ -535,7 +567,22 @@ class Compiler
                     break;
             }
 
-            $node->setAttribute($name, $this->implodeAttributeValue($name, $dynamicValues, $staticValues));
+            $value = $this->implodeAttributeValue($name, $dynamicValues, $staticValues);
+
+            if ($addIfAroundAttribute && $value) {
+                $value = $name . '|' . base64_encode(
+                    $this->builder->refactorCondition(
+                        $this->replacePlaceholders($value)
+                    )
+                );
+                $name = '__ATTRIBUTE_WITH_IF_CONDITION__';
+                $oldValue = $node->getAttribute($name);
+                if ($oldValue) {
+                    $value = $oldValue . ',' . $value;
+                }
+            }
+
+            $node->setAttribute($name, $value);
         }
     }
 
@@ -1260,6 +1307,32 @@ class Compiler
     {
         $html = str_replace('__DATA_SCOPED_STYLE_ATTRIBUTE__=""', '{{ dataScopedStyleAttribute|default(\'\') }}', $html);
         $html = preg_replace('/(data-v-[0-9a-f]{32})=""/', '$1', $html);
+
+        return $html;
+    }
+
+    /**
+     * @throws ReflectionException
+     */
+    private function replaceAttributeWithIfConditionPlaceholders(string $html): string
+    {
+        $pattern = '/__ATTRIBUTE_WITH_IF_CONDITION__="([^"]+)"/';
+        if (preg_match_all($pattern, $html, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $attributes = explode(',', $match[1]);
+                $replaceHtml = '';
+                foreach ($attributes as $attribute) {
+                    [$name, $encodedValue] = explode('|', $attribute);
+                    $value = $this->replacePlaceholders(base64_decode($encodedValue));
+                    $condition = trim(str_replace(['{{', '}}'], '', $value));
+                    if (in_array($name, ['checked', 'selected', 'disabled'])) {
+                        $value = $name;
+                    }
+                    $replaceHtml .= ' {% if ' . $condition . ' %}' . $name . '="' . $value . '"{% endif %}';
+                }
+                $html = str_replace($match[0], trim($replaceHtml), $html);
+            }
+        }
 
         return $html;
     }
