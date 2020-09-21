@@ -181,7 +181,19 @@ class Compiler
         }
 
         if ($styleBlocks->length) {
-            $this->styleBuilder->setScopedAttribute('data-v-' . md5($this->document->textContent));
+            $scopedStyleContent = null;
+            foreach ($styleBlocks as $styleBlock) {
+                /* @var DOMElement $styleBlock */
+                if ($styleBlock->hasAttribute('scoped')) {
+                    $scopedStyleContent =
+                        $scopedStyleContent === null
+                            ? $styleBlock->textContent
+                            : $scopedStyleContent . ' ' . $styleBlock->textContent;
+                }
+            }
+            if ($scopedStyleContent !== null) {
+                $this->styleBuilder->setScopedAttribute('data-v-' . md5($scopedStyleContent));
+            }
             foreach ($styleBlocks as $styleBlock) {
                 /* @var DOMElement $styleBlock */
                 $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
@@ -1289,17 +1301,15 @@ class Compiler
 
     private function addScopedAttribute(DOMElement $node, int $level): void
     {
-        if ($this->styleBuilder->hasScoped()) {
+        if ($this->styleBuilder->hasScoped() && $this->styleBuilder->getScopedAttribute()) {
             $scopedAttribute = $this->styleBuilder->getScopedAttribute();
             $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
-
-            if ($level !== 1) {
-                return;
-            }
         }
 
-        if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
-            $node->setAttributeNode(new DOMAttr('__DATA_SCOPED_STYLE_ATTRIBUTE__', ''));
+        if ($level === 1) {
+            if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
+                $node->setAttributeNode(new DOMAttr('__DATA_SCOPED_STYLE_ATTRIBUTE__', ''));
+            }
         }
     }
 
