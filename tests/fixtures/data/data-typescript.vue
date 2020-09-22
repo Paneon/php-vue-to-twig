@@ -16,8 +16,8 @@
 
         private myString = 'foo';
 
-        private myArray: ['a', 'b', 'c'];
+        private myArray = ['a', 'b', 'c'];
 
-        private myObject: { a: 'x', b: 'y', c: 'z' };
+        private myObject =  { a: 'x', b: 'y', c: 'z' };
     };
 </script>
