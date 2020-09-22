@@ -171,6 +171,7 @@ class Compiler
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
             $this->insertDefaultValues();
+            $this->registerData($scriptElement);
         }
 
         if ($twigBlocks->length) {
@@ -464,6 +465,15 @@ class Compiler
                 $property->setType(trim($typeScriptMatch['propType']));
                 $this->properties[$typeScriptMatch['propName']] = $property;
             }
+        }
+    }
+
+    public function registerData(DOMElement $scriptElement): void
+    {
+        if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
+            // TypeScript
+        } else {
+            // JavaScript
         }
     }
 
