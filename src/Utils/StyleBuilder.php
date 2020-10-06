@@ -7,6 +7,7 @@ namespace Paneon\VueToTwig\Utils;
 use DOMElement;
 use Exception;
 use ScssPhp\ScssPhp\Compiler as ScssCompiler;
+use ScssPhp\ScssPhp\Exception\CompilerException;
 
 class StyleBuilder
 {
@@ -83,7 +84,11 @@ class StyleBuilder
             if ($this->scssCompiler === null) {
                 $this->scssCompiler = new ScssCompiler();
             }
-            $style = $this->scssCompiler->compile($this->scssData . ' ' . $style);
+            try {
+                $style = $this->scssCompiler->compile($this->scssData . ' ' . $style);
+            } catch (CompilerException $e) {
+                $style = "\n/* Warning: " . $e->getMessage() . " */\n";
+            }
         }
 
         if ($styleElement->hasAttribute('scoped')) {
