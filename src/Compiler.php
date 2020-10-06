@@ -181,7 +181,19 @@ class Compiler
         }
 
         if ($styleBlocks->length) {
-            $this->styleBuilder->setScopedAttribute('data-v-' . md5($this->document->textContent));
+            $scopedStyleContent = null;
+            foreach ($styleBlocks as $styleBlock) {
+                /* @var DOMElement $styleBlock */
+                if ($styleBlock->hasAttribute('scoped')) {
+                    $scopedStyleContent =
+                        $scopedStyleContent === null
+                            ? $styleBlock->textContent
+                            : $scopedStyleContent . ' ' . $styleBlock->textContent;
+                }
+            }
+            if ($scopedStyleContent !== null) {
+                $this->styleBuilder->setScopedAttribute('data-v-' . md5($scopedStyleContent));
+            }
             foreach ($styleBlocks as $styleBlock) {
                 /* @var DOMElement $styleBlock */
                 $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
@@ -379,6 +391,7 @@ class Compiler
     private function preparePropertiesForInclude(array $variables): array
     {
         $values = [];
+        $hasScopedStyleAttribute = false;
         foreach ($variables as $key => $variable) {
             $name = $variable->getName();
             $value = $variable->getValue();
@@ -390,6 +403,7 @@ class Compiler
                 }
                 unset($variables[$key]);
             } elseif (strpos($name, 'dataV') === 0 && strlen($name) === 37) {
+                $hasScopedStyleAttribute = true;
                 unset($variables[$key]);
                 $variables[] = new Property(
                     'dataScopedStyleAttribute',
@@ -398,6 +412,9 @@ class Compiler
                 );
             } elseif ($name === '__DATA_SCOPED_STYLE_ATTRIBUTE__') {
                 unset($variables[$key]);
+                if ($hasScopedStyleAttribute) {
+                    continue;
+                }
                 $variables[] = new Property(
                     'dataScopedStyleAttribute',
                     'dataScopedStyleAttribute|default(\'\')',
@@ -571,10 +588,10 @@ class Compiler
 
             if ($addIfAroundAttribute && $value) {
                 $value = $name . '|' . base64_encode(
-                    $this->builder->refactorCondition(
-                        $this->replacePlaceholders($value)
-                    )
-                );
+                        $this->builder->refactorCondition(
+                            $this->replacePlaceholders($value)
+                        )
+                    );
                 $name = '__ATTRIBUTE_WITH_IF_CONDITION__';
                 $oldValue = $node->getAttribute($name);
                 if ($oldValue) {
@@ -1289,17 +1306,15 @@ class Compiler
 
     private function addScopedAttribute(DOMElement $node, int $level): void
     {
-        if ($this->styleBuilder->hasScoped()) {
+        if ($this->styleBuilder->hasScoped() && $this->styleBuilder->getScopedAttribute()) {
             $scopedAttribute = $this->styleBuilder->getScopedAttribute();
             $node->setAttributeNode(new DOMAttr($scopedAttribute, ''));
-
-            if ($level !== 1) {
-                return;
-            }
         }
 
-        if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
-            $node->setAttributeNode(new DOMAttr('__DATA_SCOPED_STYLE_ATTRIBUTE__', ''));
+        if ($level === 1) {
+            if ($this->styleBuilder->getOutputType() & StyleBuilder::STYLE_SCOPED) {
+                $node->setAttributeNode(new DOMAttr('__DATA_SCOPED_STYLE_ATTRIBUTE__', ''));
+            }
         }
     }
 
