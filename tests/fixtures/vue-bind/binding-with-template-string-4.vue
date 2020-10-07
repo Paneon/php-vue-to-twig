@@ -1,7 +1,10 @@
 <template>
   <div class="block">
-    <div :style="foo ? foo : `width: ${size}; height: ${size}`">
+    <div :style="`width: ${size}; height: ${size}`">
       Foo
+    </div>
+    <div :style="foo ? foo : `width: ${size}; height: ${size}`">
+      Bar
     </div>
   </div>
 </template>
