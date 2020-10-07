@@ -93,7 +93,11 @@ class StyleBuilder
 
         if ($styleElement->hasAttribute('scoped')) {
             $this->hasScoped = true;
-            $style = preg_replace('/((?:^|[^},]*?)\S+)(\s*[{,])/i', '$1[' . $this->scopedAttribute . ']$2', $style);
+            $style = preg_replace(
+                '/((?:^|\s)\s*[^@\s,][a-z0-9-_:]+?[a-z0-9-_]+)(\s*[{,])/i',
+                '$1[' . $this->scopedAttribute . ']$2',
+                $style
+            );
         }
 
         return '<style>' . $style . '</style>';
