@@ -77,9 +77,9 @@ class Compiler
     protected $properties;
 
     /**
-     * @var Data[]
+     * @var Data[]|null
      */
-    protected $data;
+    protected $data = null;
 
     /**
      * @var Pre[]
@@ -131,7 +131,6 @@ class Compiler
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
-        $this->data = [];
         $this->pre = [];
         $this->rawBlocks = [];
 
@@ -178,8 +177,10 @@ class Compiler
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
             $this->insertDefaultValues();
-            $this->registerData($scriptElement);
-            $this->insertData();
+            if ($this->data !== null) {
+                $this->registerData($scriptElement);
+                $this->insertData();
+            }
         }
 
         if ($twigBlocks->length) {
@@ -1216,6 +1217,13 @@ class Compiler
         if (($key = array_search('style', $this->includeAttributes)) !== false) {
             unset($this->includeAttributes[$key]);
         }
+
+        return $this;
+    }
+
+    public function enableDataSupport(): Compiler
+    {
+        $this->data = [];
 
         return $this;
     }

@@ -18,6 +18,8 @@ class DataTest extends AbstractTestCase
     {
         $compiler = $this->createCompiler($html);
 
+        $compiler->enableDataSupport();
+
         $actual = $compiler->convert();
 
         $this->assertEqualHtml($expected, $actual);
