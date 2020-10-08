@@ -256,6 +256,9 @@ class Compiler
             $attributes = array_map(function ($item) { return trim($item); }, $attributes);
             $this->attributesWithIf = array_merge($this->attributesWithIf, $attributes);
         }
+        if ($config['disable-data-support'] ?? false) {
+            $this->data = null;
+        }
     }
 
     /**
