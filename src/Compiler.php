@@ -498,6 +498,13 @@ class Compiler
         $content = $this->innerHtmlOfNode($scriptElement);
         if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
             // TypeScript
+            preg_match_all('/private\s+(\S+)\s*=\s*(.+?);\n/msi', $content, $matches, PREG_SET_ORDER);
+            foreach ($matches as $match) {
+                $this->data[] = new Data(
+                    trim($match[1]),
+                    trim($this->builder->refactorCondition(str_replace('this.', '', $match[2])))
+                );
+            }
         } else {
             // JavaScript
             if (preg_match('/data\(\)\s*{\s*return\s*{(.+)\s*}\s*;\s*}\s*,/msi', $content, $match)) {
@@ -534,7 +541,7 @@ class Compiler
                     if (substr_count($data, ':')) {
                         [$name, $value] = explode(':', $data, 2);
                         $this->data[] = new Data(
-                            trim($name, "\ \t\n\r\0\x0B\"'"),
+                            trim($name),
                             trim($this->builder->refactorCondition(str_replace('this.', '', $value)))
                         );
                     }
