@@ -1,0 +1,9 @@
+{% set foo = foo|default('') %}
+<div class="block {{ class|default('') }}" style="{{ style|default('') }}">
+  <div style="width: {{ size }}px; height: {{ size }}px;">
+    Foo
+  </div>
+  <div style='{{ foo ? foo : "width: " ~ ( size ) ~ "px; height: " ~ ( size ) ~ "px;" }};'>
+    Bar
+  </div>
+</div>

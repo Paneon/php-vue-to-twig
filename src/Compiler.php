@@ -675,6 +675,12 @@ class Compiler
         } else {
             $value = $this->builder->refactorCondition($value);
             $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
+            if (substr_count($value, '`')) {
+                preg_match_all('/`[^`]+`/', $value, $matches);
+                foreach ($matches as $match) {
+                    $value = str_replace($match[0], $this->refactorTemplateString($match[0]), $value);
+                }
+            }
             $dynamicValues[] = $this->builder->prepareBindingOutput($value, $twigOutput);
         }
 
@@ -1080,7 +1086,7 @@ class Compiler
         if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
             $templateStringContent = '"' . $matches['content'] . '"';
             $value = preg_replace(
-                '/\${(.+)}/',
+                '/\${([^{}]+)}/',
                 '" ~ ( $1 ) ~ "',
                 $templateStringContent
             );
