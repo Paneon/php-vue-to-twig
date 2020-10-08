@@ -22,6 +22,9 @@ class Data
     public function __construct(string $name, string $value)
     {
         $this->name = $name;
+        if (substr_count($value, 'window.')) {
+            $value = 'null';
+        }
         $this->value = $value;
     }
 

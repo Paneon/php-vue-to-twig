@@ -496,7 +496,6 @@ class Compiler
     public function registerData(DOMElement $scriptElement): void
     {
         $content = $this->innerHtmlOfNode($scriptElement);
-        $content = preg_replace('/\/*(.+?)*\//msi', '', $content);
         if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
             // TypeScript
             preg_match_all('/private\s+(\S+)\s*=\s*(.+?);\n/msi', $content, $matches, PREG_SET_ORDER);
@@ -508,7 +507,7 @@ class Compiler
             }
         } else {
             // JavaScript
-            if (preg_match('/data\(\)\s*{\s*return\s*{(.+)\s*}\s*;\s*}\s*,/msi', $content, $match)) {
+            if (preg_match('/data\(\)\s*{\s*return\s*{(.+?)\s*}\s*;\s*}\s*,/msi', $content, $match)) {
                 $dataString = $match[1];
                 $charsCount = mb_strlen($dataString, 'UTF-8');
                 $dataArray = [];
@@ -517,8 +516,21 @@ class Compiler
                 $bracketOpenCount = 0;
                 $quoteChar = null;
                 $lastChar = null;
+                $commentOpen = false;
                 for ($i = 0; $i < $charsCount; ++$i) {
                     $char = mb_substr($dataString, $i, 1, 'UTF-8');
+                    $nextChar = mb_substr($dataString, $i + 1, 1, 'UTF-8');
+                    if ($char === '*' && $nextChar === '/') {
+                        $i += 2;
+                        $commentOpen = false;
+                        continue;
+                    }
+                    if ($char === '/' && $nextChar === '*') {
+                        $commentOpen = true;
+                    }
+                    if ($commentOpen) {
+                        continue;
+                    }
                     if ($quoteChar === null && ($char === '"' || $char === '\'')) {
                         $quoteChar = $char;
                     } elseif ($quoteChar === $char && $lastChar !== '\\') {
