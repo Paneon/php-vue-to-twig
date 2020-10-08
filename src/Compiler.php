@@ -496,6 +496,7 @@ class Compiler
     public function registerData(DOMElement $scriptElement): void
     {
         $content = $this->innerHtmlOfNode($scriptElement);
+        $content = preg_replace('/\/*(.+?)*\//msi', '', $content);
         if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
             // TypeScript
             preg_match_all('/private\s+(\S+)\s*=\s*(.+?);\n/msi', $content, $matches, PREG_SET_ORDER);
