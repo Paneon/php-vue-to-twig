@@ -502,7 +502,7 @@ class Compiler
         $content = $this->innerHtmlOfNode($scriptElement);
         if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
             // TypeScript
-            preg_match_all('/private\s+(\S+)\s*=\s*(.+?);\n/msi', $content, $matches, PREG_SET_ORDER);
+            preg_match_all('/private\s+(\S+)\s*=\s*(.+?);\ *\n/msi', $content, $matches, PREG_SET_ORDER);
             foreach ($matches as $match) {
                 $this->data[] = new Data(
                     trim($match[1]),
@@ -525,14 +525,12 @@ class Compiler
                     $char = mb_substr($dataString, $i, 1, 'UTF-8');
                     $nextChar = mb_substr($dataString, $i + 1, 1, 'UTF-8');
                     if ($char === '*' && $nextChar === '/') {
-                        $i += 2;
+                        ++$i;
                         $commentOpen = false;
                         continue;
                     }
-                    if ($char === '/' && $nextChar === '*') {
+                    if (($char === '/' && $nextChar === '*') || $commentOpen) {
                         $commentOpen = true;
-                    }
-                    if ($commentOpen) {
                         continue;
                     }
                     if ($quoteChar === null && ($char === '"' || $char === '\'')) {
