@@ -12,6 +12,7 @@ use DOMNode;
 use DOMText;
 use Exception;
 use Paneon\VueToTwig\Models\Component;
+use Paneon\VueToTwig\Models\Data;
 use Paneon\VueToTwig\Models\Pre;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
@@ -76,6 +77,11 @@ class Compiler
     protected $properties;
 
     /**
+     * @var Data[]
+     */
+    protected $data;
+
+    /**
      * @var Pre[]
      */
     protected $pre;
@@ -125,6 +131,7 @@ class Compiler
         $this->components = [];
         $this->banner = [];
         $this->properties = [];
+        $this->data = [];
         $this->pre = [];
         $this->rawBlocks = [];
 
@@ -172,6 +179,7 @@ class Compiler
             $this->registerProperties($scriptElement);
             $this->insertDefaultValues();
             $this->registerData($scriptElement);
+            $this->insertData();
         }
 
         if ($twigBlocks->length) {
@@ -487,10 +495,51 @@ class Compiler
 
     public function registerData(DOMElement $scriptElement): void
     {
+        $content = $this->innerHtmlOfNode($scriptElement);
         if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
             // TypeScript
         } else {
             // JavaScript
+            if (preg_match('/data\(\)\s*{\s*return\s*{(.+)\s*}\s*;\s*}\s*,/msi', $content, $match)) {
+                $dataString = $match[1];
+                $charsCount = mb_strlen($dataString, 'UTF-8');
+                $dataArray = [];
+                $dataCount = 0;
+                $dataArray[$dataCount] = '';
+                $bracketOpenCount = 0;
+                $quoteChar = null;
+                $lastChar = null;
+                for ($i = 0; $i < $charsCount; ++$i) {
+                    $char = mb_substr($dataString, $i, 1, 'UTF-8');
+                    if ($quoteChar === null && ($char === '"' || $char === '\'')) {
+                        $quoteChar = $char;
+                    } elseif ($quoteChar === $char && $lastChar !== '\\') {
+                        $quoteChar = null;
+                    }
+                    if ($char === '[' || $char === '{') {
+                        ++$bracketOpenCount;
+                        $dataArray[$dataCount] .= $char;
+                    } elseif ($char === ']' || $char === '}') {
+                        --$bracketOpenCount;
+                        $dataArray[$dataCount] .= $char;
+                    } elseif ($char === ',' && $bracketOpenCount === 0 && $quoteChar === null) {
+                        ++$dataCount;
+                        $dataArray[$dataCount] = '';
+                    } else {
+                        $dataArray[$dataCount] .= $char;
+                    }
+                    $lastChar = $char;
+                }
+                foreach ($dataArray as $data) {
+                    if (substr_count($data, ':')) {
+                        [$name, $value] = explode(':', $data, 2);
+                        $this->data[] = new Data(
+                            trim($name, "\ \t\n\r\0\x0B\"'"),
+                            trim($this->builder->refactorCondition(str_replace('this.', '', $value)))
+                        );
+                    }
+                }
+            }
         }
     }
 
@@ -1275,6 +1324,13 @@ class Compiler
                 $property->getName(),
                 $property->getDefault()
             );
+        }
+    }
+
+    protected function insertData(): void
+    {
+        foreach ($this->data as $data) {
+            $this->rawBlocks[] = '{% set ' . $data->getName() . ' = ' . $data->getValue() . ' %}';
         }
     }
 
