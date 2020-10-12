@@ -538,10 +538,10 @@ class Compiler
                     } elseif ($quoteChar === $char && $lastChar !== '\\') {
                         $quoteChar = null;
                     }
-                    if ($char === '[' || $char === '{') {
+                    if (($char === '[' || $char === '{') && $quoteChar === null) {
                         ++$bracketOpenCount;
                         $dataArray[$dataCount] .= $char;
-                    } elseif ($char === ']' || $char === '}') {
+                    } elseif (($char === ']' || $char === '}') && $quoteChar === null) {
                         --$bracketOpenCount;
                         $dataArray[$dataCount] .= $char;
                     } elseif ($char === ',' && $bracketOpenCount === 0 && $quoteChar === null) {
