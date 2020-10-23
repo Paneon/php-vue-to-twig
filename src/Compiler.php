@@ -12,6 +12,7 @@ use DOMNode;
 use DOMText;
 use Exception;
 use Paneon\VueToTwig\Models\Component;
+use Paneon\VueToTwig\Models\Data;
 use Paneon\VueToTwig\Models\Pre;
 use Paneon\VueToTwig\Models\Property;
 use Paneon\VueToTwig\Models\Replacements;
@@ -74,6 +75,11 @@ class Compiler
      * @var Property[]
      */
     protected $properties;
+
+    /**
+     * @var Data[]|null
+     */
+    protected $data = null;
 
     /**
      * @var Pre[]
@@ -171,6 +177,10 @@ class Compiler
         if ($scriptElement) {
             $this->registerProperties($scriptElement);
             $this->insertDefaultValues();
+            if ($this->data !== null) {
+                $this->registerData($scriptElement);
+                $this->insertData();
+            }
         }
 
         if ($twigBlocks->length) {
@@ -245,6 +255,9 @@ class Compiler
             $attributes = explode(',', $config['attributes-with-if']);
             $attributes = array_map(function ($item) { return trim($item); }, $attributes);
             $this->attributesWithIf = array_merge($this->attributesWithIf, $attributes);
+        }
+        if ($config['disable-data-support'] ?? false) {
+            $this->data = null;
         }
     }
 
@@ -484,6 +497,74 @@ class Compiler
         }
     }
 
+    public function registerData(DOMElement $scriptElement): void
+    {
+        $content = $this->innerHtmlOfNode($scriptElement);
+        if ($scriptElement->hasAttribute('lang') && $scriptElement->getAttribute('lang') === 'ts') {
+            // TypeScript
+            preg_match_all('/private\s+(\S+)\s*=\s*(.+?);\ *\n/msi', $content, $matches, PREG_SET_ORDER);
+            foreach ($matches as $match) {
+                $this->data[] = new Data(
+                    trim($match[1]),
+                    trim($this->builder->refactorCondition(str_replace('this.', '', $match[2])))
+                );
+            }
+        } else {
+            // JavaScript
+            if (preg_match('/data\(\)\s*{\s*return\s*{(.+?)\s*}\s*;\s*}\s*,/msi', $content, $match)) {
+                $dataString = $match[1];
+                $charsCount = mb_strlen($dataString, 'UTF-8');
+                $dataArray = [];
+                $dataCount = 0;
+                $dataArray[$dataCount] = '';
+                $bracketOpenCount = 0;
+                $quoteChar = null;
+                $lastChar = null;
+                $commentOpen = false;
+                for ($i = 0; $i < $charsCount; ++$i) {
+                    $char = mb_substr($dataString, $i, 1, 'UTF-8');
+                    $nextChar = mb_substr($dataString, $i + 1, 1, 'UTF-8');
+                    if ($char === '*' && $nextChar === '/') {
+                        ++$i;
+                        $commentOpen = false;
+                        continue;
+                    }
+                    if (($char === '/' && $nextChar === '*') || $commentOpen) {
+                        $commentOpen = true;
+                        continue;
+                    }
+                    if ($quoteChar === null && ($char === '"' || $char === '\'')) {
+                        $quoteChar = $char;
+                    } elseif ($quoteChar === $char && $lastChar !== '\\') {
+                        $quoteChar = null;
+                    }
+                    if (($char === '[' || $char === '{') && $quoteChar === null) {
+                        ++$bracketOpenCount;
+                        $dataArray[$dataCount] .= $char;
+                    } elseif (($char === ']' || $char === '}') && $quoteChar === null) {
+                        --$bracketOpenCount;
+                        $dataArray[$dataCount] .= $char;
+                    } elseif ($char === ',' && $bracketOpenCount === 0 && $quoteChar === null) {
+                        ++$dataCount;
+                        $dataArray[$dataCount] = '';
+                    } else {
+                        $dataArray[$dataCount] .= $char;
+                    }
+                    $lastChar = $char;
+                }
+                foreach ($dataArray as $data) {
+                    if (substr_count($data, ':')) {
+                        [$name, $value] = explode(':', $data, 2);
+                        $this->data[] = new Data(
+                            trim($name),
+                            trim($this->builder->refactorCondition(str_replace('this.', '', $value)))
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * @throws Exception
      */
@@ -675,6 +756,12 @@ class Compiler
         } else {
             $value = $this->builder->refactorCondition($value);
             $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
+            if (substr_count($value, '`')) {
+                preg_match_all('/`[^`]+`/', $value, $matches);
+                foreach ($matches as $match) {
+                    $value = str_replace($match[0], $this->refactorTemplateString($match[0]), $value);
+                }
+            }
             $dynamicValues[] = $this->builder->prepareBindingOutput($value, $twigOutput);
         }
 
@@ -1080,7 +1167,7 @@ class Compiler
         if (preg_match('/^`(?P<content>.+)`$/', $value, $matches)) {
             $templateStringContent = '"' . $matches['content'] . '"';
             $value = preg_replace(
-                '/\${(.+)}/',
+                '/\${([^{}]+)}/',
                 '" ~ ( $1 ) ~ "',
                 $templateStringContent
             );
@@ -1137,6 +1224,13 @@ class Compiler
         if (($key = array_search('style', $this->includeAttributes)) !== false) {
             unset($this->includeAttributes[$key]);
         }
+
+        return $this;
+    }
+
+    public function enableDataSupport(): Compiler
+    {
+        $this->data = [];
 
         return $this;
     }
@@ -1265,6 +1359,13 @@ class Compiler
                 $property->getName(),
                 $property->getDefault()
             );
+        }
+    }
+
+    protected function insertData(): void
+    {
+        foreach ($this->data as $data) {
+            $this->rawBlocks[] = '{% set ' . $data->getName() . ' = ' . $data->getValue() . ' %}';
         }
     }
 
