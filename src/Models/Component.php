@@ -90,7 +90,7 @@ class Component
         return $this->slots[$name];
     }
 
-    public function addEmptyDefaultSlot()
+    public function addEmptyDefaultSlot(): void
     {
         $this->properties[] = new Property(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME, '""', false);
     }
