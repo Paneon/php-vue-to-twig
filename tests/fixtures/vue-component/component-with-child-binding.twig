@@ -1,8 +1,8 @@
 <div class="{{ class|default('') }}" style="{{ style|default('') }}">
-  {% include "/templates/ChildComponent.twig" with { 'test': "test", 'class': "", 'style': ( "fill:" ~ ( color ) ~ ";" ) } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "", 'style': "color: red" ~ "; " ~ ( "fill:" ~ ( color ) ~ ";" ) } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ ( "bar" ), 'style': "" } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "foo" ~ " " ~ ( bar ), 'style': "" } %}
-  {% include "/templates/ChildComponent.twig" with { 'class': "product-column__tile" ~ " " ~ ( isSingleProductTile ? 'product-column__tile--large ' ), 'style': "" } %}
-  {% include "/templates/ChildComponent.twig" with { 'ariaLabelledby': "foo-" ~ ( _uid ) ~ "", 'class': "", 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'test': "test", 'slot_default': "", 'class': "", 'style': ( "fill:" ~ ( color ) ~ ";" ) } %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "", 'style': "color: red" ~ "; " ~ ( "fill:" ~ ( color ) ~ ";" ) } %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "foo" ~ " " ~ ( "bar" ), 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "foo" ~ " " ~ ( bar ), 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "product-column__tile" ~ " " ~ ( isSingleProductTile ? 'product-column__tile--large ' ), 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'ariaLabelledby': "foo-" ~ ( _uid ) ~ "", 'slot_default': "", 'class': "", 'style': "" } %}
 </div>
