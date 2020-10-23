@@ -90,6 +90,11 @@ class Component
         return $this->slots[$name];
     }
 
+    public function addEmptyDefaultSlot()
+    {
+        $this->properties[] = new Property(Slot::SLOT_PREFIX . Slot::SLOT_DEFAULT_NAME, '""', false);
+    }
+
     public function kebabToCamelCase(string $string, bool $capitalizeFirstCharacter = false): string
     {
         $str = str_replace('-', '', ucwords($string, '-'));

@@ -332,6 +332,8 @@ class Compiler
                 if ($node->hasChildNodes() && !$usedComponent->hasSlot(Slot::SLOT_DEFAULT_NAME)) {
                     $this->addSlot(Slot::SLOT_DEFAULT_NAME, $node, $usedComponent);
                 }
+            } else {
+                $usedComponent->addEmptyDefaultSlot();
             }
 
             // Include Partial
