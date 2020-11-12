@@ -1,0 +1,5 @@
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+  {% set slot_foo_bar_value %}baz{% endset %}
+  {% set slot_default_value %}{% endset %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_foo_bar': slot_foo_bar_value, 'slot_default': slot_default_value, 'class': "", 'style': "" } %}
+</div>

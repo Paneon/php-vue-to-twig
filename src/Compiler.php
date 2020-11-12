@@ -1305,7 +1305,9 @@ class Compiler
         $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
 
         $slotName = Slot::SLOT_PREFIX;
-        $slotName .= $node->getAttribute('name') ? $node->getAttribute('name') : Slot::SLOT_DEFAULT_NAME;
+        $slotName .= $node->getAttribute('name')
+            ? str_replace('-', '_', $node->getAttribute('name'))
+            : Slot::SLOT_DEFAULT_NAME;
 
         if ($slotFallback) {
             $this->addVariable($slotName . '_fallback', $slotFallback);
