@@ -112,6 +112,11 @@ class Compiler
     protected $includeAttributes = ['class', 'style'];
 
     /**
+     * @var string|null
+     */
+    protected $vBind = null;
+
+    /**
      * @var string[]
      */
     protected $attributesWithIf = ['checked', 'selected', 'disabled'];
@@ -345,7 +350,8 @@ class Compiler
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
-                    $this->preparePropertiesForInclude($usedComponent->getProperties())
+                    $this->preparePropertiesForInclude($usedComponent->getProperties()),
+                    $this->vBind
                 )
             );
 
@@ -440,6 +446,9 @@ class Compiler
                     'dataScopedStyleAttribute|default(\'\')',
                     false
                 );
+            } elseif ($name === 'vBind') {
+                $this->vBind = $value;
+                unset($variables[$key]);
             }
         }
 
@@ -1334,7 +1343,7 @@ class Compiler
         foreach ($node->childNodes as $childNode) {
             if ($childNode instanceof DOMElement && $childNode->tagName === 'template') {
                 foreach ($childNode->attributes as $attribute) {
-                    if ($attribute instanceof DOMAttr && preg_match('/v-slot(?::([a-z]+)?)/i', $attribute->nodeName, $matches)) {
+                    if ($attribute instanceof DOMAttr && preg_match('/v-slot(?::([a-z0-9_-]+)?)/i', $attribute->nodeName, $matches)) {
                         $slotName = $matches[1] ?? Slot::SLOT_DEFAULT_NAME;
                         $this->addSlot($slotName, $childNode, $usedComponent);
                         $removeNodes[] = $childNode;

@@ -153,11 +153,17 @@ class TwigBuilder
     /**
      * @param Property[] $variables
      */
-    public function createIncludePartial(string $partialPath, array $variables = []): string
+    public function createIncludePartial(string $partialPath, array $variables = [], ?string $vBind = null): string
     {
         $serializedProperties = $this->serializeComponentProperties($variables);
 
-        return $this->createBlock('include "' . $partialPath . '" with ' . $serializedProperties);
+        $content = 'include "' . $partialPath . '" with ' . $serializedProperties;
+
+        if ($vBind) {
+            $content .= '|merge(' . trim($vBind, '"') . ')';
+        }
+
+        return $this->createBlock($content);
     }
 
     /**
