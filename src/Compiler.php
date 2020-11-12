@@ -117,6 +117,11 @@ class Compiler
     protected $attributesWithIf = ['checked', 'selected', 'disabled'];
 
     /**
+     * @var array
+     */
+    protected $slotFallbackCounter = [];
+
+    /**
      * Compiler constructor.
      */
     public function __construct(DOMDocument $document, LoggerInterface $logger)
@@ -1299,8 +1304,15 @@ class Compiler
         $slotName .= $node->getAttribute('name') ? $node->getAttribute('name') : Slot::SLOT_DEFAULT_NAME;
 
         if ($slotFallback) {
-            $this->addVariable($slotName . '_fallback', $slotFallback);
-            $variable = $this->builder->createVariableOutput($slotName, $slotName . '_fallback');
+            if (isset($this->slotFallbackCounter[$slotName . '_fallback'])) {
+                ++$this->slotFallbackCounter[$slotName . '_fallback'];
+                $slotFallbackName = $slotName . '_fallback_' . $this->slotFallbackCounter[$slotName . '_fallback'];
+            } else {
+                $this->slotFallbackCounter[$slotName . '_fallback'] = 1;
+                $slotFallbackName = $slotName . '_fallback';
+            }
+            $this->addVariable($slotFallbackName, $slotFallback);
+            $variable = $this->builder->createVariableOutput($slotName, $slotFallbackName);
         } else {
             $variable = $this->builder->createVariableOutput($slotName);
         }
