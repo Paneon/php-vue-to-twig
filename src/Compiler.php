@@ -1302,14 +1302,15 @@ class Compiler
 
         $slotName = Slot::SLOT_PREFIX;
         $slotName .= $node->getAttribute('name') ? $node->getAttribute('name') : Slot::SLOT_DEFAULT_NAME;
+        $slotFallbackKey = $slotName . '_fallback';
 
         if ($slotFallback) {
-            if (isset($this->slotFallbackCounter[$slotName . '_fallback'])) {
-                ++$this->slotFallbackCounter[$slotName . '_fallback'];
-                $slotFallbackName = $slotName . '_fallback_' . $this->slotFallbackCounter[$slotName . '_fallback'];
+            if (isset($this->slotFallbackCounter[$slotFallbackKey])) {
+                ++$this->slotFallbackCounter[$slotFallbackKey];
+                $slotFallbackName = $slotFallbackKey . '_' . $this->slotFallbackCounter[$slotFallbackKey];
             } else {
-                $this->slotFallbackCounter[$slotName . '_fallback'] = 1;
-                $slotFallbackName = $slotName . '_fallback';
+                $this->slotFallbackCounter[$slotFallbackKey] = 1;
+                $slotFallbackName = $slotFallbackKey;
             }
             $this->addVariable($slotFallbackName, $slotFallback);
             $variable = $this->builder->createVariableOutput($slotName, $slotFallbackName);
