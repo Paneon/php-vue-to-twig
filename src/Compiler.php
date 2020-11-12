@@ -1310,7 +1310,9 @@ class Compiler
         $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
 
         $slotName = Slot::SLOT_PREFIX;
-        $slotName .= $node->getAttribute('name') ? $node->getAttribute('name') : Slot::SLOT_DEFAULT_NAME;
+        $slotName .= $node->getAttribute('name')
+            ? str_replace('-', '_', $node->getAttribute('name'))
+            : Slot::SLOT_DEFAULT_NAME;
         $slotFallbackKey = $slotName . '_fallback';
 
         if ($slotFallback) {
@@ -1344,7 +1346,7 @@ class Compiler
             if ($childNode instanceof DOMElement && $childNode->tagName === 'template') {
                 foreach ($childNode->attributes as $attribute) {
                     if ($attribute instanceof DOMAttr && preg_match('/v-slot(?::([a-z0-9_-]+)?)/i', $attribute->nodeName, $matches)) {
-                        $slotName = $matches[1] ?? Slot::SLOT_DEFAULT_NAME;
+                        $slotName = $matches[1] ? str_replace('-', '_', $matches[1]) : Slot::SLOT_DEFAULT_NAME;
                         $this->addSlot($slotName, $childNode, $usedComponent);
                         $removeNodes[] = $childNode;
                     }
