@@ -122,7 +122,7 @@ class Compiler
     protected $attributesWithIf = ['checked', 'selected', 'disabled'];
 
     /**
-     * @var array
+     * @var int[]
      */
     protected $slotFallbackCounter = [];
 
@@ -227,15 +227,16 @@ class Compiler
         $resultNode = $this->convertNode($templateElement);
         $html = $this->document->saveHTML($resultNode);
 
-        if (count($this->rawBlocks)) {
-            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
-        }
-
         if (!$html) {
             throw new Exception('Generating html during conversion process failed.');
         }
 
-        $html = $this->addVariableBlocks($html);
+        $this->rawBlocks[] = $this->createVariableBlock();
+
+        if (count($this->rawBlocks)) {
+            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
+        }
+
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
         $html = $this->replaceAttributeWithIfConditionPlaceholders($html);
@@ -350,7 +351,7 @@ class Compiler
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
-                    $this->preparePropertiesForInclude($usedComponent->getProperties()),
+                    $this->preparePropertiesForInclude($usedComponent->getProperties(), $level === 1),
                     $this->vBind
                 )
             );
@@ -414,7 +415,7 @@ class Compiler
      *
      * @return Property[]
      */
-    private function preparePropertiesForInclude(array $variables): array
+    private function preparePropertiesForInclude(array $variables, bool $isRootNode = false): array
     {
         $values = [];
         $hasScopedStyleAttribute = false;
@@ -457,11 +458,15 @@ class Compiler
             if ($attribute === 'style') {
                 $glue = ' ~ "; " ~ ';
             }
-            $variables[] = new Property(
-                $attribute,
-                $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""',
-                false
-            );
+            $value = $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""';
+            if ($isRootNode) {
+                $value = $value . $glue . $attribute . '|default(\'\')';
+            }
+            $variables[] = new Property($attribute, $value, false);
+        }
+
+        if ($isRootNode) {
+            $variables[] = new Property('dataScopedStyleAttribute', 'dataScopedStyleAttribute|default(\'\')', false);
         }
 
         return $variables;
@@ -1287,7 +1292,7 @@ class Compiler
         $this->variables[$name] = $value;
     }
 
-    protected function addVariableBlocks(string $string): string
+    protected function createVariableBlock(): string
     {
         $blocks = [];
 
@@ -1295,7 +1300,7 @@ class Compiler
             $blocks[] = $this->builder->createMultilineVariable($varName, $varValue);
         }
 
-        return implode('', $blocks) . $string;
+        return implode('', $blocks);
     }
 
     /**
