@@ -232,10 +232,7 @@ class Compiler
         }
 
         $this->rawBlocks[] = $this->createVariableBlock();
-
-        if (count($this->rawBlocks)) {
-            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
-        }
+        $html = implode("\n", $this->rawBlocks) . "\n" . $html;
 
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
@@ -463,10 +460,6 @@ class Compiler
                 $value = $value . $glue . $attribute . '|default(\'\')';
             }
             $variables[] = new Property($attribute, $value, false);
-        }
-
-        if ($isRootNode) {
-            $variables[] = new Property('dataScopedStyleAttribute', 'dataScopedStyleAttribute|default(\'\')', false);
         }
 
         return $variables;
