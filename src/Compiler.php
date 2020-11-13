@@ -350,7 +350,7 @@ class Compiler
             $include = $this->document->createTextNode(
                 $this->builder->createIncludePartial(
                     $usedComponent->getPath(),
-                    $this->preparePropertiesForInclude($usedComponent->getProperties()),
+                    $this->preparePropertiesForInclude($usedComponent->getProperties(), $level === 1),
                     $this->vBind
                 )
             );
@@ -414,7 +414,7 @@ class Compiler
      *
      * @return Property[]
      */
-    private function preparePropertiesForInclude(array $variables): array
+    private function preparePropertiesForInclude(array $variables, bool $isRootNode = false): array
     {
         $values = [];
         $hasScopedStyleAttribute = false;
@@ -457,11 +457,15 @@ class Compiler
             if ($attribute === 'style') {
                 $glue = ' ~ "; " ~ ';
             }
-            $variables[] = new Property(
-                $attribute,
-                $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""',
-                false
-            );
+            $value = $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""';
+            if ($isRootNode) {
+                $value = $value . $glue . $attribute . '|default(\'\')';
+            }
+            $variables[] = new Property($attribute, $value, false);
+        }
+
+        if ($isRootNode) {
+            $variables[] = new Property('dataScopedStyleAttribute', 'dataScopedStyleAttribute|default(\'\')', false);
         }
 
         return $variables;
