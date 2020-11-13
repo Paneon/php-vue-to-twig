@@ -93,11 +93,22 @@ class StyleBuilder
 
         if ($styleElement->hasAttribute('scoped')) {
             $this->hasScoped = true;
-            $style = preg_replace(
-                '/((?:^|\s)\s*[^@\s,][a-z0-9-_]+?)((?::{1,2}[a-z-]+)?\s*[{,])/i',
-                '$1[' . $this->scopedAttribute . ']$2',
-                $style
+            preg_match_all(
+                '/(?:^|\s)\s*[^@\s,][\.a-z0-9-_:\/\s]+?\s*[{,]/i',
+                $style,
+                $matches,
+                PREG_SET_ORDER
             );
+            foreach ($matches as $match) {
+                $regex = strpos($match[0], '/deep/') !== false
+                ? '/((?:^|\s)\s*[^@\s,][a-z0-9-_]+?)((?::{1,2}[a-z-]+)?\s*)(?:\/deep\/)/i'
+                : '/((?:^|\s)\s*[^@\s,][a-z0-9-_]+?)((?::{1,2}[a-z-]+)?\s*[{,])/i';
+                $style = str_replace(
+                    $match[0],
+                    preg_replace($regex, '$1[' . $this->scopedAttribute . ']$2', $match[0]),
+                    $style
+                );
+            }
         }
 
         return '<style>' . $style . '</style>';
