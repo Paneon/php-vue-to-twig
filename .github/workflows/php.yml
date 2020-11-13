@@ -26,6 +26,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-
 
+    - name: Downgrade Composer to v1.
+      run: composer self-update --1
+
     - name: Install dependencies
       if: steps.composer-cache.outputs.cache-hit != 'true'
       run: composer install --prefer-dist --no-progress --no-suggest
