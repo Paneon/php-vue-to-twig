@@ -465,10 +465,6 @@ class Compiler
             $variables[] = new Property($attribute, $value, false);
         }
 
-        if ($isRootNode) {
-            $variables[] = new Property('dataScopedStyleAttribute', 'dataScopedStyleAttribute|default(\'\')', false);
-        }
-
         return $variables;
     }
 
