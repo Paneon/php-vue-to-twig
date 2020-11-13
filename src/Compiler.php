@@ -122,7 +122,7 @@ class Compiler
     protected $attributesWithIf = ['checked', 'selected', 'disabled'];
 
     /**
-     * @var array
+     * @var int[]
      */
     protected $slotFallbackCounter = [];
 
