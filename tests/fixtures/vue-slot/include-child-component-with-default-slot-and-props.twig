@@ -1,0 +1,4 @@
+{% set text = text|default('foo') %}
+{% set slot_default_fallback %}{{ text }}{% endset %}
+{% set slot_default_value %}{{ slot_default|default(slot_default_fallback) }}{% endset %}
+{% include "/templates/ChildComponent.twig" with { 'slot_default': slot_default_value, 'class': "", 'style': "" } %}
