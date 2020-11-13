@@ -227,15 +227,16 @@ class Compiler
         $resultNode = $this->convertNode($templateElement);
         $html = $this->document->saveHTML($resultNode);
 
-        if (count($this->rawBlocks)) {
-            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
-        }
-
         if (!$html) {
             throw new Exception('Generating html during conversion process failed.');
         }
 
-        $html = $this->addVariableBlocks($html);
+        $this->rawBlocks[] = $this->createVariableBlock();
+
+        if (count($this->rawBlocks)) {
+            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
+        }
+
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
         $html = $this->replaceAttributeWithIfConditionPlaceholders($html);
@@ -1291,7 +1292,7 @@ class Compiler
         $this->variables[$name] = $value;
     }
 
-    protected function addVariableBlocks(string $string): string
+    protected function createVariableBlock(): string
     {
         $blocks = [];
 
@@ -1299,7 +1300,7 @@ class Compiler
             $blocks[] = $this->builder->createMultilineVariable($varName, $varValue);
         }
 
-        return implode('', $blocks) . $string;
+        return implode('', $blocks);
     }
 
     /**
