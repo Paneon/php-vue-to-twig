@@ -462,10 +462,10 @@ class Compiler
             if ($attribute === 'style') {
                 $glue = ' ~ "; " ~ ';
             }
-            $value = $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""';
             if ($isRootNode) {
-                $value = $value . $glue . $attribute . '|default(\'\')';
+                $values[$attribute][] = $attribute . '|default(\'\')';
             }
+            $value = $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""';
             $variables[] = new Property($attribute, $value, false);
         }
 
