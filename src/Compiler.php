@@ -232,10 +232,7 @@ class Compiler
         }
 
         $this->rawBlocks[] = $this->createVariableBlock();
-
-        if (count($this->rawBlocks)) {
-            $html = implode("\n", $this->rawBlocks) . "\n" . $html;
-        }
+        $html = implode("\n", $this->rawBlocks) . "\n" . $html;
 
         $html = $this->replacePlaceholders($html);
         $html = $this->replaceScopedPlaceholders($html);
@@ -440,13 +437,20 @@ class Compiler
             } elseif ($name === '__DATA_SCOPED_STYLE_ATTRIBUTE__') {
                 unset($variables[$key]);
                 if ($hasScopedStyleAttribute) {
-                    continue;
+                    foreach ($variables as $variable) {
+                        if ($variable->getName() === 'dataScopedStyleAttribute') {
+                            $variable->setValue(
+                                $variable->getValue() . ' ~ " " ~ dataScopedStyleAttribute|default(\'\')'
+                            );
+                        }
+                    }
+                } else {
+                    $variables[] = new Property(
+                        'dataScopedStyleAttribute',
+                        'dataScopedStyleAttribute|default(\'\')',
+                        false
+                    );
                 }
-                $variables[] = new Property(
-                    'dataScopedStyleAttribute',
-                    'dataScopedStyleAttribute|default(\'\')',
-                    false
-                );
             } elseif ($name === 'vBind') {
                 $this->vBind = $value;
                 unset($variables[$key]);
@@ -458,15 +462,11 @@ class Compiler
             if ($attribute === 'style') {
                 $glue = ' ~ "; " ~ ';
             }
-            $value = $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""';
             if ($isRootNode) {
-                $value = $value . $glue . $attribute . '|default(\'\')';
+                $values[$attribute][] = $attribute . '|default(\'\')';
             }
+            $value = $values[$attribute] ?? null ? implode($glue, $values[$attribute]) : '""';
             $variables[] = new Property($attribute, $value, false);
-        }
-
-        if ($isRootNode) {
-            $variables[] = new Property('dataScopedStyleAttribute', 'dataScopedStyleAttribute|default(\'\')', false);
         }
 
         return $variables;
