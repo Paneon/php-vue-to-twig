@@ -58,6 +58,12 @@ class Property
         return $this->value;
     }
 
+    public function setValue(string $value): Property
+    {
+        $this->value = $value;
+        return $this;
+    }
+
     public function isBinding(): bool
     {
         return $this->isBinding;
