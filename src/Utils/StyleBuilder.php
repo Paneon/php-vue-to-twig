@@ -94,7 +94,7 @@ class StyleBuilder
         if ($styleElement->hasAttribute('scoped')) {
             $this->hasScoped = true;
             preg_match_all(
-                '/(?:^|\s)\s*[^@\s][.a-z0-9-_:,()\/\s]+?\s*[{]/i',
+                '/(?:^|\s)\s*[^@\s][\.a-z0-9-_:,\(\)\/\s]+?\s*[{]/i',
                 $style,
                 $matches,
                 PREG_SET_ORDER
