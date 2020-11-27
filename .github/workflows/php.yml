@@ -37,8 +37,8 @@ jobs:
       run: phpunit
 
     - name: Run PHPStan
-      uses: actions-x/phpstan@v1
+      uses: docker://oskarstark/phpstan-ga
+      env:
+        REQUIRE_DEV: true
       with:
-        paths: src
-        level: 6
-        phpstanVersion: ^0.12
+        args: analyse src/ --level=6
