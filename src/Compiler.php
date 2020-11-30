@@ -67,6 +67,11 @@ class Compiler
     protected $styleBuilder;
 
     /**
+     * @var string|null
+     */
+    protected $stylePath = null;
+
+    /**
      * @var NodeHelper
      */
     protected $nodeHelper;
@@ -133,6 +138,7 @@ class Compiler
     {
         $this->builder = new TwigBuilder();
         $this->styleBuilder = new StyleBuilder();
+        $this->stylePath = null;
         $this->nodeHelper = new NodeHelper();
         $this->document = $document;
         $this->logger = $logger;
@@ -157,6 +163,14 @@ class Compiler
         }
 
         $this->banner = $strings;
+    }
+
+    /**
+     * @param string $path
+     */
+    public function setStylePath(string $path): void
+    {
+        $this->stylePath = $path;
     }
 
     /**
@@ -216,7 +230,7 @@ class Compiler
             }
             foreach ($styleBlocks as $styleBlock) {
                 /* @var DOMElement $styleBlock */
-                $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock);
+                $this->rawBlocks[] = $this->styleBuilder->compile($styleBlock, $this->stylePath);
             }
         }
 
