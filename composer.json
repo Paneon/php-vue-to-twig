@@ -42,6 +42,7 @@
     "scripts": {
         "cs:fix": "phpcbf --standard=phpcs.xml",
         "cs:check": "phpcs --standard=phpcs.xml --colors -ps",
-        "phpstan": "@php vendor/bin/phpstan analyse src --level 6"
+        "phpstan": "@php vendor/bin/phpstan analyse src --level 6",
+        "phpunit": "@php vendor/phpunit/phpunit/phpunit"
     }
 }
