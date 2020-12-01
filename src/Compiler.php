@@ -166,9 +166,9 @@ class Compiler
     }
 
     /**
-     * @param string $path
+     * @param string|null $path
      */
-    public function setRelativePath(string $path): void
+    public function setRelativePath(?string $path): void
     {
         $this->relativePath = $path;
     }

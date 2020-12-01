@@ -7,7 +7,8 @@
 </template>
 
 <style lang="scss" scoped>
-  @import "import";
+  @import "imports/import";
+  @import "imports/subfolder/import2";
   .foo {
     color: blue;
     &__bar {
