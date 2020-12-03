@@ -10,7 +10,7 @@
   @import "imports/import";
   @import "imports/subfolder/import2";
   .foo {
-    color: blue;
+    color: $blue;
     &__bar {
       color: $red;
     }
