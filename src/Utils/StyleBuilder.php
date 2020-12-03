@@ -70,7 +70,7 @@ class StyleBuilder
         $this->scssData = $data;
     }
 
-    public function compile(?DOMElement $styleElement): ?string
+    public function compile(?DOMElement $styleElement, ?string $path = null): ?string
     {
         if (!$styleElement instanceof DOMElement
             || ($styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE_SCOPED))
@@ -85,7 +85,7 @@ class StyleBuilder
                 $this->scssCompiler = new ScssCompiler();
             }
             try {
-                $style = $this->scssCompiler->compile($this->scssData . ' ' . $style);
+                $style = $this->scssCompiler->compile($this->scssData . ' ' . $style, $path);
             } catch (CompilerException $e) {
                 $style = "\n/* Warning: " . $e->getMessage() . " */\n";
             }

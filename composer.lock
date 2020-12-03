@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "404ba233b3a8fe089b190ac3054a6680",
+    "content-hash": "05cae48b7c39809879a444a88e0525cd",
     "packages": [
         {
             "name": "paragonie/random_compat",
@@ -135,16 +135,16 @@
         },
         {
             "name": "scssphp/scssphp",
-            "version": "1.1.1",
+            "version": "v1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/scssphp/scssphp.git",
-                "reference": "824e4cec10b2bfa88eec5dac23991cb9106622c1"
+                "reference": "f7c9088320e218ca42e4ef0074259a1ba24ec93a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/scssphp/scssphp/zipball/824e4cec10b2bfa88eec5dac23991cb9106622c1",
-                "reference": "824e4cec10b2bfa88eec5dac23991cb9106622c1",
+                "url": "https://api.github.com/repos/scssphp/scssphp/zipball/f7c9088320e218ca42e4ef0074259a1ba24ec93a",
+                "reference": "f7c9088320e218ca42e4ef0074259a1ba24ec93a",
                 "shasum": ""
             },
             "require": {
@@ -153,8 +153,10 @@
                 "php": ">=5.6.0"
             },
             "require-dev": {
-                "phpunit/phpunit": "^5.7 || ^6.5 || ^7.5 || ^8.3",
+                "phpunit/phpunit": "^5.7 || ^6.5 || ^7.5 || ^8.3 || ^9.4",
+                "sass/sass-spec": "2020.10.29",
                 "squizlabs/php_codesniffer": "~3.5",
+                "symfony/phpunit-bridge": "^5.1",
                 "twbs/bootstrap": "~4.3",
                 "zurb/foundation": "~6.5"
             },
@@ -192,7 +194,7 @@
                 "scss",
                 "stylesheet"
             ],
-            "time": "2020-06-04T17:30:40+00:00"
+            "time": "2020-11-07T20:53:41+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
