@@ -70,7 +70,7 @@ class StyleBuilder
         $this->scssData = $data;
     }
 
-    public function compile(?DOMElement $styleElement, $path = null): ?string
+    public function compile(?DOMElement $styleElement, ?string $path = null): ?string
     {
         if (!$styleElement instanceof DOMElement
             || ($styleElement->hasAttribute('scoped') && !($this->outputType & self::STYLE_SCOPED))
