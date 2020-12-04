@@ -466,8 +466,9 @@ class Compiler
                     );
                 }
             } elseif ($name === 'vBind') {
-                $value = $value === '"$props"' ? $value = '"_props"' : $value;
-                $this->vBind = $value;
+                if ($value !== '"$props"') {
+                    $this->vBind = $value;
+                }
                 unset($variables[$key]);
             }
         }

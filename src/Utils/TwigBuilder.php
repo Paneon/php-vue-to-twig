@@ -160,7 +160,7 @@ class TwigBuilder
         $content = 'include "' . $partialPath . '" with ' . $serializedProperties;
 
         if ($vBind) {
-            $content .= '|merge(' . trim($vBind, '"') . '|default([]))';
+            $content .= '|merge(' . trim($vBind, '"') . ')';
         }
 
         return $this->createBlock($content);
