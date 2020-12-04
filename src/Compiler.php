@@ -729,7 +729,6 @@ class Compiler
         $dynamicValues = [];
 
         $regexArrayBinding = '/^\[([^\]]+)\]$/';
-        $regexArrayElements = '/((?:[\'"])(?<elements>[^\'"])[\'"])/';
         $regexTemplateString = '/^`(?P<content>.+)`$/';
         $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
         $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
@@ -739,14 +738,13 @@ class Compiler
             if ($node) {
                 $node->setAttribute($name, $name);
             }
-        } elseif (preg_match($regexArrayBinding, $value, $matches)) {
-            $this->logger->debug('- array binding ', ['value' => $value]);
+        } elseif (preg_match($regexArrayBinding, $value, $match)) {
+            $elements = explode(',', $match[1]);
+            $value = [];
 
-            if (preg_match_all($regexArrayElements, $value, $arrayMatch)) {
-                $value = $arrayMatch['elements'];
-                $this->logger->debug('- ', ['match' => $arrayMatch]);
-            } else {
-                $value = [];
+            foreach ($elements as $element) {
+                $element = trim($element);
+                $value[] = trim($element, '"\'');
             }
 
             if ($name === 'style') {

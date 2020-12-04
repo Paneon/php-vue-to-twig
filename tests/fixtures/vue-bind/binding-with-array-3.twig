@@ -1,0 +1,6 @@
+{% set isDisabled = isDisabled|default(false) %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+  <div class="a b {% if isDisabled %}b--disabled{% endif %}">
+    Foo
+  </div>
+</div>
