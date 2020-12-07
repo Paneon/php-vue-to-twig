@@ -735,6 +735,7 @@ class Compiler
                 $node->setAttribute($name, $name);
             }
         } elseif (preg_match($regexArrayBinding, $value, $match)) {
+            $this->logger->debug('- array binding ', ['value' => $value]);
             $elements = explode(',', $match[1]);
             foreach ($elements as $element) {
                 $element = trim($element);
@@ -752,6 +753,7 @@ class Compiler
             $this->handleObjectBinding($items, $dynamicValues, $twigOutput);
         } elseif (preg_match($regexTemplateString, $value, $matches)) {
             // <div :class="`abc ${someDynamicClass}`">
+            $this->logger->debug('- template string binding ', ['value' => $value]);
             $dynamicValues[] = $this->handleTemplateStringBinding($matches['content'], $twigOutput);
         } else {
             $value = $this->builder->refactorCondition($value);
