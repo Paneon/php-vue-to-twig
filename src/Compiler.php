@@ -468,6 +468,10 @@ class Compiler
             } elseif ($name === 'vBind') {
                 if ($value !== '"$props"') {
                     $this->vBind = $value;
+                } else {
+                    foreach ($this->properties as $property) {
+                        $variables[] = (clone $property)->setValue($property->getName());
+                    }
                 }
                 unset($variables[$key]);
             }

@@ -4,8 +4,12 @@
   </div>
 </template>
 
-<script>
-    export default {
-        name: 'ComponentWithVBind',
-    };
+<script lang="ts">
+    import { Component, Prop, Vue } from 'vue-property-decorator';
+
+    @Component
+    export default class ComponentWithVBind extends Vue {
+      @Prop({ type: String, required: true }) a: string;
+      @Prop({ type: Number, required: true }) b: number;
+    }
 </script>
