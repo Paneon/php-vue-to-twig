@@ -466,12 +466,12 @@ class Compiler
                     );
                 }
             } elseif ($name === 'vBind') {
-                if ($value !== '"$props"') {
-                    $this->vBind = $value;
-                } else {
+                if ($value === '"$props"') {
                     foreach ($this->properties as $property) {
                         $variables[] = (clone $property)->setValue($property->getName());
                     }
+                } else {
+                    $this->vBind = $value;
                 }
                 unset($variables[$key]);
             }
