@@ -1,6 +1,6 @@
 <template>
   <div>
-    <ChildComponent v-bind="$props" bar="baz" />
+    <ChildComponent v-bind="$props" />
   </div>
 </template>
 
@@ -9,7 +9,7 @@
 
     @Component
     export default class ComponentWithVBind extends Vue {
-      @Prop({ type: String, default: 'foo' }) a: string;
-      @Prop({ type: Number, default: 42 }) b: number;
+      @Prop({ type: String, default: 'foo' }) foo: string;
+      @Prop({ type: Number, default: 42 }) bar: number;
     }
 </script>
