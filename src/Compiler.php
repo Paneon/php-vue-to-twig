@@ -740,7 +740,6 @@ class Compiler
                 $element = trim($element);
                 if (preg_match('/^`(.*)`$/', $element, $match)) {
                     $dynamicValues[] = $this->handleTemplateStringBinding($match[1], $twigOutput);
-//                    $dynamicValues[] = '{{ ' . str_replace('"', '\'', $this->refactorTemplateString($element)) . ' }}';
                 } elseif (preg_match('/^\{(.*)\}$/', $element, $match)) {
                     $this->handleObjectBinding([$match[1]], $dynamicValues, $twigOutput);
                 } else {
@@ -772,13 +771,11 @@ class Compiler
     /**
      * @param string[] $items
      * @param string[] $dynamicValues
-
      * @throws ReflectionException
      */
     protected function handleObjectBinding(array $items, array &$dynamicValues, bool $twigOutput): void
     {
         $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
-
         foreach ($items as $item) {
             if (preg_match($regexObjectElements, $item, $matchElement)) {
                 $dynamicValues[] = $this->builder->prepareBindingOutput(
@@ -789,6 +786,9 @@ class Compiler
         }
     }
 
+    /**
+     * @throws ReflectionException
+     */
     protected function handleTemplateStringBinding(string $templateStringContent, bool $twigOutput): string
     {
         preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
