@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div :class="['a', { 'a--disabled': isDisabled } ]">
+    <div :class="['a', { 'a--disabled': isDisabled }, 'b' ]">
       Foo
     </div>
   </div>

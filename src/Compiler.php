@@ -165,9 +165,6 @@ class Compiler
         $this->banner = $strings;
     }
 
-    /**
-     * @param string|null $path
-     */
     public function setRelativePath(?string $path): void
     {
         $this->relativePath = $path;
@@ -744,6 +741,14 @@ class Compiler
 
             foreach ($elements as $element) {
                 $element = trim($element);
+                if (preg_match('/^`.*`$/', $element)) {
+                    $element = ' {{ ' . str_replace('"', '\'', $this->refactorTemplateString($element)) . ' }} ';
+                } elseif (preg_match('/^\{(.*)\}$/', $element, $match)) {
+                    [$elementValue, $condition] = explode(':', $match[1]);
+                    $element = ' {% if ' . $condition . ' %}{{' .
+                        trim(str_replace('"', '\'', $elementValue)) .
+                        '}}{% endif %} ';
+                }
                 $value[] = trim($element, '"\'');
             }
 
