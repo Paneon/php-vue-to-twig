@@ -728,7 +728,6 @@ class Compiler
         $regexArrayBinding = '/^\[([^\]]+)\]$/';
         $regexTemplateString = '/^`(?P<content>.+)`$/';
         $regexObjectBinding = '/^\{(?<elements>[^\}]+)\}$/';
-        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
 
         if ($value === 'true') {
             $this->logger->debug('- setAttribute ' . $name);
@@ -739,43 +738,22 @@ class Compiler
             $elements = explode(',', $match[1]);
             foreach ($elements as $element) {
                 $element = trim($element);
-                if (preg_match('/^`.*`$/', $element)) {
-                    $element = ' {{ ' . str_replace('"', '\'', $this->refactorTemplateString($element)) . ' }} ';
+                if (preg_match('/^`(.*)`$/', $element, $match)) {
+                    $dynamicValues[] = $this->handleTemplateStringBinding($match[1], $twigOutput);
+//                    $dynamicValues[] = '{{ ' . str_replace('"', '\'', $this->refactorTemplateString($element)) . ' }}';
                 } elseif (preg_match('/^\{(.*)\}$/', $element, $match)) {
-                    [$value, $condition] = explode(':', $match[1]);
-                    $element = ' {% if ' . trim($condition) . ' %}{{' .
-                        trim(str_replace('"', '\'', $value)) .
-                        '}}{% endif %} ';
+                    $this->handleObjectBinding([$match[1]], $dynamicValues, $twigOutput);
+                } else {
+                    $dynamicValues[] = trim($element, '"\'');
                 }
-                $dynamicValues[] = trim($element, '"\'');
             }
         } elseif (preg_match($regexObjectBinding, $value, $matches)) {
             $this->logger->debug('- object binding ', ['value' => $value]);
-
             $items = explode(',', $matches['elements']);
-
-            foreach ($items as $item) {
-                if (preg_match($regexObjectElements, $item, $matchElement)) {
-                    $dynamicValues[] = $this->builder->prepareBindingOutput(
-                        $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . ' \'',
-                        $twigOutput
-                    );
-                }
-            }
+            $this->handleObjectBinding($items, $dynamicValues, $twigOutput);
         } elseif (preg_match($regexTemplateString, $value, $matches)) {
             // <div :class="`abc ${someDynamicClass}`">
-            $templateStringContent = $matches['content'];
-
-            preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
-            foreach ($matches as $match) {
-                $templateStringContent = str_replace(
-                    $match[0],
-                    $this->builder->prepareBindingOutput($this->builder->refactorCondition($match[1]), $twigOutput),
-                    $templateStringContent
-                );
-            }
-
-            $dynamicValues[] = $templateStringContent;
+            $dynamicValues[] = $this->handleTemplateStringBinding($matches['content'], $twigOutput);
         } else {
             $value = $this->builder->refactorCondition($value);
             $this->logger->debug(sprintf('- setAttribute "%s" with value "%s"', $name, $value));
@@ -789,6 +767,39 @@ class Compiler
         }
 
         return $dynamicValues;
+    }
+
+    /**
+     * @param string[] $items
+     * @param string[] $dynamicValues
+
+     * @throws ReflectionException
+     */
+    protected function handleObjectBinding(array $items, array &$dynamicValues, bool $twigOutput): void
+    {
+        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
+
+        foreach ($items as $item) {
+            if (preg_match($regexObjectElements, $item, $matchElement)) {
+                $dynamicValues[] = $this->builder->prepareBindingOutput(
+                    $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . ' \'',
+                    $twigOutput
+                );
+            }
+        }
+    }
+
+    protected function handleTemplateStringBinding(string $templateStringContent, bool $twigOutput): string
+    {
+        preg_match_all('/\${([^}]+)}/', $templateStringContent, $matches, PREG_SET_ORDER);
+        foreach ($matches as $match) {
+            $templateStringContent = str_replace(
+                $match[0],
+                $this->builder->prepareBindingOutput($this->builder->refactorCondition($match[1]), $twigOutput),
+                $templateStringContent
+            );
+        }
+        return $templateStringContent;
     }
 
     /**
