@@ -9,7 +9,7 @@
 
     @Component
     export default class ComponentWithVBind extends Vue {
-      @Prop({ type: String, required: true }) a: string;
-      @Prop({ type: Number, required: true }) b: number;
+      @Prop({ type: String, default: 'foo' }) a: string;
+      @Prop({ type: Number, default: 42 }) b: number;
     }
 </script>

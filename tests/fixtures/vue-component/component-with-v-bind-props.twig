@@ -1,3 +1,5 @@
+{% set a = a|default('foo') %}
+{% set b = b|default(42) %}
 <div class="{{ class|default('') }}" style="{{ style|default('') }}">
   {% include "/templates/ChildComponent.twig" with { 'bar': "baz", 'slot_default': "", 'a': a, 'b': b, 'class': "", 'style': "" } %}
 </div>
