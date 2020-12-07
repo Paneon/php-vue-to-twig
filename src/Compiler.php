@@ -737,32 +737,17 @@ class Compiler
             }
         } elseif (preg_match($regexArrayBinding, $value, $match)) {
             $elements = explode(',', $match[1]);
-            $value = [];
-
             foreach ($elements as $element) {
                 $element = trim($element);
                 if (preg_match('/^`.*`$/', $element)) {
                     $element = ' {{ ' . str_replace('"', '\'', $this->refactorTemplateString($element)) . ' }} ';
                 } elseif (preg_match('/^\{(.*)\}$/', $element, $match)) {
-                    [$elementValue, $condition] = explode(':', $match[1]);
-                    $element = ' {% if ' . $condition . ' %}{{' .
-                        trim(str_replace('"', '\'', $elementValue)) .
+                    [$value, $condition] = explode(':', $match[1]);
+                    $element = ' {% if ' . trim($condition) . ' %}{{' .
+                        trim(str_replace('"', '\'', $value)) .
                         '}}{% endif %} ';
                 }
-                $value[] = trim($element, '"\'');
-            }
-
-            if ($name === 'style') {
-                foreach ($value as $prop => $setting) {
-                    if ($setting) {
-                        $prop = strtolower($this->transformCamelCaseToCSS($prop));
-                        $dynamicValues[] = sprintf('%s:%s', $prop, $setting);
-                    }
-                }
-            } elseif ($name === 'class') {
-                foreach ($value as $className) {
-                    $dynamicValues[] = $className;
-                }
+                $dynamicValues[] = trim($element, '"\'');
             }
         } elseif (preg_match($regexObjectBinding, $value, $matches)) {
             $this->logger->debug('- object binding ', ['value' => $value]);
