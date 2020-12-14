@@ -85,7 +85,9 @@ class StyleBuilder
                 $this->scssCompiler = new ScssCompiler();
             }
             try {
+                $style = str_replace('/deep/', '__vue_to_twig_deep_placeholder__', $style);
                 $style = $this->scssCompiler->compile($this->scssData . ' ' . $style, $path);
+                $style = str_replace('__vue_to_twig_deep_placeholder__', '/deep/', $style);
             } catch (CompilerException $e) {
                 $style = "\n/* Warning: " . $e->getMessage() . " */\n";
             }
