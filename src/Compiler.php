@@ -661,8 +661,7 @@ class Compiler
             }
 
             $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-            $value = $this->builder->sanitizeAttributeValue($attribute->value);
-            $this->logger->debug('- handle: ' . $name . ' = ' . $value);
+            $this->logger->debug('- handle: ' . $name . ' = ' . $attribute->value);
 
             $staticValues = $node->hasAttribute($name) ? $node->getAttribute($name) : '';
 
@@ -675,11 +674,11 @@ class Compiler
             }
 
             // makes no sense to use this in code, but it must handled.
-            if ($value === 'false') {
+            if ($attribute->value === 'false') {
                 continue;
             }
 
-            $dynamicValues = $this->handleBinding($value, $name, $node);
+            $dynamicValues = $this->handleBinding($attribute->value, $name, $node);
 
             $addIfAroundAttribute = in_array($name, $this->attributesWithIf);
 
@@ -787,7 +786,7 @@ class Compiler
         foreach ($items as $item) {
             if (preg_match($regexObjectElements, $item, $matchElement)) {
                 $dynamicValues[] = $this->builder->prepareBindingOutput(
-                    $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . ' \'',
+                    $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . '\'',
                     $twigOutput
                 );
             }

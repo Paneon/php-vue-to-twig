@@ -4,12 +4,12 @@
     <img src="{{ imageSrc }}">
     <img src="{{ imageSrc }}">
     <div class="a b c"></div>
-    <div title="Title" class="category-filter-list categories {{ isSomething ? 'block ' }} {{ not isSomething ? 'block2 ' }}"></div>
+    <div title="Title" class="category-filter-list categories {{ isSomething ? 'block' }} {{ not isSomething ? 'block2' }}"></div>
     <div class="{{ getClasses(not hasSomething) }}"></div>
     <div style="{{ 'display: none !important' }};">Hidden</div>
     <div style="color: red; {{ 'display: none !important' }};">Hidden</div>
-    <div style="border: 1px solid #000000; {{ isSomething ? 'color: red ' }}; {{ not isSomething ? 'color: blue ' }};">Hidden</div>
-    <div class="{{ bar ? 'foo ' }}"></div>
-    <div class="{{ bar ? 'foo ' }}"></div>
+    <div style="border: 1px solid #000000; {{ isSomething ? 'color: red' }}; {{ not isSomething ? 'color: blue' }};">Hidden</div>
+    <div class="{{ bar ? 'foo' }}"></div>
+    <div class="{{ bar ? 'foo' }}"></div>
   </div>
 </div>
