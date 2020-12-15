@@ -3,6 +3,6 @@
   {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "", 'style': "color: red" ~ "; " ~ ( "fill:" ~ ( color ) ~ ";" ) } %}
   {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "foo" ~ " " ~ ( "bar" ), 'style': "" } %}
   {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "foo" ~ " " ~ ( bar ), 'style': "" } %}
-  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "product-column__tile" ~ " " ~ ( isSingleProductTile ? 'product-column__tile--large ' ), 'style': "" } %}
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': "product-column__tile" ~ " " ~ ( isSingleProductTile ? 'product-column__tile--large' ), 'style': "" } %}
   {% include "/templates/ChildComponent.twig" with { 'ariaLabelledby': "foo-" ~ ( _uid ) ~ "", 'slot_default': "", 'class': "", 'style': "" } %}
 </div>

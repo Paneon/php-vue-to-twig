@@ -1,0 +1,7 @@
+{% set foo = foo|default(false) %}
+{% set bar = bar|default(false) %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+  <div class="a {{ foo or bar ? 'b' }}">
+    Foo
+  </div>
+</div>
