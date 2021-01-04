@@ -1,0 +1,4 @@
+{% set test = test|default(false) %}
+<div class="{{ class|default('') }}" style="{{ style|default('') }}">
+  {% include "/templates/ChildComponent.twig" with { 'slot_default': "", 'class': 'foo' ~ " " ~ ( test ? 'bar' ) ~ " " ~ ( not test ? 'baz' ), 'style': "" } %}
+</div>

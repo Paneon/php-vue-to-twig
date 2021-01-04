@@ -433,7 +433,9 @@ class Compiler
             if (in_array($name, $this->includeAttributes)) {
                 if ($variable->isBinding()) {
                     foreach ($this->handleBinding($value, $name, null, false) as $bindingValue) {
-                        $values[$name][] = $bindingValue;
+                        if (!empty($bindingValue)) {
+                            $values[$name][] = $bindingValue;
+                        }
                     }
                 } else {
                     $values[$name][] = $value;
