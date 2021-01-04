@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": ">=7.1",
+        "php": "^7.1|^8.0",
         "ext-dom": "*",
         "ext-libxml": "*",
         "scssphp/scssphp": "1.4.0",
