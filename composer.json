@@ -10,7 +10,7 @@
         }
     ],
     "require": {
-        "php": "^7.1|^8.0",
+        "php": "^7.3|^8.0",
         "ext-dom": "*",
         "ext-libxml": "*",
         "scssphp/scssphp": "1.4.0",
@@ -34,7 +34,7 @@
     },
     "require-dev": {
         "ext-simplexml": "*",
-        "phpunit/phpunit": "^7",
+        "phpunit/phpunit": "^9",
         "monolog/monolog": "^1.24",
         "phpstan/phpstan": "^0.12",
         "friendsofphp/php-cs-fixer": "^2.16"
