@@ -432,7 +432,11 @@ class Compiler
             $value = $variable->getValue();
             if (in_array($name, $this->includeAttributes)) {
                 if ($variable->isBinding()) {
-                    $values[$name][] = $this->handleBinding($value, $name, null, false)[0];
+                    foreach ($this->handleBinding($value, $name, null, false) as $bindingValue) {
+                        if (!empty($bindingValue)) {
+                            $values[$name][] = $bindingValue;
+                        }
+                    }
                 } else {
                     $values[$name][] = $value;
                 }
@@ -749,7 +753,7 @@ class Compiler
                 } elseif (preg_match('/^\{(.*)\}$/', $element, $match)) {
                     $this->handleObjectBinding([$match[1]], $dynamicValues, $twigOutput);
                 } else {
-                    $dynamicValues[] = trim($element, '"\'');
+                    $dynamicValues[] = $element;
                 }
             }
         } elseif (preg_match($regexObjectBinding, $value, $matches)) {
@@ -1142,6 +1146,10 @@ class Compiler
      */
     protected function implodeAttributeValue(string $attribute, array $values, string $oldValue): string
     {
+        foreach ($values as &$value) {
+            $value = preg_replace('/^(["\'])(.+)\1$/', '$2', $value);
+        }
+
         if ($attribute === 'style') {
             if (!empty($oldValue)) {
                 $oldValue = trim($oldValue, ';') . ';';
