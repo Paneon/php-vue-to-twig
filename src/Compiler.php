@@ -315,81 +315,8 @@ class Compiler
             $this->addScopedAttribute($node, $level);
         }
 
-        // Registered Component
         if (in_array($node->nodeName, array_keys($this->components))) {
-            $matchedComponent = $this->components[$node->nodeName];
-            $usedComponent = new Component($matchedComponent->getName(), $matchedComponent->getPath());
-
-            if ($node->hasAttributes()) {
-                /** @var DOMAttr $attribute */
-                foreach ($node->attributes as $attribute) {
-                    if (strpos($attribute->name, 'v-bind:') === 0 || strpos($attribute->name, ':') === 0) {
-                        $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
-                        $value = $attribute->value;
-
-                        if (substr_count($value, '`')) {
-                            $value = $this->refactorTemplateString($attribute->value);
-                        } else {
-                            $value = $this->builder->refactorCondition($value);
-                        }
-
-                        $usedComponent->addProperty($name, $value, true);
-                    } else {
-                        $usedComponent->addProperty($attribute->name, '"' . $attribute->value . '"', false);
-                    }
-                }
-            }
-
-            foreach (iterator_to_array($node->childNodes) as $childNode) {
-                $this->convertNode($childNode, $level + 1);
-            }
-
-            // Slots
-            if ($node->hasChildNodes()) {
-                $this->handleNamedSlotsInclude($node, $usedComponent);
-                // Slots (Default)
-                if ($node->hasChildNodes() && !$usedComponent->hasSlot(Slot::SLOT_DEFAULT_NAME)) {
-                    $this->addSlot(Slot::SLOT_DEFAULT_NAME, $node, $usedComponent);
-                }
-            } else {
-                $usedComponent->addEmptyDefaultSlot();
-            }
-
-            // Include Partial
-            $include = $this->document->createTextNode(
-                $this->builder->createIncludePartial(
-                    $usedComponent->getPath(),
-                    $this->preparePropertiesForInclude($usedComponent->getProperties(), $level === 1),
-                    $this->vBind
-                )
-            );
-
-            $node->parentNode->insertBefore($include, $node);
-
-            if ($usedComponent->hasSlots()) {
-                foreach ($usedComponent->getSlots() as $slotName => $slot) {
-                    // Add variable which contains the content (set)
-                    $openSet = $this->document->createTextNode(
-                        $this->builder->createSet($slot->getSlotValueName())
-                    );
-                    $node->parentNode->insertBefore($openSet, $include);
-
-                    $setContent = $this->document->createTextNode($slot->getSlotContentVariableString());
-
-                    $node->parentNode->insertBefore($setContent, $include);
-
-                    // Close variable (endset)
-                    $closeSet = $this->document->createTextNode(
-                        $this->builder->closeSet()
-                    );
-                    $node->parentNode->insertBefore($closeSet, $include);
-                }
-            }
-
-            // Remove original node
-            $this->nodeHelper->removeNode($node);
-
-            return $node;
+            return $this->handleComponent($node, $level);
         }
 
         if ($node instanceof DOMElement) {
@@ -412,6 +339,83 @@ class Compiler
         if ($node->nodeName === 'selected') {
             $this->selectData = null;
         }
+
+        return $node;
+    }
+
+    private function handleComponent(DOMNode $node, int $level): DOMNode
+    {
+        $matchedComponent = $this->components[$node->nodeName];
+        $usedComponent = new Component($matchedComponent->getName(), $matchedComponent->getPath());
+
+        if ($node->hasAttributes()) {
+            /** @var DOMAttr $attribute */
+            foreach ($node->attributes as $attribute) {
+                if (strpos($attribute->name, 'v-bind:') === 0 || strpos($attribute->name, ':') === 0) {
+                    $name = substr($attribute->name, strpos($attribute->name, ':') + 1);
+                    $value = $attribute->value;
+
+                    if (substr_count($value, '`')) {
+                        $value = $this->refactorTemplateString($attribute->value);
+                    } else {
+                        $value = $this->builder->refactorCondition($value);
+                    }
+
+                    $usedComponent->addProperty($name, $value, true);
+                } else {
+                    $usedComponent->addProperty($attribute->name, '"' . $attribute->value . '"', false);
+                }
+            }
+        }
+
+        foreach (iterator_to_array($node->childNodes) as $childNode) {
+            $this->convertNode($childNode, $level + 1);
+        }
+
+        // Slots
+        if ($node->hasChildNodes()) {
+            $this->handleNamedSlotsInclude($node, $usedComponent);
+            // Slots (Default)
+            if ($node->hasChildNodes() && !$usedComponent->hasSlot(Slot::SLOT_DEFAULT_NAME)) {
+                $this->addSlot(Slot::SLOT_DEFAULT_NAME, $node, $usedComponent);
+            }
+        } else {
+            $usedComponent->addEmptyDefaultSlot();
+        }
+
+        // Include Partial
+        $include = $this->document->createTextNode(
+            $this->builder->createIncludePartial(
+                $usedComponent->getPath(),
+                $this->preparePropertiesForInclude($usedComponent->getProperties(), $level === 1),
+                $this->vBind
+            )
+        );
+
+        $node->parentNode->insertBefore($include, $node);
+
+        if ($usedComponent->hasSlots()) {
+            foreach ($usedComponent->getSlots() as $slotName => $slot) {
+                // Add variable which contains the content (set)
+                $openSet = $this->document->createTextNode(
+                    $this->builder->createSet($slot->getSlotValueName())
+                );
+                $node->parentNode->insertBefore($openSet, $include);
+
+                $setContent = $this->document->createTextNode($slot->getSlotContentVariableString());
+
+                $node->parentNode->insertBefore($setContent, $include);
+
+                // Close variable (endset)
+                $closeSet = $this->document->createTextNode(
+                    $this->builder->closeSet()
+                );
+                $node->parentNode->insertBefore($closeSet, $include);
+            }
+        }
+
+        // Remove original node
+        $this->nodeHelper->removeNode($node);
 
         return $node;
     }
@@ -1345,6 +1349,12 @@ class Compiler
     {
         if ($node->nodeName !== 'slot') {
             return;
+        }
+
+        if ($node->hasChildNodes()) {
+            foreach ($node->childNodes as $childNode) {
+                $this->convertNode($childNode);
+            }
         }
 
         $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
