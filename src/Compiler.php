@@ -1351,6 +1351,12 @@ class Compiler
             return;
         }
 
+        if ($node->hasChildNodes()) {
+            foreach ($node->childNodes as $childNode) {
+                $this->convertNode($childNode);
+            }
+        }
+
         $slotFallback = $node->hasChildNodes() ? $this->innerHtmlOfNode($node) : null;
 
         $slotName = Slot::SLOT_PREFIX;
