@@ -650,7 +650,14 @@ class Compiler
     public function replaceShowWithIf(DOMElement $node): void
     {
         if ($node->hasAttribute('v-show')) {
-            $node->setAttribute('v-if', $node->getAttribute('v-show'));
+            if ($node->hasAttribute('v-if')) {
+                $node->setAttribute(
+                    'v-if',
+                    '(' . $node->getAttribute('v-if') . ') && (' . $node->getAttribute('v-show') . ')'
+                );
+            } else {
+                $node->setAttribute('v-if', $node->getAttribute('v-show'));
+            }
             $node->removeAttribute('v-show');
         }
     }
