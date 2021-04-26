@@ -310,7 +310,7 @@ class Compiler
             $this->handleHtml($node);
             $this->handleText($node);
             $this->stripEventHandlers($node);
-            $this->handleSlots($node);
+            $this->handleSlots($node, $level);
             $this->cleanupAttributes($node);
             $this->addScopedAttribute($node, $level);
         }
@@ -1345,7 +1345,7 @@ class Compiler
     /**
      * @throws Exception
      */
-    protected function handleSlots(DOMElement $node): void
+    protected function handleSlots(DOMElement $node, int $level): void
     {
         if ($node->nodeName !== 'slot') {
             return;
@@ -1353,7 +1353,7 @@ class Compiler
 
         if ($node->hasChildNodes()) {
             foreach ($node->childNodes as $childNode) {
-                $this->convertNode($childNode);
+                $this->convertNode($childNode, $level + 1);
             }
         }
 
