@@ -21,5 +21,8 @@
     <span :style="'background-color:' + color">
       test
     </span>
+    <span :style="{backgroundColor: color}">
+      test
+    </span>
   </div>
 </template>

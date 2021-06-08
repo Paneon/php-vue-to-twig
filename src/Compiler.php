@@ -802,7 +802,7 @@ class Compiler
             if (preg_match($regexObjectElements, $item, $matchElement)) {
                 $dynamicValues[] = $this->builder->prepareBindingOutput(
                     $isStyle && !$matchElement['isString']
-                        ? '\'' . $matchElement['class'] . ':\' + ' . $matchElement['condition']
+                        ? '\'' . $this->camelCaseToKebabCase($matchElement['class']) . ':\' + ' . $matchElement['condition']
                         : $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . '\'',
                     $twigOutput
                 );
@@ -1529,5 +1529,10 @@ class Compiler
         }
 
         return $html;
+    }
+
+    private function camelCaseToKebabCase(string $text): string
+    {
+        return strtolower(preg_replace('/([a-z])([A-Z])/', '\1-\2', $text));
     }
 }
