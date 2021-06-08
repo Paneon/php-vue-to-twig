@@ -762,7 +762,7 @@ class Compiler
                 if (preg_match('/^`(.*)`$/', $element, $match)) {
                     $dynamicValues[] = $this->handleTemplateStringBinding($match[1], $twigOutput);
                 } elseif (preg_match('/^\{(.*)\}$/', $element, $match)) {
-                    $this->handleObjectBinding([$match[1]], $dynamicValues, $twigOutput);
+                    $this->handleObjectBinding([$match[1]], $dynamicValues, $twigOutput, $name === 'style');
                 } else {
                     $dynamicValues[] = $element;
                 }
@@ -770,7 +770,7 @@ class Compiler
         } elseif (preg_match($regexObjectBinding, $value, $matches)) {
             $this->logger->debug('- object binding ', ['value' => $value]);
             $items = explode(',', $matches['elements']);
-            $this->handleObjectBinding($items, $dynamicValues, $twigOutput);
+            $this->handleObjectBinding($items, $dynamicValues, $twigOutput, $name === 'style');
         } elseif (preg_match($regexTemplateString, $value, $matches)) {
             // <div :class="`abc ${someDynamicClass}`">
             $this->logger->debug('- template string binding ', ['value' => $value]);
@@ -795,15 +795,15 @@ class Compiler
      * @param string[] $dynamicValues
      * @throws ReflectionException
      */
-    protected function handleObjectBinding(array $items, array &$dynamicValues, bool $twigOutput): void
+    protected function handleObjectBinding(array $items, array &$dynamicValues, bool $twigOutput, bool $isStyle): void
     {
         $regexObjectElements = '/(?<isString>["\']?)(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
         foreach ($items as $item) {
             if (preg_match($regexObjectElements, $item, $matchElement)) {
                 $dynamicValues[] = $this->builder->prepareBindingOutput(
-                    $matchElement['isString']
-                        ? $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . '\''
-                        : '\'' . $matchElement['class'] . ':\' + ' . $matchElement['condition'],
+                    $isStyle && !$matchElement['isString']
+                        ? '\'' . $matchElement['class'] . ':\' + ' . $matchElement['condition']
+                        : $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . '\'',
                     $twigOutput
                 );
             }
