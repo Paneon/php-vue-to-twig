@@ -797,11 +797,13 @@ class Compiler
      */
     protected function handleObjectBinding(array $items, array &$dynamicValues, bool $twigOutput): void
     {
-        $regexObjectElements = '/["\']?(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
+        $regexObjectElements = '/(?<isString>["\']?)(?<class>[^"\']+)["\']?\s*:\s*(?<condition>[^,]+)/x';
         foreach ($items as $item) {
             if (preg_match($regexObjectElements, $item, $matchElement)) {
                 $dynamicValues[] = $this->builder->prepareBindingOutput(
-                    $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . '\'',
+                    $matchElement['isString']
+                        ? $this->builder->refactorCondition($matchElement['condition']) . ' ? \'' . $matchElement['class'] . '\''
+                        : '\'' . $matchElement['class'] . ':\' + ' . $matchElement['condition'],
                     $twigOutput
                 );
             }

@@ -1,5 +1,14 @@
 <div class="{{ class|default('') }}" style="{{ style|default('') }}">
-  <span style="width: {{ foo ~ 'px' }}; height: {{ bar ~ 'px' }}">
+  <span style="{{ 'color:' ~ '#ff0000' }};">
+    test
+  </span>
+  <span style="{{ 'width:' ~ w ~ 'px' }}; {{ ' height:' ~ h ~ 'px' }};">
+    test
+  </span>
+  <span style="{{ isSomething ? 'color: red' }}; {{ not isSomething ? 'color: blue' }};">
+    test
+  </span>
+  <span style="{{ isSomething ? 'display: block;' : 'display: inline;' }};">
     test
   </span>
 </div>
