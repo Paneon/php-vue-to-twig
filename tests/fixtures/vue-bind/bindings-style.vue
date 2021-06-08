@@ -1,5 +1,11 @@
 <template>
   <div>
+    <span style="color: #ff0000">
+      test
+    </span>
+    <span :style="'color: #ff0000'">
+      test
+    </span>
     <span :style="{color: '#ff0000'}">
       test
     </span>
@@ -10,6 +16,9 @@
       test
     </span>
     <span :style="isSomething ? 'display: block;' : 'display: inline;'">
+      test
+    </span>
+    <span :style="'background-color:' + color">
       test
     </span>
   </div>
